@@ -1,0 +1,29 @@
+\documentclass{report}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\DeclareUnicodeCharacter{2212}{−}
+\usepgfplotslibrary{groupplots,dateplot}
+\usetikzlibrary{patterns,shapes.arrows}
+\pgfplotsset{compat=newest}
+
+\begin{document}
+
+    \begin{figure*}[t]
+        \centering
+        %\input{example.pgf}
+        \resizebox{\linewidth}{!}{\input{example.pgf}}
+        \caption{A PGF histogram from \texttt{matplotlib} pgf.}
+        \label{fig:example1}
+    \end{figure*}
+
+    \begin{figure*}[t]
+        \centering
+%        \includegraphics[width=\columnwidth]{example}
+        \includegraphics{example}
+        \caption{A PGF histogram from \texttt{matplotlib} pdf.}
+        \label{fig:example2}
+    \end{figure*}
+
+\end{document}
