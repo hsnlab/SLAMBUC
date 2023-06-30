@@ -1,9 +1,10 @@
-# Serverless Application Composition
+# SLAMBUC
+## Serverless Layout Adaptation with Memory-Bounds and User Constraints
 
 Graph algorithms for composing cloud-native applications from standalone serverless functions
 in a cost-efficient and latency-constrained manner.
 
-## Installation
+### Installation
 
 To install all requirements the following commands can be used:
 
@@ -16,7 +17,7 @@ python3.11 -m pip install -U -r requirements.txt
 ```
 
 Tests can be executed from the **[tests](tests)** folder but algorithms can be installed as a standalone package.
-Install the ``SAC`` package with the following command:
+Install the ``SLAMBUC`` package with the following command:
 
 ```bash
 python3.11 -m pip install ./

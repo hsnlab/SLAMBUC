@@ -166,8 +166,6 @@ environment.env
 *.pkl
 *.csv
 
-sac.egg-info/
-
 out/
 *.pdf
 *.pgf
