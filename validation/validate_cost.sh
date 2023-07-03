@@ -2,8 +2,13 @@
 
 trap exit SIGINT SIGTERM
 
-# Execute sensitivity tests
+# Execute cost tests
 for n in {10..100..10}; do
-  python3.11 cli.py cost --size "${n}"
+  python3.11 cli.py cost --alg "ser" --size "${n}"
+  pkill "python3.11 cli.py cost"
+done
+
+for n in {10..100..10}; do
+  python3.11 cli.py cost --alg "par" --size "${n}"
   pkill "python3.11 cli.py cost"
 done

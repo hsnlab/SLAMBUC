@@ -90,7 +90,7 @@ def perform_tree_size_ser_tests(n: int = None, data_dir: str = DATA_DIR, output_
 
 
 def perform_tree_size_par_tests(n: int = None, data_dir: str = DATA_DIR, output_prefix: str = "test_tree_size_par",
-                                n_cpu: int = 2, tree_num: int = None, timeout: int = DEF_TIMEOUT):
+                                n_cpu: int = DEF_PAR_CPU_NUM, tree_num: int = None, timeout: int = DEF_TIMEOUT):
     log.info(" Tree size par. tests ".center(80, '#'))
     size_range = range(*PERF_TREE_SIZE_RANGE) if n is None else range(n, n + 1)
     for n in size_range:
@@ -257,7 +257,7 @@ def perform_bicriteria_sens_tests(n: int = DEF_TREE_SIZE, data_dir: str = DATA_D
 
 
 # Algorithms under test with serialized execution
-TREE_ALGS = dict(
+TREE_COST_SER_ALGS = dict(
     # Baselines - infeasible
     BASELINE_NO_PART=baseline_no_partitioning,
     BASELINE_SINGLE=baseline_singleton_partitioning,
@@ -271,29 +271,45 @@ TREE_ALGS = dict(
     CHAIN_PART=cacheless_chain_partitioning,
     # SOTA - chains, poly, integrated data caching
     CHAIN_PART_SER=stateful_chain_partitioning,
-    CHAIN_PART_PAR=functools.partial(stateful_chain_partitioning, N=DEF_PAR_CPU_NUM),
     # SOTA - chains, heuristic(poly), with data caching
     COSTLESS=functools.partial(csp_tree_partitioning, solver=cspy.BiDirectional),
-    COSTLESS_PAR=functools.partial(csp_tree_partitioning, N=DEF_PAR_CPU_NUM, solver=cspy.BiDirectional),
     # OUR - subtrees, poly-heur, feasible/no solution
-    MINW_HEUR=min_weight_partition_heuristic,
-    # OUR - subtrees, poly-heur, feasible/no solution
-    GREEDY_PAR=functools.partial(min_weight_partition_heuristic, N=DEF_PAR_CPU_NUM),
+    GREEDY=min_weight_partition_heuristic,
     # OUR - subtrees, approx. (poly)
     BIFPTAS=functools.partial(bifptas_tree_partitioning, Epsilon=DEF_EPS, Lambda=DEF_LAMBDA),
-    # OUR - subtree, optimal, parallel
-    PSEUDO_L_PAR=functools.partial(pseudo_par_ltree_partitioning, N=DEF_PAR_CPU_NUM),
     # Optimal - subtree, optimal
-    OPT=functools.partial(tree_mtx_partitioning, solver=pulp.CPLEX_CMD(path=CPLEX_PATH, msg=False)),
-    # Optimal - subtree, optimal, parallel
-    OPT_PAR=functools.partial(tree_par_mtx_partitioning, N=DEF_PAR_CPU_NUM,
-                              solver=pulp.CPLEX_CMD(path=CPLEX_PATH, msg=False))
+    OPT=functools.partial(tree_mtx_partitioning, solver=pulp.CPLEX_CMD(path=CPLEX_PATH, msg=False))
+)
+
+# Algorithms under test with parallelized execution
+TREE_COST_PAR_ALGS = dict(
+    # Baselines - infeasible
+    BASELINE_NO_PART_PAR=baseline_no_partitioning,
+    BASELINE_SINGLE_PAR=baseline_singleton_partitioning,
+    # Baseline1 - chains, poly, maybe infeasible
+    MINW_CHAIN_PAR=min_weight_chain_decomposition,
+    # Baseline - subtrees, poly, k-block, maybe infeasible
+    K_SPLIT_PAR=min_weight_ksplit_clustering,
+    # Baseline - subtrees, poly, all k-block, maybe infeasible
+    K_SPLIT_EXH_PAR=min_weight_tree_clustering,
+    # SOTA - chains, poly, no data caching
+    CHAIN_PART_PAR=cacheless_chain_partitioning,
+    # SOTA - chains, poly, integrated data caching
+    CHAIN_FULL_PAR=stateful_chain_partitioning,
+    # SOTA - chains, heuristic(poly), with data caching
+    COSTLESS_PAR=functools.partial(csp_tree_partitioning, solver=cspy.BiDirectional),
+    # OUR - subtrees, poly-heur, feasible/no solution
+    GREEDY_PAR=min_weight_partition_heuristic,
+    # OUR - subtree, optimal, parallel
+    PSEUDO_L_PAR=pseudo_par_ltree_partitioning,
+    # Optimal - subtree, optimal
+    OPT_PAR=functools.partial(tree_par_mtx_partitioning, solver=pulp.CPLEX_CMD(path=CPLEX_PATH, msg=False))
 )
 
 
-def perform_cost_tests(size_pattern: str | int = DEF_TREE_SIZE, tree_type: str = None, data_dir: str = DATA_DIR,
-                       output_prefix: str = "test_alg_cost", tree_num: int = None, timeout: int = DEF_TIMEOUT):
-    log.info(" Cost calculation tests ".center(80, '#'))
+def perform_cost_ser_tests(tree_type: str = None, size_pattern: str | int = DEF_TREE_SIZE, data_dir: str = DATA_DIR,
+                           output_prefix: str = "test_alg_cost", tree_num: int = None, timeout: int = DEF_TIMEOUT):
+    log.info(" Cost calculation ser tests ".center(80, '#'))
     for trees in (TREE_TYPES if tree_type is None else (f"{tree_type}_tree",)):
         log.info(f"Test algs with tree type: {trees}")
         for test_file in sorted(pathlib.Path(data_dir).resolve().glob(trees + f"_n{size_pattern}-*.npy")):
@@ -301,22 +317,37 @@ def perform_cost_tests(size_pattern: str | int = DEF_TREE_SIZE, tree_type: str =
             output_file = pathlib.Path(data_dir, '_'.join((output_prefix,
                                                            trees,
                                                            sizes))).resolve().with_suffix('.csv')
-            execute_tests(TREE_ALGS, test_file=test_file, mem_coeff=DEF_MEM_COEFF, lat_coeff=DEF_LAT_COEFF,
+            execute_tests(TREE_COST_SER_ALGS, test_file=test_file, mem_coeff=DEF_MEM_COEFF, lat_coeff=DEF_LAT_COEFF,
                           N=DEF_CPU_NUM, output_file=output_file, tree_num=tree_num, timeout=timeout)
     log.info("Finished")
 
 
+def perform_cost_par_tests(tree_type: str = None, size_pattern: str | int = DEF_TREE_SIZE, n_cpu: int = DEF_PAR_CPU_NUM,
+                           data_dir: str = DATA_DIR, output_prefix: str = "test_alg_cost", tree_num: int = None,
+                           timeout: int = DEF_TIMEOUT):
+    log.info(" Cost calculation par tests ".center(80, '#'))
+    for trees in (TREE_TYPES if tree_type is None else (f"{tree_type}_tree",)):
+        log.info(f"Test algs with tree type: {trees}")
+        for test_file in sorted(pathlib.Path(data_dir).resolve().glob(trees + f"_n{size_pattern}-*.npy")):
+            sizes = test_file.name.rsplit('_', 1)[1]
+            output_file = pathlib.Path(data_dir, '_'.join((output_prefix,
+                                                           trees,
+                                                           sizes))).resolve().with_suffix('.csv')
+            execute_tests(TREE_COST_PAR_ALGS, test_file=test_file, mem_coeff=DEF_MEM_COEFF, lat_coeff=DEF_LAT_COEFF,
+                          N=n_cpu, output_file=output_file, tree_num=tree_num, timeout=timeout)
+    log.info("Finished")
+
+
 if __name__ == '__main__':
-    # perform_tree_size_ser_tests()
-    # perform_tree_size_par_tests()
-    # perform_mem_sens_tests()
-    # perform_lat_sens_tests()
-    # perform_cpu_sens_tests()
-    # perform_epsilon_sens_tests()
-    # perform_lambda_sens_tests()
-    # perform_bicriteria_sens_tests()
-    # perform_cost_tests()
+    # perform_tree_size_ser_tests(n=20, tree_num=13, timeout=10)
+    # perform_tree_size_par_tests(n=20, tree_num=13, timeout=10)
     #
-    # perform_tree_size_ser_tests(n=30, output_prefix="test", tree_num=1, timeout=5)
-    # perform_cost_tests(size_pattern=20, output_prefix="test", tree_num=13, timeout=100)
-    perform_cost_tests(size_pattern=20, tree_type="faas", output_prefix="test", tree_num=13, timeout=100)
+    # perform_mem_sens_tests(n=20, tree_num=13, value=(0.5,), timeout=10)
+    # perform_lat_sens_tests(n=20, tree_num=13, value=(0.5,), timeout=10)
+    # perform_cpu_sens_tests(n=20, tree_num=13, value=(0.5,), timeout=10)
+    # perform_epsilon_sens_tests(n=20, tree_num=13, value=(0.5,), timeout=10)
+    # perform_lambda_sens_tests(n=20, tree_num=13, value=(0.5,), timeout=10)
+    # perform_bicriteria_sens_tests(n=20, tree_num=13, value=(0.5, 0.5), timeout=10)
+    #
+    # perform_cost_ser_tests(size_pattern=20, tree_type="faas", output_prefix="test", tree_num=13, timeout=100)
+    perform_cost_par_tests(size_pattern=20, tree_type="faas", output_prefix="test", tree_num=13, timeout=10)

@@ -15,19 +15,18 @@
 import enum
 
 import click
-
 from tests import *
 from validation.generate_test_data import MAX_INST, MAX_TREE_SIZE
 
 
-class PERF(enum.StrEnum):
-    """Options for performance tests"""
+class ATYPE(enum.StrEnum):
+    """Options for algorithm test types"""
     SER = "ser"
     PAR = "par"
 
 
-class SENS(enum.StrEnum):
-    """Options for sensitivity tests"""
+class STYPE(enum.StrEnum):
+    """Options for sensitivity tests types"""
     MEM = "mem"
     LAT = "lat"
     CPU = "cpu"
@@ -36,13 +35,7 @@ class SENS(enum.StrEnum):
     BICRIT = "bicrit"
 
 
-class COST(enum.StrEnum):
-    """Options for cost tests"""
-    SER = "ser"
-    PAR = "par"
-
-
-class TREE(enum.StrEnum):
+class TTYPE(enum.StrEnum):
     """Options for tree types"""
     RAND = "rand"
     RANDOM = "random"
@@ -56,17 +49,18 @@ def main():
 
 
 @main.command(help="Execute performance tests")
-@click.option("-a", "--alg", type=click.Choice(PERF.__members__.values()), required=True, help="Alg type")
+@click.option("-a", "--alg", type=click.Choice(ATYPE.__members__.values()), required=True, help="Alg. type")
 @click.option("-n", "--size", "n", type=click.IntRange(10, MAX_TREE_SIZE), required=True, help="Tree size")
+@click.option("-c", "--ncore", "cpu", type=click.IntRange(1), default=DEF_PAR_CPU_NUM, help="CPU cores")
 @click.option("-d", "--data", "data_dir", type=str, default=DATA_DIR, help="Data directory")
 @click.option("-i", "--instance", type=click.IntRange(1, MAX_INST), default=None, help="Tree instance num.")
 @click.option("-t", "--timeout", type=click.IntRange(min=0), default=DEF_TIMEOUT, help="Timeout")
-def perf(alg: str, n: int, data_dir: str, instance: int, timeout: int):
-    match PERF(alg):
-        case PERF.SER:
+def perf(alg: str, n: int, cpu: int, data_dir: str, instance: int, timeout: int):
+    match ATYPE(alg):
+        case ATYPE.SER:
             perform_tree_size_ser_tests(n=n, data_dir=data_dir, tree_num=instance, timeout=timeout)
-        case PERF.PAR:
-            perform_tree_size_par_tests(n=n, data_dir=data_dir, tree_num=instance, timeout=timeout)
+        case ATYPE.PAR:
+            perform_tree_size_par_tests(n=n, data_dir=data_dir, n_cpu=cpu, tree_num=instance, timeout=timeout)
         case _:
             print("Invalid alg. type:", alg)
 
@@ -84,38 +78,48 @@ class TestValuesParamType(click.ParamType):
 
 
 @main.command(help="Execute sensitivity tests")
-@click.option("-a", "--attr", type=click.Choice(SENS.__members__.values()), required=True, help="Attr type")
+@click.option("-a", "--attr", type=click.Choice(STYPE.__members__.values()), required=True, help="Sens. test type")
 @click.option("-n", "--size", "n", type=click.IntRange(10, MAX_TREE_SIZE), required=True, help="Tree size")
 @click.option("-d", "--data", "data_dir", type=str, default=DATA_DIR, help="Data directory")
 @click.option("-i", "--instance", type=click.IntRange(1, MAX_INST), default=None, help="Tree instance num.")
 @click.option("-v", "--value", type=TestValuesParamType(), default=None, help="Comma-separated attr values")
 @click.option("-t", "--timeout", type=click.IntRange(min=0), default=DEF_TIMEOUT, help="Timeout")
 def sens(attr: str, n: int, data_dir: str, instance: int, timeout: int, value: str):
-    match SENS(attr):
-        case SENS.MEM:
+    match STYPE(attr):
+        case STYPE.MEM:
             perform_mem_sens_tests(n=n, data_dir=data_dir, tree_num=instance, value=value, timeout=timeout)
-        case SENS.LAT:
+        case STYPE.LAT:
             perform_lat_sens_tests(n=n, data_dir=data_dir, tree_num=instance, value=value, timeout=timeout)
-        case SENS.CPU:
+        case STYPE.CPU:
             perform_cpu_sens_tests(n=n, data_dir=data_dir, tree_num=instance, value=value, timeout=timeout)
-        case SENS.EPS:
+        case STYPE.EPS:
             perform_epsilon_sens_tests(n=n, data_dir=data_dir, tree_num=instance, value=value, timeout=timeout)
-        case SENS.LAMBDA:
+        case STYPE.LAMBDA:
             perform_lambda_sens_tests(n=n, data_dir=data_dir, tree_num=instance, value=value, timeout=timeout)
-        case SENS.BICRIT:
+        case STYPE.BICRIT:
             perform_bicriteria_sens_tests(n=n, data_dir=data_dir, tree_num=instance, value=value, timeout=timeout)
         case _:
             print("Invalid attr. type", attr)
 
 
 @main.command(help="Execute cost tests")
+@click.option("-a", "--alg", type=click.Choice(ATYPE.__members__.values()), required=True, help="Alg. type")
+@click.option("-b", "--tree", "tree", type=click.Choice(TTYPE.__members__.values()), default=None, help="Tree type")
 @click.option("-n", "--size", "n", type=int, required=True, help="Tree size pattern")
-@click.option("-a", "--tree", "tree", type=click.Choice(TREE.__members__.values()), default=None, help="Tree type")
+@click.option("-c", "--ncore", "cpu", type=click.IntRange(1), default=DEF_PAR_CPU_NUM, help="CPU cores")
 @click.option("-d", "--data", "data_dir", type=str, default=DATA_DIR, help="Data directory")
 @click.option("-i", "--instance", type=click.IntRange(1, MAX_INST), default=None, help="Tree instance num.")
 @click.option("-t", "--timeout", type=click.IntRange(min=0), default=DEF_TIMEOUT, help="Timeout")
-def cost(n: int, tree: str, data_dir: str, instance: int, timeout: int):
-    perform_cost_tests(size_pattern=n, tree_type=tree, data_dir=data_dir, tree_num=instance, timeout=timeout)
+def cost(alg: str, tree: str, n: int, cpu: int, data_dir: str, instance: int, timeout: int):
+    match ATYPE(alg):
+        case ATYPE.SER:
+            perform_cost_ser_tests(tree_type=tree, size_pattern=n, data_dir=data_dir, tree_num=instance,
+                                   timeout=timeout)
+        case ATYPE.PAR:
+            perform_cost_par_tests(tree_type=tree, size_pattern=n, n_cpu=cpu, data_dir=data_dir, tree_num=instance,
+                                   timeout=timeout)
+        case _:
+            print("Invalid alg. type:", alg)
 
 
 if __name__ == '__main__':
