@@ -5,4 +5,4 @@ clean:
 	rm -rf build dist
 
 build: clean
-	python setup.py sdist bdist_wheel
+	python3.11 setup.py sdist bdist_wheel

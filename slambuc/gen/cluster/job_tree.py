@@ -19,7 +19,6 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import scipy
-import spar
 from matplotlib import pyplot as plt
 
 from slambuc.alg.service.common import *
@@ -29,7 +28,7 @@ from slambuc.gen.transform import faasify_dag_by_duplication
 from slambuc.misc.plot import draw_tree
 
 # Default sample job/task file of the installed spar package
-DEF_TASK_CSV = pathlib.Path(spar.__path__[0]) / "data/samples/sample_tasks.csv"
+DEF_TASK_CSV = pathlib.Path("samples/sample_tasks.csv")
 DEF_TASK_CSV_HEADER = ('job', 'task', 'duration', 'cpu', 'mem', 'num')
 DEF_TASK_CSV_COLS = (1, 2, 3, 4, 5, 6)
 # Default attributes for the front-end dispatcher function
@@ -202,9 +201,9 @@ def generate_mixed_job_trees(data_dir: str, task_file: str = DEF_TASK_CSV, itera
 
 if __name__ == '__main__':
     # plot_job_dist(min_size=30)
-    verify_job_tree("j_905", "batch_task.csv", draw_weights=True)
+    verify_job_tree("j_905", "samples/batch_task.csv", draw_weights=True)
     #
-    # check_job_trees("batch_task.csv", min_size=20, max_size=30)
+    # check_job_trees("samples/batch_task.csv", min_size=20, max_size=30)
     # check_job_trees(min_size=30)
     #
     # generate_all_job_tree("../../../validation/data")

@@ -38,15 +38,15 @@ setuptools.setup(
     license="Apache 2.0",
     keywords='cloud serverless ilp dp tree',
     install_requires=[
-        'numpy~=1.25.0',
-        'networkx~=3.1',
-        'PuLP~=2.7.0',
         'cspy~=1.0.3',
-        'matplotlib~=3.7.1',
+        'networkx~=3.1',
+        'numpy~=1.25.0',
+        'pandas~=2.0.3',
+        'PuLP~=2.7.0',
         'scipy~=1.11.1'
     ],
     package_data={'slambuc': ['gen/cluster/hist/*.pkl',
-                              'gen/cluster/batch_task.csv',
+                              'gen/cluster/samples/*.csv',
                               'gen/microservice/hist/*.pkl']},
     include_package_data=True
 )
