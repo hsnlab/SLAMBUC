@@ -39,6 +39,7 @@ setuptools.setup(
     keywords='cloud serverless ilp dp tree',
     install_requires=[
         'cspy~=1.0.3',
+        'matplotlib~=3.7.1',
         'networkx~=3.1',
         'numpy~=1.25.0',
         'pandas~=2.0.3',
