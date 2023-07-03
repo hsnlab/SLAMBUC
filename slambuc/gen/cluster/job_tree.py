@@ -19,16 +19,15 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import scipy
-from matplotlib import pyplot as plt
 
 from slambuc.alg.service.common import *
 from slambuc.gen.cluster.syn_job import random_job
 from slambuc.gen.io import save_trees_to_file
 from slambuc.gen.transform import faasify_dag_by_duplication
-from slambuc.misc.plot import draw_tree
 
 # Default sample job/task file of the installed spar package
-DEF_TASK_CSV = pathlib.Path("samples/sample_tasks.csv")
+DEF_TASK_CSV = pathlib.Path(pathlib.Path(__file__).parent / "samples/sample_tasks.csv")
+DEF_BATCH_CSV = pathlib.Path(pathlib.Path(__file__).parent / "samples/batch_task.csv")
 DEF_TASK_CSV_HEADER = ('job', 'task', 'duration', 'cpu', 'mem', 'num')
 DEF_TASK_CSV_COLS = (1, 2, 3, 4, 5, 6)
 # Default attributes for the front-end dispatcher function
@@ -102,44 +101,6 @@ def igenerate_syn_tree(n: int | tuple[int, int], iteration: int = 1, job_lb: int
 ########################################################################################################################
 
 
-def plot_job_dist(task_file: str = DEF_TASK_CSV, min_size: int = 0):
-    job_df = pd.read_csv(task_file, usecols=DEF_TASK_CSV_COLS, names=DEF_TASK_CSV_HEADER)
-    jobs = job_df.groupby("job")["task"].count()
-    jobs = jobs[jobs >= min_size]
-    max_size = jobs.max()
-    print("Max size:", max_size)
-    jobs.plot.hist(bins=50)
-    plt.grid(linestyle='dotted', zorder=0)
-    plt.show()
-
-
-def verify_job_tree(job_name: str, task_file: str = DEF_TASK_CSV, draw_weights: bool = False):
-    """Generate one job with given *job_name* into service tree and draw tree"""
-    print(f"Read data from {task_file}...")
-    job_df = pd.read_csv(task_file, usecols=DEF_TASK_CSV_COLS, names=DEF_TASK_CSV_HEADER)
-    print(f"Filter task data for jon {job_name}...")
-    task_data = job_df[job_df["job"] == job_name]
-    print(f"Generate tree from {len(task_data)} tasks...")
-    dag, root = convert_tasks_to_dag(job_name, task_data)
-    tree = faasify_dag_by_duplication(dag, root)
-    print(f"Generated tree: {tree}")
-    draw_tree(tree, draw_weights=draw_weights)
-
-
-def check_job_trees(task_file: str = DEF_TASK_CSV, min_size: int = 0, max_size: int = None):
-    """Validate generated job trees with size between *min_size* and *max_size*"""
-    print(f"Load data from {task_file}...")
-    job_df = pd.read_csv(task_file, usecols=DEF_TASK_CSV_COLS, names=DEF_TASK_CSV_HEADER)
-    jobs = job_df.groupby("job")["task"].count()
-    max_size = max_size if max_size else max(jobs)
-    viable_jobs = jobs[(min_size <= jobs) & (jobs <= max_size)]
-    print(f"Found {len(viable_jobs)} jobs with size in ({min_size} - {max_size})")
-    trees = [t for t in igenerate_job_tree(job_df, min_size=min_size)]
-    print("Generated service trees:")
-    for tree in trees:
-        print(tree, "is tree:", nx.is_tree(tree))
-
-
 def generate_all_job_trees(data_dir: str, task_file: str = DEF_TASK_CSV, start: int = 10, end: int = None,
                            step: int = 10, tree_name: str = DEF_JOB_TREE_PREFIX):
     """Generate all job service trees with size interval between *start* and *end* and save to separate files"""
@@ -200,12 +161,6 @@ def generate_mixed_job_trees(data_dir: str, task_file: str = DEF_TASK_CSV, itera
 
 
 if __name__ == '__main__':
-    # plot_job_dist(min_size=30)
-    verify_job_tree("j_905", "samples/batch_task.csv", draw_weights=True)
-    #
-    # check_job_trees("samples/batch_task.csv", min_size=20, max_size=30)
-    # check_job_trees(min_size=30)
-    #
     # generate_all_job_tree("../../../validation/data")
     # generate_syn_job_trees("../../../validation/data")
-    # generate_mixed_job_trees("../../../validation/data")
+    generate_mixed_job_trees("../../../validation/data")
