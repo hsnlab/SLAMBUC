@@ -13,6 +13,8 @@
 # limitations under the License.
 import itertools
 import os
+import pathlib
+import subprocess
 import tempfile
 
 import networkx as nx
@@ -28,13 +30,17 @@ from slambuc.misc.plot import draw_tree
 
 
 def get_cplex_path():
-    return os.path.join(os.environ.get('CPLEX_HOME', '/opt/ibm/ILOG/CPLEX_Studio2211/cplex'),
-                        'bin/x86-64_linux/cplex')
+    if isinstance(cp := subprocess.run(['which', 'cplex']), str):
+        return cp
+    return str(pathlib.Path(os.environ.get('CPLEX_HOME', '~/Programs/ibm/ILOG/CPLEX_Studio2211/cplex'),
+                            'bin/x86-64_linux/cplex').expanduser())
 
 
 def get_cpo_path():
-    return os.path.join(os.environ.get('CPO_HOME', '/opt/ibm/ILOG/CPLEX_Studio2211/cpoptimizer'),
-                        'bin/x86-64_linux/cpoptimizer')
+    if isinstance(cp := subprocess.run(['which', 'cpoptimizer']), str):
+        return cp
+    return str(pathlib.Path(os.environ.get('CPO_HOME', '~/Programs/ibm/ILOG/CPLEX_Studio2211/cpoptimizer'),
+                            'bin/x86-64_linux/cpoptimizer').expanduser())
 
 
 def is_compatible(tree1: nx.DiGraph, tree2: nx.DiGraph) -> bool:
