@@ -16,7 +16,7 @@ import enum
 
 import click
 from tests import *
-from validation.generate_test_data import MAX_INST, MAX_TREE_SIZE
+from generate_test_data import MAX_INST, MAX_TREE_SIZE
 
 
 class ATYPE(enum.StrEnum):

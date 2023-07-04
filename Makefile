@@ -6,8 +6,20 @@ build: clean
 	#python3.11 setup.py sdist bdist_wheel
 	python3.11 -m build
 
+check:
+	twine check dist/*
+
+test-publish: build
+	twine upload --repository testpypi dist/*
+
+#publish: build
+#	twine upload --repository pypi dist/*
+
 dev-install:
 	python3.11 -m pip install --no-cache-dir -e .
+
+test-install: build
+	python3.11 -m pip install --no-cache-dir --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ slambuc
 
 uninstall:
 	pip uninstall slambuc

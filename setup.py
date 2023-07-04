@@ -20,16 +20,16 @@ import slambuc
 setuptools.setup(
     name="SLAMBUC",
     version=slambuc.__version__,
-    description="Serverless Layout Adaptation with Memory-Bounds and User Constraints - Graph algorithms for composing"
-                " cloud-native applications from standalone serverless functions in a cost-efficient and"
-                " latency-constrained manner.",
+    description="Serverless Layout Adaptation with Memory-Bounds and User Constraints",
     long_description=(pathlib.Path(__file__).parent / "README.md").read_text(),
     long_description_content_type='text/markdown',
     author="Janos Czentye",
     author_email="czentye@tmit.bme.hu",
-    url="https://github.com/hsnlab/SLAMBUC",
-    packages=setuptools.find_packages(exclude=['tests', 'validation']),
-    # packages=setuptools.find_packages(include=['slambuc', 'slambuc.*']),
+    project_urls={"Repository": "https://github.com/hsnlab/SLAMBUC",
+                  "Homepage": "https://github.com/hsnlab/SLAMBUC/wiki",
+                  "Issue Tracker": "https://github.com/hsnlab/SLAMBUC/issues"},
+    packages=setuptools.find_packages(include=['slambuc', 'slambuc.*'],
+                                      exclude=['tests', 'validation']),
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
