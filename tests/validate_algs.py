@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import math
+import pathlib
 import time
 
 import networkx as nx
@@ -39,11 +40,8 @@ TREE_ALGS = dict(
     ILP_CFG_GREEDY_PAR=tree_par_cfg_partitioning,
     ILP_HYBRID_CPLEX_CMD=tree_hybrid_partitioning,
     # Matrix model ILP
-    ILP_MTX=tree_par_mtx_partitioning,
+    ILP_MTX=tree_mtx_partitioning,
     ILP_MTX_PAR=tree_par_mtx_partitioning,
-    ILP_MTX_CPLEX_CMD=tree_mtx_partitioning,
-    # ILP_CPLEX=tree_cplex_partitioning,
-    # ILP_CPO=tree_cpo_partitioning,
     # Pseudo B-tree
     PSEUDO_B=pseudo_btree_partitioning,
     PSEUDO_B_MP=pseudo_mp_btree_partitioning,
@@ -70,7 +68,8 @@ TREE_ALGS = dict(
 
 
 def compare_results(tree_path: str = None, L: int = math.inf):
-    tree = nx.read_gml(tree_path if tree_path is not None else "data/graph_test_tree_ser.gml", destringizer=int)
+    tree = nx.read_gml(tree_path if tree_path is not None else
+                       pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml", destringizer=int)
     params = dict(tree=tree, root=1, cp_end=10, M=6, L=L, delay=10)
     ##########################################################
     print('#' * 80)
