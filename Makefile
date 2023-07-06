@@ -12,14 +12,18 @@ check:
 test-publish: build
 	twine upload --repository testpypi dist/*
 
-#publish: build
-#	twine upload --repository pypi dist/*
+publish: build
+	twine upload --repository pypi dist/*
+
+install-req:
+	python3.11 -m pip install -U -r requirements.txt
 
 dev-install:
-	python3.11 -m pip install --no-cache-dir -e .
+	python3.11 -m pip install --no-cache-dir --ignore-requires-python --no-deps -e .
 
 test-install: build
-	python3.11 -m pip install --no-cache-dir --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ slambuc
+	python3.11 -m pip install --no-cache-dir --index-url https://test.pypi.org/simple/ \
+				--extra-index-url https://pypi.org/simple/ slambuc
 
 uninstall:
 	pip uninstall slambuc
