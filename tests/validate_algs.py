@@ -85,8 +85,8 @@ def compare_results(tree_path: str = None, L: int = math.inf):
             stats.append([name, *result, round(alg_time, ndigits=8)])
     print('#' * 80)
     print("Summary:")
-    print(tabulate.tabulate(stats, ['Alg.', 'Partition', 'Cost', 'Latency', 'Time (s)'],
-                            colalign=('left', 'left', 'decimal', 'decimal', 'decimal'), tablefmt='pretty'))
+    print(tabulate.tabulate(stats, ['Algorithm', 'Partitioning', 'Cost', 'Latency', 'Time (s)'],
+                            colalign=('left', 'left', 'center', 'center', 'decimal'), tablefmt='github'))
 
 
 if __name__ == '__main__':
