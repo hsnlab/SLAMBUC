@@ -15,11 +15,9 @@ import pathlib
 
 import setuptools
 
-import slambuc
-
 setuptools.setup(
     name="SLAMBUC",
-    version=slambuc.__version__,
+    # version=slambuc.__version__,
     description="Serverless Layout Adaptation with Memory-Bounds and User Constraints",
     long_description=(pathlib.Path(__file__).parent / "README.md").read_text(),
     long_description_content_type='text/markdown',
