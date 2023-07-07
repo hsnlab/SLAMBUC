@@ -38,7 +38,6 @@ TREE_ALGS = dict(
     ILP_CFG_GREEDY=tree_cfg_partitioning,
     ILP_CFG_HYBRID_PAR=tree_par_hybrid_partitioning,
     ILP_CFG_GREEDY_PAR=tree_par_cfg_partitioning,
-    ILP_HYBRID_CPLEX_CMD=tree_hybrid_partitioning,
     # Matrix model ILP
     ILP_MTX=tree_mtx_partitioning,
     ILP_MTX_PAR=tree_par_mtx_partitioning,
@@ -91,3 +90,4 @@ def compare_results(tree_path: str = None, L: int = math.inf):
 
 if __name__ == '__main__':
     compare_results()
+    exit(0)
