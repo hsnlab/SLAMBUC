@@ -3,6 +3,8 @@
 ![PyPI](https://img.shields.io/pypi/v/SLAMBUC)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/SLAMBUC)
 ![PyPI - License](https://img.shields.io/pypi/l/SLAMBUC)
+![Algorithm tests](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-tests.yml/badge.svg?branch=main)
+
 
 Collection of graph partitioning algorithms implemented in Python for composing cloud-native
 applications from standalone serverless functions in a cost-efficient and latency-constrained manner.
