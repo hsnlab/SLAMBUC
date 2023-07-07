@@ -10,7 +10,7 @@ name: Upload Python Package to TestPyPI
 
 on: 
   push:
-    branches: [main]
+    branches: [ "main" ]
     tags:
       - '**'
       
