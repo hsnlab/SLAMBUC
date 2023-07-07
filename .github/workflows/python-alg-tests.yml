@@ -21,7 +21,7 @@ jobs:
         python-version: "3.11"
     - name: Install dependencies
       run: |
-        apt install graphviz graphviz-dev
+        apt update && apt install graphviz graphviz-dev
         python3.11 -m pip install --upgrade pip
         python3.11 -m pip install -U -r requirements.txt
         python3.11 -m pip install --ignore-requires-python --no-deps -e .
