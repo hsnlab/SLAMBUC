@@ -1,18 +1,22 @@
 clean:
 	rm -rf *.egg-info
-	rm -rf build dist
+	rm -rf ./build ./dist
 
 build: clean
 	#python3.11 setup.py sdist bdist_wheel
-	python3.11 -m build
+	python3.11 -m build --sdist --wheel --outdir dist/ .
 
 check:
 	twine check dist/*
 
-test-publish: build
+release: build check
+	git tag -a `python3.11 -c "import slambuc;print(slambuc.__version__)"` -m  "New version release"
+	git push --tags
+
+test-publish: build check
 	twine upload --repository testpypi dist/*
 
-publish: build
+publish: release
 	twine upload --repository pypi dist/*
 
 install-req:
@@ -26,7 +30,9 @@ test-install: build
 				--extra-index-url https://pypi.org/simple/ slambuc
 
 uninstall:
-	pip uninstall slambuc
+	python3.11 -m pip uninstall slambuc
+
+
 
 .PHONY: clean dev-install uninstall
 .DEFAULT_GOAL := build
