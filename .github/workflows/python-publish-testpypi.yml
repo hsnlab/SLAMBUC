@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: testpypi
-      url: https://pypi.org/project/SLAMBUC/
+      url: https://test.pypi.org/project/SLAMBUC/
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
