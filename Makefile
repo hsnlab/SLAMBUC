@@ -40,5 +40,5 @@ doc:
 	pydoc-markdown --with-processors --dump | docspec -m --dump-tree
 	pydoc-markdown -p slambuc -v --py3 --render-toc > docs/slambuc_api.md
 
-.PHONY: clean dev-install uninstall
+.PHONY: clean check install-req dev-install uninstall doc
 .DEFAULT_GOAL := build

@@ -73,7 +73,7 @@ External solvers can also be used in LP-based algorithms that require the given 
 preinstalled and available for the [PuLP frontend](https://github.com/coin-or/pulp). Currently,
 the following solvers are tested.
 
-* CBC (default)
+* CBC (default, packaged with PuLP)
 * GLPK (see installation [here](https://coin-or.github.io/pulp/main/installing_pulp_at_home.html#linux-installation))
 * CPLEX ([installation](https://www.ibm.com/products/ilog-cplex-optimization-studio)
   and [setup](https://coin-or.github.io/pulp/guides/how_to_configure_solvers.html#cplex))
@@ -206,8 +206,13 @@ environment can be set up with the following commands.
 git clone https://github.com/hsnlab/SLAMBUC.git
 python3.11 -m pip install -U -r SLAMBUC/requirements.txt
 python3.11 -m pip install --ignore-requires-python --no-deps -e SLAMBUC/
-# Remove editing-mode package outside of repo root
-python3.11 -m pip uninstall slambuc 
+# OR
+cd SLAMBUC && make install-req && make dev-install
+
+## Remove editing-mode package outside of repo root
+python3.11 -m pip uninstall slambuc
+# OR
+make uninstall
 ```
 
 ## Publications
