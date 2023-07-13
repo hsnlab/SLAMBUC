@@ -19,6 +19,8 @@ test-publish: build check
 publish: release
 	twine upload --repository pypi dist/*
 
+########################################################################################################################
+
 install-req:
 	python3.11 -m pip install -U -r requirements.txt
 
@@ -32,7 +34,11 @@ test-install: build
 uninstall:
 	python3.11 -m pip uninstall slambuc
 
+########################################################################################################################
 
+doc:
+	pydoc-markdown --with-processors --dump | docspec -m --dump-tree
+	pydoc-markdown -p slambuc -v --py3 --render-toc > docs/slambuc_api.md
 
 .PHONY: clean dev-install uninstall
 .DEFAULT_GOAL := build
