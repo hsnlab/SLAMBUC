@@ -12,20 +12,54 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import functools
 import math
 import pathlib
 import time
+from collections.abc import Callable
 
 import networkx as nx
 import tabulate
 
+from slambuc.alg import Flavor
+from slambuc.alg.chain import *
 from slambuc.alg.ext import *
-from slambuc.alg.tree.par import *
+from slambuc.alg.service import RUNTIME, MEMORY, RATE, DATA
+from slambuc.alg.tree import *
+from slambuc.alg.tree.dp.seq_state import cacheless_chain_partitioning, stateful_chain_partitioning
 from slambuc.alg.tree.par.pseudo import pseudo_par_btree_partitioning
-from slambuc.alg.tree.ser import *
+from slambuc.alg.util import ibacktrack_chain, split_chain
 from slambuc.misc.util import get_cplex_path
 
 CPLEX_PATH = get_cplex_path()
+
+
+def on_critical_path(alg: Callable, with_cpu: bool = True, with_data: bool = True, extract: bool = True):
+    @functools.wraps(alg)
+    def input_wrapper(tree: nx.DiGraph, root: int = 1, cp_end: int = None, **kwargs):
+        chain = list(reversed(list(ibacktrack_chain(tree, start=root, leaf=cp_end))))
+        runtime, memory, rate, data = zip(*((tree.nodes[n][RUNTIME], tree.nodes[n][MEMORY],
+                                             tree[next(tree.predecessors(n))][n][RATE],
+                                             tree[next(tree.predecessors(n))][n][DATA]) for n in chain))
+        params = dict(runtime=runtime, memory=memory, rate=rate, M=kwargs.get('M', math.inf),
+                      L=kwargs.get('L', math.inf), start=0, end=len(runtime) - 1, delay=kwargs.get('delay', 1))
+        if with_data:
+            params.update(data=data)
+        if with_cpu:
+            params.update(N=kwargs.get('N', math.inf))
+        res = alg(**params)
+        return (split_chain(res[0], len(chain)), *res[1:]) if extract else res
+
+    return input_wrapper
+
+
+def with_single_flavor(alg: Callable):
+    @functools.wraps(alg)
+    def input_wrapper(M: int = math.inf, N: int = 1, **kwargs):
+        return alg(flavors=[Flavor(mem=M, ncore=N)], **kwargs)
+
+    return input_wrapper
+
 
 TREE_ALGS = dict(
     # Greedy
@@ -60,9 +94,28 @@ TREE_ALGS = dict(
     MINW_UNBOUDED=min_weight_greedy_partitioning,
     MINW_HEUR=min_weight_partition_heuristic,
     CSP=csp_tree_partitioning,
+    # Chain-based partitioning
+    GREEDY_CHAIN_PART=greedy_tree_partitioning,
+    CHAIN_META_PART=meta_tree_partitioning,
+    CHAIN_MIN_PART=min_tree_partitioning,
+    CHAIN_SEQ_PART=seq_tree_partitioning,
+    CHAIN_PART=cacheless_chain_partitioning,
+    CHAIN_PART_SER=stateful_chain_partitioning,
+    # General partitioning with flavors
+    GREEDY_GEN_ILP=with_single_flavor(all_gen_tree_mtx_partitioning),
+    GEN_ILP_CFG=with_single_flavor(tree_gen_hybrid_partitioning),
+    GEN_ILP_MTX=with_single_flavor(tree_gen_mtx_partitioning),
     # Baselines
     BASELINE_NO_PART=baseline_no_partitioning,
-    BASELINE_SINGLE=baseline_singleton_partitioning
+    BASELINE_SINGLE=baseline_singleton_partitioning,
+    # Critical path chain
+    GREEDY_CPATH_CHAIN=on_critical_path(greedy_chain_partitioning, with_data=False, extract=False),
+    CPATH_CHAIN_MIN=on_critical_path(min_chain_partitioning, with_data=False),
+    CPATH_CHAIN=on_critical_path(chain_partitioning, with_data=False),
+    CPATH_CHAIN_VEC=on_critical_path(vec_chain_partitioning, with_data=False),
+    GREEDY_CPATH_SER_CHAIN=on_critical_path(greedy_ser_chain_partitioning, with_cpu=False, extract=False),
+    CPATH_SER_CFG_ILP=on_critical_path(chain_cfg_partitioning, with_cpu=False, extract=False),
+    CPATH_SER_MTX_ILP=on_critical_path(chain_mtx_partitioning, with_cpu=False, extract=False),
 )
 
 
