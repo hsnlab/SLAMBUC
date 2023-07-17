@@ -15,21 +15,38 @@ import collections
 import functools
 import itertools
 import operator
+from collections.abc import Generator
 
 import networkx as nx
 import pulp as lp
 
+from slambuc.alg import T_PART, T_BARRS
 from slambuc.alg.service.common import *
 
 
 def verify_limits(tree: nx.DiGraph, cpath: set[int], M: int | float, L: int | float) -> tuple[bool, bool]:
-    """Verify that given limits *M*, *L*, and *N* based on the given *tree* allow feasible solution"""
+    """
+    Verify that given limits *M*, *L*, and *N* based on the given *tree* allow feasible solution.
+
+    :param tree:    input tree
+    :param cpath:   nodes of critical path
+    :param M:       memory upper bound
+    :param L:       latency upper bound
+    :return:        boolean values of satisfied limits M and L
+    """
     return (max(tree.nodes[v][MEMORY] for v in tree if v is not PLATFORM) <= M,
             sum(tree.nodes[v][RUNTIME] for v in cpath) <= L)
 
 
-def ipostorder_dfs(tree: nx.DiGraph, source: int, inclusive: bool = True) -> tuple[int, int]:
-    """Return the existing predecessor and node tuple in a DFS traversal of the given *tree* in a post/reversed order"""
+def ipostorder_dfs(tree: nx.DiGraph, source: int, inclusive: bool = True) -> Generator[tuple[int, int]]:
+    """
+    Return the existing predecessor and node tuple in a DFS traversal of the given *tree* in a post/reversed order.
+
+    :param tree:        input tree
+    :param source:      starting node
+    :param inclusive:   also return the source node
+    :return:            generator of tree nodes
+    """
     stack = collections.deque([(source, iter(tree[source]))])
     while stack:
         v, ichildren = stack[-1]
@@ -44,8 +61,17 @@ def ipostorder_dfs(tree: nx.DiGraph, source: int, inclusive: bool = True) -> tup
         yield next(tree.predecessors(source), None), source
 
 
-def ipostorder_tabu_dfs(tree: nx.DiGraph, source: int, tabu: set = None, inclusive: bool = True) -> tuple[int, int]:
-    """Return nodes of *tree* in a postorder DFS traversal excluding descendants of nodes in *tabu* set"""
+def ipostorder_tabu_dfs(tree: nx.DiGraph, source: int, tabu: set = None,
+                        inclusive: bool = True) -> Generator[tuple[int, int]]:
+    """
+    Return nodes of *tree* in a postorder DFS traversal excluding descendants of nodes in *tabu* set.
+
+    :param tree:        input tree
+    :param source:      starting node
+    :param tabu:        tabu node set
+    :param inclusive:   also return the source node
+    :return:            generator of tree nodes
+    """
     stack = collections.deque([(source, iter(tree[source]))])
     while stack:
         v, ichildren = stack[-1]
@@ -61,8 +87,15 @@ def ipostorder_tabu_dfs(tree: nx.DiGraph, source: int, tabu: set = None, inclusi
         yield next(tree.predecessors(source), None), source
 
 
-def ipostorder_edges(tree: nx.DiGraph, source: int, data: bool = False) -> tuple[int, int]:
-    """Return the edges (head, tail) in a DFS traversal of the given *tree* in a post/reversed order with edge data"""
+def ipostorder_edges(tree: nx.DiGraph, source: int, data: bool = False) -> Generator[tuple[int, int]]:
+    """
+    Return the edges (head, tail) in a DFS traversal of the given *tree* in a post/reversed order with edge data.
+
+    :param tree:        input tree
+    :param source:      starting node
+    :param data:        return edge data
+    :return:            generator of edges
+    """
     stack = collections.deque([(source, iter(tree[source]))])
     while stack:
         v, ichildren = stack[-1]
@@ -79,8 +112,14 @@ def ipostorder_edges(tree: nx.DiGraph, source: int, data: bool = False) -> tuple
                     yield p, v
 
 
-def ileft_right_dfs(tree: nx.DiGraph, source: int) -> tuple[tuple[int, int], int, tuple[int, int]]:
-    """Return edges in left-right traversal along with the previously visited uncle and sibling edges"""
+def ileft_right_dfs(tree: nx.DiGraph, source: int) -> Generator[tuple[tuple[int, int], int, tuple[int, int]]]:
+    """
+    Return edges in left-right traversal along with the previously visited uncle and sibling edges.
+
+    :param tree:    input tree
+    :param source:  starting node
+    :return:        generator of interested nodes
+    """
     # ... -> [u] -j-> [v] -i-> [v_i]  => [(u, u_j-1), v_i-1, v_succ, v, v_i]
     stack = collections.deque([[(None, None), None, iter(tree[source]), source, 0]])
     while stack:
@@ -94,8 +133,14 @@ def ileft_right_dfs(tree: nx.DiGraph, source: int) -> tuple[tuple[int, int], int
             stack.pop()
 
 
-def ileft_right_dfs_idx(tree: nx.DiGraph, source: int) -> tuple[int, int]:
-    """Return nodes of the given *tree* in left-right traversal along with the index of the considered child node"""
+def ileft_right_dfs_idx(tree: nx.DiGraph, source: int) -> Generator[tuple[int, int]]:
+    """
+    Return nodes of the given *tree* in left-right traversal along with the index of the considered child node.
+
+    :param tree:    input tree
+    :param source:  starting node
+    :return:        generator of interested node indices
+    """
     # [v] -i-> [v_i]  => [v_succ, v, v_i]
     stack = collections.deque([[iter(tree[source]), source, 0]])
     while stack:
@@ -109,8 +154,15 @@ def ileft_right_dfs_idx(tree: nx.DiGraph, source: int) -> tuple[int, int]:
             stack.pop()
 
 
-def ichain(tree: nx.DiGraph, start: int, leaf: int) -> list[int]:
-    """Generator over the nodes of the chain from *start* node to *leaf* node"""
+def ichain(tree: nx.DiGraph, start: int, leaf: int) -> Generator[int]:
+    """
+    Generator over the nodes of the chain from *start* node to *leaf* node.
+
+    :param tree:    input tree
+    :param start:   first node
+    :param leaf:    last node
+    :return:        generator of chain nodes
+    """
     n = start
     while n != leaf:
         yield n
@@ -121,8 +173,15 @@ def ichain(tree: nx.DiGraph, start: int, leaf: int) -> list[int]:
     yield leaf
 
 
-def ibacktrack_chain(tree: nx.DiGraph, start: int, leaf: int) -> list[int]:
-    """Return the node of a chain in the *tree* in backward order from *leaf* to *start* node"""
+def ibacktrack_chain(tree: nx.DiGraph, start: int, leaf: int) -> Generator[int]:
+    """
+    Return the node of a chain in the *tree* in backward order from *leaf* to *start* node.
+
+    :param tree:    input tree
+    :param start:   first node
+    :param leaf:    last node
+    :return:        generator of chain nodes
+    """
     if leaf not in tree:
         return
     last = leaf
@@ -135,9 +194,16 @@ def ibacktrack_chain(tree: nx.DiGraph, start: int, leaf: int) -> list[int]:
     yield last
 
 
-def isubchains(tree: nx.DiGraph, start: int, leaf: int = None) -> tuple[(list[int], list[int]), set[int]]:
-    """Generator over the subchains and its branches from *start* to all reachable leaf where the subchain is bisected
-        at the last node from which the specific *leaf* is still reachable"""
+def isubchains(tree: nx.DiGraph, start: int, leaf: int = None) -> Generator[tuple[list[int], list[int]], set[int]]:
+    """
+    Generator over the subchains and its branches from *start* to all reachable leaf where the subchain is bisected
+    at the last node from which the specific *leaf* is still reachable.
+
+    :param tree:    input tree
+    :param start:   first node
+    :param leaf:    last node
+    :return:        generator of chain node parts and branches
+    """
     chain = [start]
     while (deg := len(tree.succ[chain[-1]])) == 1:
         chain.append(next(tree.successors(chain[-1])))
@@ -155,16 +221,28 @@ def isubchains(tree: nx.DiGraph, start: int, leaf: int = None) -> tuple[(list[in
                     yield (chain + part1, []), nbr | branches
 
 
-def iflattened_tree(tree: nx.DiGraph, root: int) -> list[list[int]]:
-    """Generate chain decomposition of the given *tree* started from node *root*"""
+def iflattened_tree(tree: nx.DiGraph, root: int) -> Generator[list[int]]:
+    """
+    Generate chain decomposition of the given *tree* started from node *root*.
+
+    :param tree:    input tree
+    :param root:    root node
+    :return:        generator of decomposed chains
+    """
     for (head, tail), brs in isubchains(tree, root, max(tree.nodes[root][LABEL])):
         chain, brs = [head + tail], sorted(brs)
         for subchains in itertools.product(*map(functools.partial(iflattened_tree, tree), brs)):
             yield list(itertools.chain(chain, *subchains))
 
 
-def isubtree_bfs(tree: nx.DiGraph, root: int) -> int:
-    """Return nodes in BFS traversal of the given *tree* started from *root*"""
+def isubtree_bfs(tree: nx.DiGraph, root: int) -> Generator[int]:
+    """
+    Return nodes in BFS traversal of the given *tree* started from *root*.
+
+    :param tree:    input tree
+    :param root:    root node
+    :return:        generator of tree nodes
+    """
     children = collections.deque((root,))
     yield root
     while children:
@@ -174,8 +252,14 @@ def isubtree_bfs(tree: nx.DiGraph, root: int) -> int:
             yield v
 
 
-def isubtrees(tree: nx.DiGraph, barrs: set[int]) -> tuple[int, list[int]]:
-    """Return the barrier nodes and subtrees of the given *tree* marked by the *barr* nodes"""
+def isubtrees(tree: nx.DiGraph, barrs: T_BARRS) -> Generator[tuple[int, list[int]]]:
+    """
+    Return the barrier nodes and subtrees of the given *tree* marked by the *barr* nodes.
+
+    :param tree:    input tree
+    :param barrs:   set of barrier nodes
+    :return:        generator of barrier and regarding subtree nodes
+    """
     for b in barrs:
         nodes = [b]
         children = collections.deque(nodes)
@@ -189,8 +273,15 @@ def isubtrees(tree: nx.DiGraph, barrs: set[int]) -> tuple[int, list[int]]:
         yield b, nodes
 
 
-def itop_subtree_nodes(tree: nx.DiGraph, root: int, barrs: set[int]) -> list[int]:
-    """Return the node sof the top subtree with *root* of the given *tree* cut by the *barr* nodes"""
+def itop_subtree_nodes(tree: nx.DiGraph, root: int, barrs: T_BARRS) -> Generator[int]:
+    """
+    Return the nodes of the top subtree with *root* of the given *tree* cut by the *barr* nodes.
+
+    :param tree:    input tree
+    :param root:    root node
+    :param barrs:   set of barrier nodes
+    :return:        generator of topmost block's nodes
+    """
     nodes = [root]
     children = collections.deque(nodes)
     while children:
@@ -201,8 +292,16 @@ def itop_subtree_nodes(tree: nx.DiGraph, root: int, barrs: set[int]) -> list[int
                 yield v
 
 
-def induced_subtrees(tree: nx.DiGraph, root: int, only_nodes: bool = False) -> tuple[tuple, list[int | tuple[int]]]:
-    """Recursively generate the ingress edge of subtrees and all reachable edges(nodes) in the given subtree"""
+def induced_subtrees(tree: nx.DiGraph, root: int,
+                     only_nodes: bool = False) -> Generator[tuple[tuple[int, int], list[int | tuple[int]]]]:
+    """
+    Recursively generate the ingress edge of subtrees and all reachable edges / nodes in the given subtree.
+
+    :param tree:        input tree
+    :param root:        root node
+    :param only_nodes:  return only subtree nodes instead of edges
+    :return:            generator of ingress and covered edges
+    """
     subtrees = collections.defaultdict(list)
     for p, n in ipostorder_dfs(tree, root, inclusive=True):
         base = (n,) if only_nodes else ((n, s) for s in tree.successors(n))
@@ -212,23 +311,45 @@ def induced_subtrees(tree: nx.DiGraph, root: int, only_nodes: bool = False) -> t
         yield (p, n), subtrees[n]
 
 
-def ipowerset(data: list[int], start: int = 0) -> list[int]:
-    """Generate the powerset of the given *data* beginning to count the sets from size *start*"""
+def ipowerset(data: list[int], start: int = 0) -> Generator[list[int]]:
+    """
+    Generate the powerset of the given *data* beginning to count the sets from size *start*.
+
+    :param data:    list of data values
+    :param start:   lower bound of set size
+    :return:        generator of subsets
+    """
     return itertools.chain.from_iterable(itertools.combinations(data, i) for i in range(start, len(data) + 1))
 
 
-def iser_mul_factor(rate: list[int]) -> list[int]:
-    """Generator over the **pessimistic** number of function instances inside a block"""
+def iser_mul_factor(rate: list[int]) -> Generator[int]:
+    """
+    Generator over the **pessimistic** number of function instances inside a block assuming serialized execution model.
+
+    :param rate:    list of rate values
+    :return:        generator of accumulated function instance count
+    """
     return itertools.accumulate((math.ceil(j / i) for i, j in itertools.pairwise(rate)), operator.mul, initial=1)
 
 
-def ipar_mul_factor(rate: list[int], N: int = 1) -> list[int]:
-    """Generator over the **pessimistic** number of function instances inside a block"""
+def ipar_mul_factor(rate: list[int], N: int = 1) -> Generator[int]:
+    """
+    Generator over the **pessimistic** number of function instances inside a block assuming parallelized execution model.
+
+    :param rate:    list of rate values
+    :param N:       CPU count
+    :return:        generator of accumulated function instance count
+    """
     return itertools.accumulate((math.ceil(j / (i * N)) for i, j in itertools.pairwise(rate)), operator.mul, initial=1)
 
 
-def igen_mul_factor(rate: list[int], ncores: list[int]) -> list[int]:
-    """Generator over the **pessimistic** number of function instances using separate relative CPU cores"""
+def igen_mul_factor(rate: list[int], ncores: list[int]) -> Generator[int]:
+    """
+    Generator over the **pessimistic** number of function instances using separate relative CPU cores.
+
+    :param rate:    list of rate values
+    :param ncores:  list of CPU cores
+    """
     return itertools.accumulate((math.ceil(j / (i * nc)) for (i, j), nc in zip(itertools.pairwise(rate), ncores)),
                                 operator.mul, initial=1)
 
@@ -237,31 +358,65 @@ def igen_mul_factor(rate: list[int], ncores: list[int]) -> list[int]:
 
 
 def leaf_label_nodes(tree: nx.DiGraph) -> nx.DiGraph:
-    """Label each node *n* with the set of leafs that can be reached from *n*"""
+    """
+    Label each node *n* with the set of leafs that can be reached from *n*.
+
+    :param tree:    input tree
+    :return:        labeled tree
+    """
     for _, v in ipostorder_dfs(tree, PLATFORM, inclusive=False):
         tree.nodes[v][LABEL] = set().union(*(tree.nodes[s][LABEL] for s in tree.succ[v])) if len(tree.succ[v]) else {v}
     return tree
 
 
 def ith_child(tree: nx.DiGraph, v: int, i: int) -> int:
-    """Returns the *ith* child of the node *v* started to count from 1. E.g.:
-    >>> v_i = ith_child(tree, v, i) # [v] -i-> [v_i]"""
+    """
+    Returns the *i*-th child of the node *v* started to count from 1.
+
+    E.g.:
+    >>> v_i = ith_child(tree, v, i) # [v] -i-> [v_i]
+
+    :param tree:    input tree
+    :param v:       node ID
+    :param i:       number of given child
+    :return:        i-th node
+    """
     return next(itertools.islice(tree.successors(v), i - 1, None)) if i > 0 else 0
 
 
 def child_idx(tree: nx.DiGraph, v: int) -> int:
-    """Returns the index of *v* among its sibling nodes or return 0. E.g.:
-    >>> j = child_idx(tree, v) # [u] -j-> [v]"""
+    """
+    Returns the index of *v* among its sibling nodes or return 0.
+
+    E.g.:
+    >>> j = child_idx(tree, v) # [u] -j-> [v]
+
+    :param tree:    input tree
+    :param v:       node ID
+    :return:        index of node *v*
+    """
     return next((i for i, v_i in enumerate(tree.succ[next(tree.predecessors(v))], 1) if v_i == v)) if v else 0
 
 
-def top_subtree_block(tree: nx.DiGraph, barr: set[int]) -> nx.DiGraph:
-    """Return the first/top subtree of the given *tree* separated by the given *barr* nodes."""
+def top_subtree_block(tree: nx.DiGraph, barr: T_BARRS) -> nx.DiGraph:
+    """
+    Return the first/top subtree of the given *tree* separated by the given *barr* nodes.
+
+    :param tree:    input tree
+    :param barr:    set of barrier nodes
+    :return:        top subtree
+    """
     return tree.subgraph(next(isubtrees(tree, sorted(barr)))[1])
 
 
-def path_blocks(partition: list[list[int]], path: list[int]) -> list[list[int]]:
-    """Calculate the blocks of separated critical path based on the original partitioning"""
+def path_blocks(partition: T_PART, path: list[int]) -> T_PART:
+    """
+    Calculate the blocks of separated critical path based on the original partitioning.
+
+    :param partition:   given tree partitioning
+    :param path:        path of specific nodes
+    :return:            calculated path blocks
+    """
     parts = []
     current_blk = None
     for v in path:
@@ -275,8 +430,14 @@ def path_blocks(partition: list[list[int]], path: list[int]) -> list[list[int]]:
     return parts
 
 
-def recreate_subchain_blocks(tree: nx.DiGraph, barr: list) -> list[list[int]]:
-    """Recreate chain blocks from barrier nodes of the given partitioning"""
+def recreate_subchain_blocks(tree: nx.DiGraph, barr: T_BARRS) -> T_PART:
+    """
+    Recreate chain blocks from barrier nodes of the given partitioning.
+
+    :param tree:    input tree
+    :param barr:    set of barrier nodes
+    :return:        list of chain blocks
+    """
     n = list(tree.nodes)
     p = []
     if not barr:
@@ -295,8 +456,14 @@ def recreate_subchain_blocks(tree: nx.DiGraph, barr: list) -> list[list[int]]:
     return sorted(p)
 
 
-def recreate_subtree_blocks(tree: nx.DiGraph, barr: set[int]) -> list[list[int]]:
-    """Return the partition blocks of the given *tree* cut by the *barr* nodes"""
+def recreate_subtree_blocks(tree: nx.DiGraph, barr: T_BARRS) -> T_PART:
+    """
+    Return the partition blocks of the given *tree* cut by the *barr* nodes.
+
+    :param tree:    input tree
+    :param barr:    set of barrier nodes
+    :return:        list of partition blocks
+    """
     p = []
     for b in barr:
         blk = [b]
@@ -311,29 +478,73 @@ def recreate_subtree_blocks(tree: nx.DiGraph, barr: set[int]) -> list[list[int]]
     return sorted(p)
 
 
-def split_chain(barr: list[int], n: int, full: bool = True) -> list[list[int]]:
-    """Recreate partition blocks from barrier nodes for an n-size chain := [0, n-1]"""
+def split_chain(barr: T_BARRS, n: int, full: bool = True) -> T_PART:
+    """
+    Recreate partition blocks from barrier nodes for an *n*-size chain := [0, n-1].
+
+    :param barr:    set of barrier nodes
+    :param n:       chain size
+    :param full:    recreate all block nodes instead of just fist/last nodes
+    :return:        created partitioning
+    """
     return [list(range(b, w)) if full else [b, w - 1] if b < w - 1 else [b]
             for b, w in itertools.pairwise(barr + [n])]
 
 
+def split_path(path: list[int], barr: T_BARRS) -> T_PART:
+    """
+    Recreate partition blocks of a chain from barrier nodes for an *n*-size chain := [0, n-1].
+
+    :param path:    list of nodes
+    :param barr:    set of barrier nodes
+    :return:        created partitioning
+    """
+    return [path[b: w] for b, w in itertools.pairwise(barr + [len(path)])]
+
+
 def x_eval(x: int | None | lp.LpVariable) -> bool:
-    """Evaluate **x** from a decision variable matrix based on its solution value"""
+    """
+    Evaluate *x* from a decision variable matrix based on its solution value.
+
+    :param x:   decision variable
+    :return:    whether it is a solution or not
+    """
     return bool(round(x.varValue) if isinstance(x, lp.LpVariable) else x)
 
 
-def recalculate_ser_partitioning(tree: nx.DiGraph, partition: list[list[int]], root: int = 1,
-                                 cp_end: int = None, delay: int = 1) -> tuple[int, int]:
-    """Calculate the sum cost and sum latency on the critical path based on the given *partition*"""
+def recalculate_ser_partitioning(tree: nx.DiGraph, partition: T_PART, root: int = 1, cp_end: int = None,
+                                 delay: int = 1) -> tuple[int, int]:
+    """
+    Calculate the sum cost and sum latency on the critical path based on the given *partition* assuming serialized
+    execution model.
+
+    :param tree:        input tree
+    :param partition:   given partitioning
+    :param root:        root node
+    :param cp_end:      end node of critical path
+    :param delay:       platform invocation delay
+    :return:            sum cost nad latency of the given partitioning
+    """
     cpath = set(ibacktrack_chain(tree, root, cp_end))
     c_blks = [blk for blk in partition if blk[0] in cpath]
     return (sum(ser_subtree_cost(tree, blk[0], blk) for blk in partition),
             sum(ser_subchain_latency(tree, blk[0], set(blk), cpath) for blk in c_blks) + (len(c_blks) - 1) * delay)
 
 
-def recalculate_partitioning(tree: nx.DiGraph, partition: list[list[int]], root: int = 1, N: int = 1,
-                             cp_end: int = None, delay: int = 1) -> tuple[int, int]:
-    """Calculate the sum cost and sum latency on the critical path based on the given *partition*"""
+def recalculate_partitioning(tree: nx.DiGraph, partition: T_PART, root: int = 1, N: int = 1, cp_end: int = None,
+                             delay: int = 1) -> tuple[int, int]:
+    """
+    Calculate sum cost and sum latency on the critical path based on the given *partition* assuming parallelized
+    execution model.
+
+    :param tree:        input tree
+    :param partition:   given partitioning
+    :param root:        root node
+    :param N:           CPU count
+    :param cp_end:      end node of critical path
+    :param delay:       platform invocation delay
+    :return:            sum cost nad latency of the given partitioning
+    """
     cpath = set(ibacktrack_chain(tree, root, cp_end))
     c_blks = [blk for blk in partition if blk[0] in cpath]
     return (sum(par_subtree_cost(tree, min(blk), blk, N) for blk in partition),
@@ -345,23 +556,56 @@ def recalculate_partitioning(tree: nx.DiGraph, partition: list[list[int]], root:
 
 
 def block_memory(memory: list[int], b: int, w: int) -> int:
-    """Calculate cumulative memory of block [b,w]"""
+    """
+    Calculate cumulative memory of block [b, w].
+
+    :param memory:  list of memory values
+    :param b:       barrier node
+    :param w:       end node of block
+    :return:        memory value
+    """
     return sum(itertools.islice(memory, b, w + 1))
 
 
 def block_cpu(rate: list[int], b: int, w: int) -> int:
-    """Calculate CPU core need of block [b,w] with multiprocessing"""
+    """
+    Calculate CPU core need of block [b, w] with multiprocessing.
+
+    :param rate:    list of rate values
+    :param b:       barrier node
+    :param w:       end node of block
+    :return:        CPU count
+    """
     r_max = itertools.chain((1,), enumerate(itertools.accumulate(reversed(rate[b: w + 1]), max)))
     return functools.reduce(lambda pre, max_i: max(pre, math.ceil(max_i[1] / rate[w - max_i[0]])), r_max)
 
 
 def block_cost(runtime: list[int], rate: list[int], b: int, w: int, unit: int = 100) -> int:
-    """Calculate running time of block [b,w] with multiprocessing"""
+    """
+    Calculate running time of block [b, w] with multiprocessing.
+
+    :param runtime: list of runtime values
+    :param rate:    list of rate values
+    :param b:       barrier node
+    :param w:       end node of block
+    :param unit:    rounding unit
+    :return:        calculated cost
+    """
     return rate[b] * (math.ceil(sum(runtime[b: w + 1]) / unit) * unit)
 
 
 def block_latency(runtime: list[int], b: int, w: int, delay: int, start: int, end: int) -> int:
-    """Calculate relevant latency for block [b,w] with multiprocessing"""
+    """
+    Calculate relevant latency for block [b, w] with multiprocessing.
+
+    :param runtime: list of runtime values
+    :param b:       barrier node
+    :param w:       end node of block
+    :param delay:   platform delay
+    :param start:   fist node to consider
+    :param end:     last node to consider
+    :return:        calculated latency value
+    """
     if end < b or w < start:
         # Do not consider latency if no intersection
         return 0
@@ -374,36 +618,79 @@ def block_latency(runtime: list[int], b: int, w: int, delay: int, start: int, en
 
 
 def ser_block_memory(memory: list[int]) -> int:
-    """Calculate cumulative memory of block [b,w] with serialization"""
+    """
+    Calculate cumulative memory of block [b, w] with serialization.
+
+    :param memory:  list of memory values
+    :return:        memory value
+    """
     return sum(memory)
 
 
 def ser_block_memory_opt(memory: list[int], rate: list[int], b: int, w: int) -> int:
-    """Calculate memory of block [b,w] recursively based on the **optimistic** number of parallel function instances"""
+    """
+    Calculate memory of block [b, w] recursively based on the **optimistic** number of parallel function instances.
+
+    :param memory:  list of memory values
+    :param rate:    list of rate values
+    :param b:       barrier node
+    :param w:       end node of block
+    :return:        calculated memory value
+    """
     return functools.reduce(lambda pre, i: max(pre, max(math.ceil(rate[j] / rate[i]) * memory[j]
                                                         for j in range(i, w + 1))), reversed(range(b, w + 1)), 0)
 
 
 def ser_block_memory_pes(memory: list[int], rate: list[int], b: int, w: int) -> int:
-    """Calculate memory of block [b,w] recursively based on the **pessimistic** number of parallel function instances"""
+    """
+    Calculate memory of block [b, w] recursively based on the **pessimistic** number of parallel function instances.
+
+    :param memory:  list of memory values
+    :param rate:    list of rate values
+    :param b:       barrier node
+    :param w:       end node of block
+    :return:        calculated memory value
+    """
     return functools.reduce(lambda pre, i: max(memory[i], math.ceil(rate[i + 1] / rate[i]) * pre),
                             reversed(range(b, w)), memory[w])
 
 
 def ser_block_memory_pes2(memory: list[int], rate: list[int], b: int, w: int) -> int:
-    """Calculate memory of block [b,w] directly based on the **pessimistic** number of parallel function instances"""
+    """
+    Calculate memory of block [b, w] directly based on the **pessimistic** number of parallel function instances.
+
+    :param memory:  list of memory values
+    :param rate:    list of rate values
+    :param b:       barrier node
+    :param w:       end node of block
+    :return:        calculated memory value
+    """
     n_k = itertools.accumulate((math.ceil(rate[i + 1] / rate[i]) for i in range(b, w)), operator.mul, initial=1)
     return max(n * memory[b + k] for k, n in enumerate(n_k))
 
 
 def ser_block_cost(runtime: list[int], rate: list[int], data: list[int]) -> int:
-    """Calculate running time of a subtree block with serialization"""
+    """
+    Calculate running time of a subtree block with serialization.
+
+    :param runtime: list of runtime values
+    :param rate:    list of rate values
+    :param data:    list of data values
+    :return:        calculated cost
+    """
     # return rate[b] * (data[b] + sum([(rate[i] / rate[b]) * runtime[i] for i in range(b, w + 1)]))
     return sum((r * t for r, t in zip(rate, runtime)), start=rate[0] * data[0])
 
 
 def ser_block_latency(runtime: list[int], rate: list[int], data: list[int]) -> int:
-    """Calculate relevant latency of a subtree block with serialization"""
+    """
+    Calculate relevant latency of a subtree block with serialization.
+
+    :param runtime: list of runtime values
+    :param rate:    list of rate values
+    :param data:    list of data values
+    :return:        calculated latency
+    """
     return sum((n * t for n, t in zip(iser_mul_factor(rate), runtime)), start=data[0])
 
 
@@ -411,12 +698,28 @@ def ser_block_latency(runtime: list[int], rate: list[int], data: list[int]) -> i
 
 
 def ser_block_submemory(memory: list[int], b: int, w: int) -> int:
-    """Calculate cumulative memory of **chain block** [b,w] with serialization and data fetching/caching"""
+    """
+    Calculate cumulative memory of **chain block** [b, w] with serialization and data fetching/caching.
+
+    :param memory:  list of memory values
+    :param b:       barrier node
+    :param w:       end node of block
+    :return:        calculated memory value
+    """
     return sum(itertools.islice(memory, b, w + 1))
 
 
 def ser_block_subcost(runtime: list[int], rate: list[int], data: list[int], b: int, w: int) -> int:
-    """Calculate running time of a **chain block** [b,w] with serialization and data fetching/caching"""
+    """
+    Calculate running time of a **chain block** [b, w] with serialization and data fetching/caching.
+
+    :param runtime: list of runtime values
+    :param rate:    list of rate values
+    :param data:    list of data values
+    :param b:       barrier node
+    :param w:       end node of block
+    :return:        calculated cost
+    """
     cost = sum((r * t for r, t in zip(itertools.islice(rate, b, w + 1),
                                       itertools.islice(runtime, b, w + 1))), start=rate[b] * data[b])
     return cost + rate[w + 1] * data[w + 1] if w < len(data) - 1 else cost
@@ -424,7 +727,19 @@ def ser_block_subcost(runtime: list[int], rate: list[int], data: list[int], b: i
 
 def ser_block_sublatency(runtime: list[int], rate: list[int], data: list[int], b: int, w: int, delay: int,
                          start: int, end: int) -> int:
-    """Calculate relevant latency for **chain block** [b,w] with serialization and data fetching/caching"""
+    """
+    Calculate relevant latency for **chain block** [b,w] with serialization and data fetching/caching.
+
+    :param runtime: list of runtime values
+    :param rate:    list of rate values
+    :param data:    list of data values
+    :param b:       barrier node
+    :param w:       end node of block
+    :param delay:   platform delay
+    :param start:   fist node to consider
+    :param end:     last node to consider
+    :return:        calculated latency
+    """
     if end < b or w < start:
         # Do not consider latency if there is no intersection
         return 0
@@ -446,13 +761,26 @@ def ser_block_sublatency(runtime: list[int], rate: list[int], data: list[int], b
 ########################################################################################################################
 
 
-def ser_subtree_memory(tree: nx.DiGraph, nodes: set[int]):
-    """Calculate cumulative memory of a subtree"""
+def ser_subtree_memory(tree: nx.DiGraph, nodes: set[int]) -> int:
+    """
+    Calculate cumulative memory of a subtree.
+
+    :param tree:    input tree
+    :param nodes:   set of block nodes
+    :return:        calculated memory
+    """
     return sum(tree.nodes[v][MEMORY] for v in nodes)
 
 
 def ser_subtree_cost(tree: nx.DiGraph, barr: int, nodes: set[int]) -> int:
-    """Calculate running time of a **subtree** with serialization and data fetching/caching"""
+    """
+    Calculate running time of a **subtree** with serialization and data fetching/caching.
+
+    :param tree:    input tree
+    :param barr:    barrier node
+    :param nodes:   set of block nodes
+    :return:        calculated cost
+    """
     p = next(tree.predecessors(barr))
     return sum((tree[next(tree.predecessors(v))][v][RATE] * tree.nodes[v][RUNTIME] +
                 sum(vs[RATE] * vs[DATA] for s, vs in tree.succ[v].items() if s not in nodes)
@@ -460,7 +788,15 @@ def ser_subtree_cost(tree: nx.DiGraph, barr: int, nodes: set[int]) -> int:
 
 
 def ser_pes_subchain_latency(tree: nx.DiGraph, barr: int, nodes: set[int], cpath: set[int]) -> int:
-    """Calculate relevant latency of **chain** in group of **nodes** with serialization and **pessimistic** caching"""
+    """
+    Calculate relevant latency of **chain** in group of **nodes** with serialization and **pessimistic** caching.
+
+    :param tree:    input tree
+    :param barr:    barrier node
+    :param nodes:   set of block nodes
+    :param cpath:   critical path nodes
+    :return:        calculated latency
+    """
     if not (subchain := sorted(nodes & cpath)):
         return 0
     p = next(tree.predecessors(barr))
@@ -472,7 +808,15 @@ def ser_pes_subchain_latency(tree: nx.DiGraph, barr: int, nodes: set[int], cpath
 
 
 def ser_subchain_latency(tree: nx.DiGraph, barr: int, nodes: set[int], cpath: set[int]) -> int:
-    """Calculate relevant latency of **chain** in group of **nodes** with serialization and data fetching/caching"""
+    """
+    Calculate relevant latency of **chain** in group of **nodes** with serialization and data fetching/caching.
+
+    :param tree:    input tree
+    :param barr:    barrier node
+    :param nodes:   set of block nodes
+    :param cpath:   critical path nodes
+    :return:        calculated latency
+    """
     if barr not in cpath:
         return 0
     chain = sorted(nodes & cpath)
@@ -490,13 +834,28 @@ def ser_subchain_latency(tree: nx.DiGraph, barr: int, nodes: set[int], cpath: se
 
 
 def par_inst_count(r_barr: int, r_v: int, N: int = 1) -> int:
-    """Calculate instance number of a function considering the function/barrier rates and CPU count *N*"""
+    """
+    Calculate instance number of a function considering the function/barrier rates and CPU count *N*.
+
+    :param r_barr:  barrier node's ingress rate
+    :param r_v:     call rate of node v
+    :param N:       CPU count
+    :return:        calculated instance count of node v
+    """
     rel_r_v, sat_insts = r_v / r_barr, r_v % r_barr
     return sat_insts * math.ceil(math.ceil(rel_r_v) / N) + (r_barr - sat_insts) * math.ceil(math.floor(rel_r_v) / N)
 
 
 def par_subtree_memory(tree: nx.DiGraph, barr: int, nodes: list[int] | set[int], N: int = 1) -> int:
-    """Calculate memory demand of a subtree as the sum of cumulative and parallel execution components"""
+    """
+    Calculate memory demand of a subtree as the sum of cumulative and parallel execution components.
+
+    :param tree:    input tree
+    :param barr:    barrier node
+    :param nodes:   set of block nodes
+    :param N:       CPU count
+    :return:        calculated memory value
+    """
     r_b = tree[next(tree.predecessors(barr))][barr][RATE]
     return max(sum(tree.nodes[v][MEMORY] for v in nodes),
                max(min(math.ceil(tree[next(tree.predecessors(v))][v][RATE] / r_b), N) * tree.nodes[v][MEMORY]
@@ -504,7 +863,15 @@ def par_subtree_memory(tree: nx.DiGraph, barr: int, nodes: list[int] | set[int],
 
 
 def par_subtree_cost(tree: nx.DiGraph, barr: int, nodes: set[int], N: int = 1) -> int:
-    """Calculate running time of a **subtree** with multiprocessing and data fetching/caching"""
+    """
+    Calculate running time of a **subtree** with multiprocessing and data fetching/caching.
+
+    :param tree:    input tree
+    :param barr:    barrier node
+    :param nodes:   set of block nodes
+    :param N:       CPU count
+    :return:        calculated cost
+    """
     p = next(tree.predecessors(barr))
     r_b = tree[p][barr][RATE]
     return sum((par_inst_count(r_b, tree[next(tree.predecessors(v))][v][RATE], N) * tree.nodes[v][RUNTIME] +
@@ -513,7 +880,16 @@ def par_subtree_cost(tree: nx.DiGraph, barr: int, nodes: set[int], N: int = 1) -
 
 
 def par_subchain_latency(tree: nx.DiGraph, barr: int, nodes: set[int], cpath: set[int], N: int = 1) -> int:
-    """Calculate relevant latency of **chain** in group of **nodes** with serialization and data fetching/caching"""
+    """
+    Calculate relevant latency of **chain** in group of **nodes** with serialization and data fetching/caching.
+
+    :param tree:    input tree
+    :param barr:    barrier node
+    :param nodes:   set of block nodes
+    :param cpath:   critical path nodes
+    :param N:       CPU count
+    :return:        calculated latency
+    """
     if barr not in cpath:
         return 0
     chain = sorted(nodes & cpath)
@@ -532,7 +908,15 @@ def par_subchain_latency(tree: nx.DiGraph, barr: int, nodes: set[int], cpath: se
 
 
 def gen_subtree_memory(tree: nx.DiGraph, barr: int, nodes: set[int], N: int = 1) -> int:
-    """Calculate memory demand of a subtree as the sum of cumulative and parallel execution components"""
+    """
+    Calculate memory demand of a subtree as the sum of cumulative and parallel execution components.
+
+    :param tree:    input tree
+    :param barr:    barrier node
+    :param nodes:   set of block nodes
+    :param N:       CPU count
+    :return:        calculated memory value
+    """
     r_b = tree[next(tree.predecessors(barr))][barr][RATE]
     return max(sum(tree.nodes[v][MEMORY] for v in nodes),
                max(min(math.ceil(tree[next(tree.predecessors(v))][v][RATE] / r_b),
@@ -542,9 +926,18 @@ def gen_subtree_memory(tree: nx.DiGraph, barr: int, nodes: set[int], N: int = 1)
 
 def gen_subtree_cost(tree: nx.DiGraph, barr: int, nodes: set[int], N: int = 1,
                      exec_calc: collections.abc.Callable[[int, int, int], int] = lambda i, t, n: t) -> int:
-    """Calculate running time of a **subtree** with multiprocessing and data fetching/caching while using *exec_calc*
+    """
+    Calculate running time of a **subtree** with multiprocessing and data fetching/caching while using *exec_calc*
     callable to recalculate function execution time based on the function's id (i), reference runtime (t) and available
-    CPU cores (n)"""
+    CPU cores (n).
+
+    :param tree:        input tree
+    :param barr:        barrier node
+    :param nodes:       set of block nodes
+    :param N:           CPU count
+    :param exec_calc:   calculator function
+    :return:            calculated cost
+    """
     p = next(tree.predecessors(barr))
     r_b = tree[p][barr][RATE]
     return sum((par_inst_count(r_b, tree[next(tree.predecessors(v))][v][RATE], int(N / tree.nodes[v].get(CPU, 1))) *
@@ -555,9 +948,19 @@ def gen_subtree_cost(tree: nx.DiGraph, barr: int, nodes: set[int], N: int = 1,
 
 def gen_subchain_latency(tree: nx.DiGraph, barr: int, nodes: set[int], cpath: set[int], N: int = 1,
                          exec_calc: collections.abc.Callable[[int, int, int], int] = lambda i, t, n: t) -> int:
-    """Calculate relevant latency of **chain** in group of **nodes** with serialization and data fetching/caching while
+    """
+    Calculate relevant latency of **chain** in group of **nodes** with serialization and data fetching/caching while
     using *exec_calc* callable to recalculate function execution time based on the function's id (i), reference runtime
-     (t) and available CPU cores (n)"""
+    (t) and available CPU cores (n).
+
+    :param tree:        input tree
+    :param barr:        barrier node
+    :param nodes:       set of block nodes
+    :param cpath:       critical path nodes
+    :param N:           CPU count
+    :param exec_calc:   calculator function
+    :return:            calculated latency
+    """
     if barr not in cpath:
         return 0
     chain = sorted(nodes & cpath)

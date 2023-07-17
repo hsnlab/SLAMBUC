@@ -30,7 +30,12 @@ DIST_CACHE = {}
 
 def draw(hist_name: str, num: int = 1, path: list = tuple(), ndigits: int = 2, positive: bool = True,
          output_integer: bool = False, seed: int = None) -> list[int | float]:
-    """Draw random samples from a given distribution."""
+    """
+    Draw random samples from a given distribution.
+
+    Random job generation source code is moved from package *spar* with adaptations to newer versions of Python3.11
+    and Scipy 1.10.  See also: https://github.com/All-less/trace-generator/blob/master/spar/generate.py
+    """
     if hist_name not in DIST_CACHE:
         with (HIST_DATA_DIR / f"{hist_name}.pkl").open('rb') as f:
             hist = pickle.load(f)

@@ -14,18 +14,28 @@
 import collections
 import itertools
 import math
+from collections.abc import Generator
 
 import networkx as nx
 import pulp as lp
 
-from slambuc.alg import LP_LAT, INFEASIBLE
+from slambuc.alg import LP_LAT, INFEASIBLE, T_RESULTS, T_PART
 from slambuc.alg.service import *
 from slambuc.alg.util import (ipowerset, ipostorder_dfs, ibacktrack_chain, recreate_subtree_blocks, induced_subtrees,
                               ser_subtree_cost, ser_subchain_latency, ser_subtree_memory, verify_limits, x_eval)
 
 
-def ifeasible_greedy_subtrees(tree: nx.DiGraph, root: int, M: int) -> list[list[int]]:
-    """Generate feasible subtrees in combinatorial way, which meet the connectivity and memory constraint *M*"""
+def ifeasible_greedy_subtrees(tree: nx.DiGraph, root: int, M: int) -> Generator[tuple[int, set[int]]]:
+    """
+    Generate feasible subtrees in a combinatorial way, which meet the connectivity and memory constraint *M*.
+    
+    Block metrics are calculated based on serialized execution platform model.
+
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
+    :param root:    root node of the graph
+    :param M:       upper memory bound of the partition blocks (in MB)
+    :return:        generator of subtree root and regarding subtree nodes
+    """
     for st in ipowerset(tuple(filter(lambda n: n is not PLATFORM, tree)), start=1):
         st = set(st)
         for v in itertools.islice(sorted(st, reverse=True), len(st) - 1):
@@ -36,8 +46,18 @@ def ifeasible_greedy_subtrees(tree: nx.DiGraph, root: int, M: int) -> list[list[
                 yield min(st), st
 
 
-def ifeasible_subtrees(tree: nx.DiGraph, root: int, M: int, filtered: bool = True) -> tuple[int, list[list[int]]]:
-    """Generate feasible(connected) subtrees and roots in bottom-up way, which meet the memory constraint *M*"""
+def ifeasible_subtrees(tree: nx.DiGraph, root: int, M: int, filtered: bool = True) -> Generator[tuple[int, set[int]]]:
+    """
+    Generate M-feasible(connected) subtrees and roots in a bottom-up way, which meet the memory constraint *M*.
+
+    Block metrics are calculated based on serialized execution platform model.
+
+    :param tree:        service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
+    :param root:        root node of the graph
+    :param M:           upper memory bound of the partition blocks (in MB)
+    :param filtered:    filter our infeasible subtrees
+    :return:            generator of subtree root and regarding subtree nodes
+    """
     subtrees = collections.defaultdict(list)
     for _, n in ipostorder_dfs(tree, root):
         for children in ipowerset(tuple(tree.successors(n))):
@@ -50,11 +70,12 @@ def ifeasible_subtrees(tree: nx.DiGraph, root: int, M: int, filtered: bool = Tru
             del subtrees[c]
 
 
-def build_tree_cfg_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
-                         L: int = math.inf, cpath: set[int] = frozenset(), delay: int = 1,
+def build_tree_cfg_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
+                         cpath: set[int] = frozenset(), delay: int = 1,
                          isubtrees: iter = ifeasible_subtrees) -> tuple[lp.LpProblem, dict[int, list[lp.LpVariable]]]:
     """
-    Generate the ILP model.
+    Generate the configuration ILP model using serialized metric calculation.
+
     :return: tuple of the created model and list of decision variables
     """
     # Model
@@ -87,11 +108,14 @@ def build_tree_cfg_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
 
 def tree_cfg_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
                           cp_end: int = None, delay: int = 1, solver: lp.LpSolver = None,
-                          timeout: int = None, **lpargs) -> tuple[list[list[int]], int, int]:
+                          timeout: int = None, **lpargs) -> T_RESULTS:
     """
-    Calculates minimal-cost partitioning of a tree based on configuration LP formulation.
+    Calculates minimal-cost partitioning of a tree based on configuration LP formulation and greedy subcase
+    generation.
+    
+    Block metrics are calculated based on serialized execution platform model.
 
-    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rate
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:    root node of the graph
     :param M:       upper memory bound of the partition blocks (in MB)
     :param L:       latency limit defined on the critical path (in ms)
@@ -119,11 +143,14 @@ def tree_cfg_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L:
 
 def tree_hybrid_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
                              cp_end: int = None, delay: int = 1, solver: lp.LpSolver = None,
-                             timeout: int = None, **lpargs) -> tuple[list[list[int]], int, int]:
+                             timeout: int = None, **lpargs) -> T_RESULTS:
     """
-    Calculates minimal-cost partitioning of a tree based on configuration LP formulation.
+    Calculates minimal-cost partitioning of a tree based on configuration LP formulation and hybrid subcase
+    generation.
 
-    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rate
+    Block metrics are calculated based on serialized execution platform model.
+
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:    root node of the graph
     :param M:       upper memory bound of the partition blocks (in MB)
     :param L:       latency limit defined on the critical path (in ms)
@@ -149,13 +176,24 @@ def tree_hybrid_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
         return INFEASIBLE
 
 
-def extract_subtrees_from_xdict(model: lp.LpProblem) -> list[list[int]]:
-    """Recreate partitioning blocks from metadata cached in variables objects"""
+def extract_subtrees_from_xdict(model: lp.LpProblem) -> T_PART:
+    """
+    Recreate partitioning blocks from metadata cached in variables objects.
+
+    :param model:   LP problem model
+    :return:        calculated partitioning
+    """
     return sorted(x.blk for x in filter(lambda x: round(x.varValue) == 1, model.variables()))
 
 
-def recreate_subtrees_from_xdict(tree: nx.DiGraph, Xn: dict[int, list[lp.LpVariable]]) -> list[list[int]]:
-    """Extract barrier nodes from variable names (x_{b}_{w}) and recreate partitioning blocks"""
+def recreate_subtrees_from_xdict(tree: nx.DiGraph, Xn: dict[int, list[lp.LpVariable]]) -> T_PART:
+    """
+    Extract barrier nodes from variable names (x_{b}_{w}) and recreate partitioning blocks.
+
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
+    :param Xn:      specific structure of decision variables
+    :return:        calculated partitioning
+    """
     barr = set(int(next(filter(lambda x: round(x.varValue) == 1, x_n)).name.split('_', 2)[1]) for x_n in Xn.values())
     return recreate_subtree_blocks(tree=tree, barr=barr)
 
@@ -167,7 +205,10 @@ def build_greedy_tree_mtx_model(tree: nx.DiGraph, root: int = 1, M: int = math.i
                                 L: int = math.inf, cpath: set[int] = frozenset(),
                                 delay: int = 1) -> tuple[lp.LpProblem, dict[int, dict[int, lp.LpVariable]]]:
     """
-    Generate the matrix ILP model.
+    Generate the matrix ILP model in a greedy manner.
+
+    Block metrics are calculated based on serialized execution platform model.
+
     :return: tuple of the created model and list of decision variables
     """
     # Model
@@ -224,7 +265,10 @@ def build_tree_mtx_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
                          L: int = math.inf, cpath: set[int] = frozenset(),
                          delay: int = 1) -> tuple[lp.LpProblem, dict[int, dict[int, lp.LpVariable]]]:
     """
-    Generate the matrix ILP model.
+    Generate the matrix ILP model directly from formulas.
+    
+    Block metrics are calculated based on serialized execution platform model.
+
     :return: tuple of the created model and list of decision variables
     """
     # Model
@@ -283,9 +327,11 @@ def build_tree_mtx_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
 
 def tree_mtx_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
                           cp_end: int = None, delay: int = 1, solver: lp.LpSolver = None,
-                          timeout: int = None, **lpargs) -> tuple[list[list[int]], int, int]:
+                          timeout: int = None, **lpargs) -> T_RESULTS:
     """
-    Calculates minimal-cost partitioning of a tree based on matrix ILP formulation.
+    Calculates minimal-cost partitioning of a tree based on the matrix ILP formulation.
+
+    Block metrics are calculated based on serialized execution platform model.
 
     :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rate
     :param root:    root node of the graph
@@ -313,13 +359,24 @@ def tree_mtx_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L:
         return INFEASIBLE
 
 
-def recreate_subtrees_from_xmatrix(tree: nx.DiGraph, X: dict[int, dict[int, lp.LpVariable]]) -> list[list[int]]:
-    """Extract barrier nodes from variable matrix(dict-of-dict) and recreate partitioning blocks"""
+def recreate_subtrees_from_xmatrix(tree: nx.DiGraph, X: dict[int, dict[int, lp.LpVariable]]) -> T_PART:
+    """
+    Extract barrier nodes from variable matrix(dict-of-dict) and recreate partitioning blocks.
+
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
+    :param X:       specific structure of decision variables
+    :return:        calculated partitioning
+    """
     return recreate_subtree_blocks(tree, barr=set(i for i in X if x_eval(X[i][i])))
 
 
-def extract_subtrees_from_xmatrix(X: dict[int, dict[int, lp.LpVariable]]) -> list[list[int]]:
-    """Extract barrier nodes from variable matrix(dict-of-dict) and recreate partitioning blocks"""
+def extract_subtrees_from_xmatrix(X: dict[int, dict[int, lp.LpVariable]]) -> T_PART:
+    """
+    Extract barrier nodes from variable matrix(dict-of-dict) and recreate partitioning blocks.
+    
+    :param X:   specific structure of decision variables
+    :return:    calculated partitioning
+    """
     return [[i for i in sorted(X) if j in X[i] and x_eval(X[i][j])] for j in sorted(X) if x_eval(X[j][j])]
 
 
@@ -331,8 +388,10 @@ def all_tree_mtx_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf
                               timeout: int = None, **lpargs) -> tuple[list[list[int]], int, int]:
     """
     Calculates all minimal-cost partitioning variations of a tree based on matrix ILP formulation.
+    
+    Block metrics are calculated based on serialized execution platform model.
 
-    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rate
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:    root node of the graph
     :param M:       upper memory bound of the partition blocks (in MB)
     :param L:       latency limit defined on the critical path (in ms)

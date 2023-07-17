@@ -13,12 +13,13 @@
 # limitations under the License.
 import networkx as nx
 
+from slambuc.alg import T_RESULTS
 from slambuc.alg.service import PLATFORM
 from slambuc.alg.util import recalculate_partitioning
 
 
 def baseline_singleton_partitioning(tree: nx.DiGraph, root: int = 1, N: int = 1, cp_end: int = None,
-                                    delay: int = 1, **kwargs) -> tuple[list[list[int]], int, int]:
+                                    delay: int = 1, **kwargs) -> T_RESULTS:
     """
     Derive the trivial partitioning of grouping all nodes into one single block.
 
@@ -34,7 +35,7 @@ def baseline_singleton_partitioning(tree: nx.DiGraph, root: int = 1, N: int = 1,
 
 
 def baseline_no_partitioning(tree: nx.DiGraph, root: int = 1, N: int = 1, cp_end: int = None,
-                             delay: int = 1, **kwargs) -> tuple[list[list[int]], int, int]:
+                             delay: int = 1, **kwargs) -> T_RESULTS:
     """
     Derive the trivial solution of not merging any of the given tree nodes.
 

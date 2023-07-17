@@ -18,7 +18,7 @@ import operator
 
 import networkx as nx
 
-from slambuc.alg import INFEASIBLE
+from slambuc.alg import INFEASIBLE, T_RESULTS
 from slambuc.alg.service import RATE, DATA, PLATFORM
 from slambuc.alg.util import recreate_subtree_blocks, recalculate_partitioning
 
@@ -26,21 +26,23 @@ from slambuc.alg.util import recreate_subtree_blocks, recalculate_partitioning
 def min_weight_subchain_split(tree: nx.DiGraph, root: int) -> set[int]:
     """
     Return chain-based edge cuts with the minimal edge weight (amount of transferred data).
+
     The splitting marks the edge with the largest weight at each branching nodes to be a must-merge edge.
 
     :param tree:    service graph annotated with node runtime(ms), edge rate and edge data unit size
     :param root:    root node of the tree
-    :return:        barrier nodes
+    :return:        set of barrier nodes
     """
     return {root}.union(*(set(tree.successors(v)) -
                           {max(tree.successors(v), key=lambda s: tree[v][s][RATE] * tree[v][s][DATA])}
                           for v in tree if v is not PLATFORM and len(tree.succ[v]) > 1))
 
 
-def min_weight_chain_decomposition(tree: nx.DiGraph, root: int, N: int = 1, cp_end: int = None, delay: int = 1,
-                                   metrics: bool = True, **kwargs) -> tuple[list[list[int]], int, int]:
+def min_weight_chain_decomposition(tree: nx.DiGraph, root: int, N: int = 1, cp_end: int = None,
+                                   delay: int = 1, metrics: bool = True, **kwargs) -> T_RESULTS:
     """
     Minimal edge-weight chain-based tree partitioning (O(n)) without memory and latency constraints.
+
     Although latency is not considered on the critical path the algorithm reports it with the sum cost.
 
     :param tree:    service graph annotated with node runtime(ms) and edge rate
@@ -62,6 +64,7 @@ def min_weight_chain_decomposition(tree: nx.DiGraph, root: int, N: int = 1, cp_e
 def min_weight_ksplit(tree: nx.DiGraph, root: int, k: int) -> set[int]:
     """
     Minimal data-transfer tree clustering into *k* clusters with k-1 cuts without memory and latency constraints.
+
     The clustering algorithm is based on the maximum split clustering algorithm(O(n^3)) which ranks the edges (paths)
     based on the amount of transferred data.
 
@@ -71,7 +74,7 @@ def min_weight_ksplit(tree: nx.DiGraph, root: int, k: int) -> set[int]:
     :param tree:    service graph annotated with node runtime(ms), edge rate and edge data unit size
     :param root:    root node of the tree
     :param k:       number of clusters
-    :return:        barrier nodes
+    :return:        set of barrier nodes
     """
     dist_tree = nx.to_undirected(tree)
     # Define distance of two nodes as the reciprocal of the sum transferred data between the nodes
@@ -95,10 +98,11 @@ def min_weight_ksplit(tree: nx.DiGraph, root: int, k: int) -> set[int]:
 
 
 def min_weight_ksplit_clustering(tree: nx.DiGraph, root: int, k: int = None, N: int = 1, cp_end: int = None,
-                                 delay: int = 1, metrics: bool = True, **kwargs) -> tuple[list[list[int]], int, int]:
+                                 delay: int = 1, metrics: bool = True, **kwargs) -> T_RESULTS:
     """
     Minimal data-transfer tree clustering into *k* clusters (with k-1 cuts) without memory and latency constraints.
-    Although latency is not considered on the critical path the algorithm reports it with the sum cost.
+
+    Although latency is not considered on the critical path the algorithm reports it along with the sum cost.
 
     :param tree:    service graph annotated with node runtime(ms), edge rate and edge data unit size
     :param root:    root node of the tree
@@ -116,10 +120,12 @@ def min_weight_ksplit_clustering(tree: nx.DiGraph, root: int, k: int = None, N: 
 
 
 def min_weight_tree_clustering(tree: nx.DiGraph, root: int, L: int = math.inf, N: int = 1, cp_end: int = None,
-                               delay: int = 1, metrics: bool = True, **kwargs) -> tuple[list[list[int]], int, int]:
+                               delay: int = 1, metrics: bool = True, **kwargs) -> T_RESULTS:
     """
-    Minimal data-transfer tree clustering into without memory  constraints.
-    Iteratively calculates k-1 different ksplit clustering in reverse order until a latency-feasible solution is found.
+    Minimal data-transfer tree clustering into without memory constraints.
+
+    Iteratively calculates *k-1* different ksplit clustering in reverse order until an L-feasible solution is found.
+
     Although latency is not considered on the critical path the algorithm reports it with the sum cost.
 
     :param tree:    service graph annotated with node runtime(ms), edge rate and edge data unit size

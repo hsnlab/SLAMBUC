@@ -14,19 +14,25 @@
 import itertools
 import math
 
-from slambuc.alg import MEM, COST, LAT, CPU
+from slambuc.alg import MEM, COST, LAT, CPU, T_BARRS, T_BRESULTS
 from slambuc.alg.chain.dp.mtx import State
 
 
-def min_chain_partitioning(runtime: list, memory: list, rate: list, M: int = math.inf, N: int = math.inf,
-                           L: int = math.inf, start: int = 0, end: int = None, delay: int = 1,
-                           unit: int = 100) -> tuple[list, int, int]:
+def min_chain_partitioning(runtime: list[int], memory: list[int], rate: list[int], M: int = math.inf,
+                           N: int = math.inf, L: int = math.inf, start: int = 0, end: int = None,
+                           delay: int = 1, unit: int = 100) -> T_BRESULTS:
     """
     Calculates minimal-cost partitioning of a chain based on the node properties of *running time*, *memory usage* and
     *invocation rate* with respect to an upper bound **M** on the total memory of blocks and a latency constraint **L**
     defined on the subchain between *start* and *end* nodes.
 
-    It can be only used when the cost function regarding the chain attributes is sub-additive, that is k_opt = k_min.
+    Cost calculation relies on the rounding *unit* and number of vCPU cores *N*, whereas platform invocation *delay*
+    is used for latency calculations.
+
+    It gives optimal result only in case the cost function regarding the chain attributes is sub-additive,
+    that is k_opt = k_min is guaranteed for each case.
+
+    Instead of full partitioning it only returns the list of barrier nodes.
 
     :param runtime: running times in ms
     :param memory:  memory requirements in MB
@@ -44,23 +50,23 @@ def min_chain_partitioning(runtime: list, memory: list, rate: list, M: int = mat
     end = end if end is not None else n - 1
 
     def block_memory(_v: int, cumsum: list = (0,)) -> int:
-        """Calculate memory of a block from the cached cumulative sum of block[v+1, w] or block[b, v-1]"""
+        """Calculate memory of a block from the cached cumulative sum of block[v+1, w] or block[b, v-1]."""
         cumsum[MEM] += memory[_v]
         return cumsum[MEM]
 
     def block_cpu(_b: int, cumsum: list = (0, 0, 0, (0, 1))) -> int:
-        """Calculate CPU need of a block from the cached cumulative sum of block[b+1, w]"""
+        """Calculate CPU need of a block from the cached cumulative sum of block[b+1, w]."""
         cumsum[CPU][0] = max(cumsum[CPU][0], rate[_b])
         cumsum[CPU][1] = max(cumsum[CPU][1], math.ceil(cumsum[CPU][0] / rate[_b]))
         return cumsum[CPU][1]
 
     def block_cost(_b: int, cumsum: list = (0, 0)) -> int:
-        """Calculate running time of block[b, w] from the cached cumulative sum of block[b+1, w]"""
+        """Calculate running time of block[b, w] from the cached cumulative sum of block[b+1, w]."""
         cumsum[COST] += runtime[_b]
         return rate[_b] * (math.ceil(cumsum[COST] / unit) * unit)
 
     def block_latency(_b: int, _w: int, cumsum: list = (0, 0, 0)) -> int:
-        """Calculate relevant latency for block[b, w] from the cached cumulative sum of block[b+1, w]"""
+        """Calculate relevant latency for block[b, w] from the cached cumulative sum of block[b+1, w]."""
         # Do not consider latency if no intersection
         if end < _b or _w < start:
             return 0
@@ -102,8 +108,13 @@ def min_chain_partitioning(runtime: list, memory: list, rate: list, M: int = mat
     return (extract_min_barr(DP), DP[n - 1].cost, DP[n - 1].lat) if DP[n - 1].cost < math.inf else DP[n - 1]
 
 
-def extract_min_barr(DP: list[State]) -> list[int]:
-    """Extract barrier nodes form DP matrix by iteratively backtracking the minimal cost subcases"""
+def extract_min_barr(DP: list[State]) -> T_BARRS:
+    """
+    Extract barrier nodes form DP list by iteratively backtracking minimal cost subcases.
+
+    :param DP:  dynamic programming structure storing intermediate *States*
+    :return:    list of barrier nodes
+    """
     barr = [DP[-2].barr]
     while barr[-1]:
         barr.append(DP[barr[-1] - 1].barr)

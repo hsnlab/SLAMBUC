@@ -14,19 +14,28 @@
 import collections
 import itertools
 import math
+from collections.abc import Generator
 
 import networkx as nx
 import pulp as lp
 
-from slambuc.alg import LP_LAT, INFEASIBLE
+from slambuc.alg import LP_LAT, INFEASIBLE, T_RESULTS
 from slambuc.alg.service import *
 from slambuc.alg.tree.ser.ilp import recreate_subtrees_from_xdict, extract_subtrees_from_xmatrix
 from slambuc.alg.util import (ipowerset, par_subtree_memory, ipostorder_dfs, ibacktrack_chain, par_subtree_cost,
                               par_subchain_latency, induced_subtrees, par_inst_count, verify_limits, x_eval)
 
 
-def ifeasible_par_greedy_subtrees(tree: nx.DiGraph, root: int, M: int, N: int = 1) -> list[list[int]]:
-    """Generate feasible subtrees in combinatorial way, which meet the connectivity and memory constraint *M*"""
+def ifeasible_par_greedy_subtrees(tree: nx.DiGraph, root: int, M: int, N: int = 1) -> Generator[tuple[int, set[int]]]:
+    """
+    Generate feasible subtrees in a combinatorial way, which meet the connectivity and memory constraint *M*.
+
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
+    :param root:    root node of the graph
+    :param M:       upper memory bound of the partition blocks (in MB)
+    :param N:       upper CPU core bound of the partition blocks
+    :return:        generator of subtree root and regarding subtree nodes
+    """
     for st in ipowerset(tuple(filter(lambda n: n is not PLATFORM, tree)), start=1):
         st = set(st)
         for v in itertools.islice(sorted(st, reverse=True), len(st) - 1):
@@ -37,8 +46,16 @@ def ifeasible_par_greedy_subtrees(tree: nx.DiGraph, root: int, M: int, N: int = 
                 yield min(st), st
 
 
-def ifeasible_par_subtrees(tree: nx.DiGraph, root: int, M: int, N: int = 1) -> tuple[int, list[list[int]]]:
-    """Generate feasible(connected) subtrees and roots in bottom-up way, which meet the memory constraint *M*"""
+def ifeasible_par_subtrees(tree: nx.DiGraph, root: int, M: int, N: int = 1) -> Generator[tuple[int, set[int]]]:
+    """
+    Generate M-feasible(connected) subtrees and roots in a bottom-up way, which meet the memory constraint *M*.
+
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
+    :param root:    root node of the graph
+    :param M:       upper memory bound of the partition blocks (in MB)
+    :param N:       upper CPU core bound of the partition blocks
+    :return:        generator of subtree root and regarding subtree nodes
+    """
     subtrees = collections.defaultdict(list)
     for _, n in ipostorder_dfs(tree, root):
         for children in ipowerset(tuple(tree.successors(n))):
@@ -51,11 +68,13 @@ def ifeasible_par_subtrees(tree: nx.DiGraph, root: int, M: int, N: int = 1) -> t
             del subtrees[c]
 
 
-def build_par_tree_cfg_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
-                             L: int = math.inf, N: int = 1, cpath: set[int] = frozenset(), delay: int = 1,
-                             isubtrees: iter = ifeasible_par_subtrees) -> tuple[lp.LpProblem, list[lp.LpVariable]]:
+def build_par_tree_cfg_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
+                             N: int = 1, cpath: set[int] = frozenset(), delay: int = 1,
+                             isubtrees: iter = ifeasible_par_subtrees) -> tuple[
+    lp.LpProblem, dict[int, list[lp.LpVariable]]]:
     """
-    Generate the ILP model.
+    Generate the configuration ILP model using parallel metric calculation.
+
     :return: tuple of the created model and list of decision variables
     """
     # Model
@@ -88,11 +107,14 @@ def build_par_tree_cfg_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
 
 def tree_par_cfg_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
                               N: int = 1, cp_end: int = None, delay: int = 1, solver: lp.LpSolver = None,
-                              timeout: int = None, **lpargs) -> tuple[list[list[int]], int, int]:
+                              timeout: int = None, **lpargs) -> T_RESULTS:
     """
-    Calculate minimal-cost partitioning of a tree based on configuration LP formulation.
+    Calculate minimal-cost partitioning of a tree based on configuration LP formulation and greedy subcase
+    generation.
 
-    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rate
+    Block metrics are calculated based on parallelized execution platform model.
+
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:    root node of the graph
     :param M:       upper memory bound of the partition blocks (in MB)
     :param L:       latency limit defined on the critical path (in ms)
@@ -121,11 +143,14 @@ def tree_par_cfg_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf
 
 def tree_par_hybrid_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
                                  N: int = 1, cp_end: int = None, delay: int = 1, solver: lp.LpSolver = None,
-                                 timeout: int = None, **lpargs) -> tuple[list[list[int]], int, int]:
+                                 timeout: int = None, **lpargs) -> T_RESULTS:
     """
-    Calculate minimal-cost partitioning of a tree based on configuration LP formulation.
+    Calculate minimal-cost partitioning of a tree based on configuration LP formulation and hybrid subcase
+    generation.
 
-    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rate
+    Block metrics are calculated based on parallelized execution platform model.
+
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:    root node of the graph
     :param M:       upper memory bound of the partition blocks (in MB)
     :param L:       latency limit defined on the critical path (in ms)
@@ -158,7 +183,8 @@ def build_greedy_par_tree_mtx_model(tree: nx.DiGraph, root: int = 1, M: int = ma
                                     L: int = math.inf, N: int = 1, cpath: set[int] = frozenset(),
                                     delay: int = 1) -> tuple[lp.LpProblem, dict[int, dict[int, lp.LpVariable]]]:
     """
-    Generate the ILP model.
+    Generate the matrix ILP model using greedy subcase building and parallel metric calculation.
+
     :return: tuple of the created model and list of decision variables
     """
     # Model
@@ -223,7 +249,8 @@ def build_par_tree_mtx_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
                              L: int = math.inf, N: int = 1, cpath: set[int] = frozenset(),
                              delay: int = 1) -> tuple[lp.LpProblem, dict[int, dict[int, lp.LpVariable]]]:
     """
-    Generate the ILP model.
+    Generate the matrix ILP model based on parallel metric calculations.
+
     :return: tuple of the created model and list of decision variables
     """
     # Model
@@ -289,13 +316,15 @@ def build_par_tree_mtx_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
     return model, X
 
 
-def tree_par_mtx_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf, N: int = 1,
-                              cp_end: int = None, delay: int = 1, solver: lp.LpSolver = None,
-                              timeout: int = None, **lpargs) -> tuple[list[list[int]], int, int]:
+def tree_par_mtx_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
+                              N: int = 1, cp_end: int = None, delay: int = 1, solver: lp.LpSolver = None,
+                              timeout: int = None, **lpargs) -> T_RESULTS:
     """
-    Calculate minimal-cost partitioning of a tree based on configuration LP formulation.
+    Calculate minimal-cost partitioning of a tree based on matrix LP formulation.
 
-    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rate
+    Block metrics are calculated based on parallelized execution platform model.
+
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:    root node of the graph
     :param M:       upper memory bound of the partition blocks (in MB)
     :param L:       latency limit defined on the critical path (in ms)
@@ -325,13 +354,13 @@ def tree_par_mtx_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf
 ########################################################################################################################
 
 
-def all_par_tree_mtx_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf, N: int = 1,
-                                  cp_end: int = None, delay: int = 1, solver: lp.LpSolver = None,
-                                  timeout: int = None, **lpargs) -> tuple[list[list[int]], int, int]:
+def all_par_tree_mtx_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
+                                  N: int = 1, cp_end: int = None, delay: int = 1, solver: lp.LpSolver = None,
+                                  timeout: int = None, **lpargs) -> list[T_RESULTS]:
     """
     Calculate all minimal-cost partitioning variations of a tree based on matrix ILP formulation.
 
-    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rate
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:    root node of the graph
     :param M:       upper memory bound of the partition blocks (in MB)
     :param L:       latency limit defined on the critical path (in ms)

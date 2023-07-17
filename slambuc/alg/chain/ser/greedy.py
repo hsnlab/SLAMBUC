@@ -13,14 +13,21 @@
 # limitations under the License.
 import math
 
-from slambuc.alg import INFEASIBLE
+from slambuc.alg import INFEASIBLE, T_PART_GEN, T_RESULTS
 from slambuc.alg.util import ipowerset, split_chain, ser_block_submemory, ser_block_sublatency, ser_block_subcost
 
 
-def ichain_blocks(memory: list[int], M: int) -> list[list[list[int]]]:
+def ichain_blocks(memory: list[int], M: int) -> T_PART_GEN:
     """
-    Calculates all combination of chain cuts with respect to the *memory* values and constraint *M*.
-    The calculation is improved compared to brute force to only start calculating cuts from c_min.
+    Calculates all combinations of chain cuts with respect to the *memory* values and constraint *M*.
+
+    Block memories are calculated assuming serialized platform execution model.
+
+    The calculation is improved compared to brute force to only start calculating cuts from minimal cut size *c_min*.
+
+    :param memory:  list of node memory values
+    :param M:       upper memory limit
+    :return:        Generator over M-feasible cuts.
     """
     n = len(memory)
     for cut in ipowerset(range(1, n), start=math.ceil(sum(memory) / M) - 1):
@@ -31,11 +38,15 @@ def ichain_blocks(memory: list[int], M: int) -> list[list[list[int]]]:
             yield valid
 
 
-def greedy_ser_chain_partitioning(runtime: list, memory: list, rate: list, data: list, M: int = math.inf,
-                                  L: int = math.inf, start: int = 0, end: int = None,
-                                  delay: int = 1) -> list[tuple[list[int], int, int]]:
+def greedy_ser_chain_partitioning(runtime: list[int], memory: list[int], rate: list[int], data: list[int],
+                                  M: int = math.inf, L: int = math.inf, start: int = 0, end: int = None,
+                                  delay: int = 1) -> T_RESULTS:
     """
-    Calculates the minimal-cost partitioning of a given chain by exhaustive search
+    Calculates all minimal-cost partitioning outcomes of a given chain by applying exhaustive search.
+
+    Parameters are the same as the partitioning algorithms in ``slambuc.alg.chain.ser.ilp``.
+
+    Block metrics are calculated assuming serialized platform execution model.
 
     :param runtime: running times in ms
     :param memory:  memory requirements in MB

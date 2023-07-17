@@ -15,19 +15,22 @@ import math
 
 import networkx as nx
 
-from slambuc.alg import INFEASIBLE
+from slambuc.alg import INFEASIBLE, T_RESULTS, T_BARRS_GEN
 from slambuc.alg.util import (ipowerset, isubtrees, par_subtree_memory, ibacktrack_chain, par_subtree_cost,
                               par_subchain_latency)
 
 
-def isubtrees_exhaustive(tree: nx.DiGraph, root: int, M: int, N: int = 1) -> list[int]:
-    """Calculate all combination of edge cuts and returns only if it is feasible wrt. the memory limit M.
+def isubtrees_exhaustive(tree: nx.DiGraph, root: int, M: int, N: int = 1) -> T_BARRS_GEN:
+    """
+    Calculate all combinations of edge cuts and returns only if it is feasible wrt. the memory limit *M*.
 
-    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rate
+    Block metrics are calculated based on parallelized execution platform model.
+
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:    root node of the graph
     :param M:       upper memory bound in MB
     :param N:       available CPU core count
-    :return:        generator of chain partitions
+    :return:        generator of feasible subtrees' barrier nodes
     """
     for cuts in ipowerset(tree.edges(range(1, len(tree)))):
         barrs = {root}.union(v for _, v in cuts)
@@ -37,12 +40,14 @@ def isubtrees_exhaustive(tree: nx.DiGraph, root: int, M: int, N: int = 1) -> lis
             yield feasible_subtrees
 
 
-def greedy_par_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf, N: int = 1,
-                                 cp_end: int = None, delay: int = 1) -> list[tuple[list, int, int]]:
+def greedy_par_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
+                                 N: int = 1, cp_end: int = None, delay: int = 1) -> T_RESULTS:
     """
-    Calculates minimal-cost partitioning of a service graph(tree) by iterating over all possible cuttings.
+    Calculate minimal-cost partitioning of a service graph(tree) by greedily iterating over all possible cuttings.
 
-    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rate
+    Block metrics are calculated based on parallelized execution platform model.
+
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:    root node of the graph
     :param M:       upper memory bound of the partition blocks (in MB)
     :param L:       latency limit defined on the critical path (in ms)

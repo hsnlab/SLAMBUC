@@ -18,7 +18,7 @@ import typing
 
 import networkx as nx
 
-from slambuc.alg import COST, INFEASIBLE
+from slambuc.alg import COST, INFEASIBLE, T_BRESULTS
 from slambuc.alg.chain.dp.mtx import chain_partitioning, extract_barr
 from slambuc.alg.service import *
 from slambuc.alg.service.common import LABEL
@@ -26,7 +26,7 @@ from slambuc.alg.util import ipostorder_dfs, isubchains, ibacktrack_chain, leaf_
 
 
 class TPart(typing.NamedTuple):
-    """Store subtree attributes for a given subcase"""
+    """Store subtree attributes for a given meta subcase."""
     barr: set = set()  # Barrier/heading nodes of the given subtree partitioning
     cost: int = math.inf  # Sum cost of the partitioning
 
@@ -36,13 +36,25 @@ class TPart(typing.NamedTuple):
 
 def meta_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N: int = math.inf, L: int = math.inf,
                            cp_end: int = None, delay: int = 1, unit: int = 100, only_barr: bool = False,
-                           partition=chain_partitioning, barriers=extract_barr) -> tuple[list[int], int, int]:
+                           partition=chain_partitioning, barriers=extract_barr) -> T_BRESULTS:
     """
     Calculates minimal-cost partitioning of a service graph(tree) with respect to an upper bound **M** on the total
     memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes using
-    the *partition* function to partition subchains.
+    the *partition* function to partition subchains independently.
 
-    :param tree:        service graph annotated with node runtime(ms), memory(MB) and edge rate
+    Cost calculation relies on the rounding *unit* and number of vCPU cores *N*, whereas platform invocation *delay*
+    is used for latency calculations.
+
+    It gives optimal result only in case the cost function regarding the chain attributes is sub-additive,
+    that is k_opt = k_min is guaranteed for each case.
+
+    Instead of full partitioning it only returns the list of barrier nodes.
+
+    Details in: J. Czentye, I. Pelle and B. Sonkoly, "Cost-optimal Operation of Latency Constrained Serverless
+    Applications: From Theory to Practice," NOMS 2023-2023 IEEE/IFIP Network Operations and Management Symposium,
+    Miami, FL, USA, 2023, pp. 1-10, doi: 10.1109/NOMS56928.2023.10154412.
+
+    :param tree:        service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:        root node of the graph
     :param M:           upper memory bound of the partition blocks (in MB)
     :param N:           upper CPU core bound of the partition blocks
@@ -92,7 +104,7 @@ def meta_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N
                 if subchain[0] == root:
                     barr, opt_cost, opt_lat = partition(runtime, memory, rate, M, N, L, delay=delay, unit=unit)
                     if not barr:
-                        return [], opt_cost, opt_lat
+                        return barr, opt_cost, opt_lat
                     opt_barr_cost = TPart({subchain[b] for b in barr} | sum_m_barr, sum_cost := opt_cost + sum_m_cost)
                     for c in range(len(barr) - 1, c_max + 1):
                         if sum_cost < DP[n][c].cost:
@@ -136,7 +148,7 @@ def meta_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N
                             barr, opt_cost, _ = partition(runtime, memory, rate, M, N, L_head, 0, len(head_part) - 1,
                                                           delay, unit)
                             # If subchain cannot be partitioned with L_head -> stricter L_head is also infeasible
-                            if barr is None:
+                            if not barr:
                                 break
                             # Precalculate stricter solutions based on the distance between optimal cut and L_head cut
                             for _c in reversed(range(len(barr) - 1, c_head + 1)):

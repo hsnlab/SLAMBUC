@@ -13,4 +13,5 @@
 # limitations under the License.
 from .greedy import greedy_tree_partitioning
 from .meta import meta_tree_partitioning
+from .min import min_tree_partitioning
 from .seq import seq_tree_partitioning

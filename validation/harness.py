@@ -51,12 +51,12 @@ log.handlers.extend((sh, fh))
 
 
 class ExternalAbortInterrupt(BaseException):
-    """Specific class for signaling aborted tests case from outer scope (observer process)"""
+    """Specific class for signaling aborted tests case from outer scope (observer process)."""
     pass
 
 
 class InternalTimeoutInterrupt(BaseException):
-    """Specific class for signaling timeout tests case from inner scope"""
+    """Specific class for signaling timeout tests case from inner scope."""
     pass
 
 
@@ -67,31 +67,31 @@ def _ext_abort_handler(*args):
 
 
 def _int_alarm_handler(*args):
-    """Transform and propagate caught SIGALRM signal to a dedicated exception and supress further signals"""
+    """Transform and propagate caught SIGALRM signal to a dedicated exception and supress further signals."""
     supress_int_signals()
     raise InternalTimeoutInterrupt(*args)
 
 
 def set_int_signal_handlers():
-    """Register signal handlers"""
+    """Register signal handlers."""
     signal.signal(signal.SIGABRT, _ext_abort_handler)
     signal.signal(signal.SIGALRM, _int_alarm_handler)
 
 
 def supress_int_signals():
-    """Suppress signals from interrupting execution"""
+    """Suppress signals from interrupting execution."""
     signal.signal(signal.SIGABRT, signal.SIG_IGN)
     signal.signal(signal.SIGALRM, signal.SIG_IGN)
 
 
 def reset_int_signal_handlers():
-    """Reset default signal handlers"""
+    """Reset default signal handlers."""
     signal.signal(signal.SIGABRT, signal.SIG_DFL)
     signal.signal(signal.SIGALRM, signal.SIG_DFL)
 
 
 def calc_min_max_latency(tree: nx.DiGraph, cpath: list[int], delay: int, N: int = 1) -> tuple[int, int]:
-    """Calculate the min/max latency values for the given *cpath* with exhaustive search"""
+    """Calculate the min/max latency values for the given *cpath* with exhaustive search."""
     cp_len, cp_set, min_lats, max_lats = len(cpath), set(cpath), math.inf, 0
     for cut in ipowerset(range(1, cp_len)):
         blk_lats = [par_subchain_latency(tree, cpath[i], set(cpath[i:j]), cp_set, N)
@@ -102,7 +102,7 @@ def calc_min_max_latency(tree: nx.DiGraph, cpath: list[int], delay: int, N: int 
 
 
 def est_min_max_latency(tree: nx.DiGraph, cpath: list[int], delay: int, N: int = 1) -> list[int, int]:
-    """Estimate the min/max latency values for the given *cpath* by considering all cuts and singleton group cases"""
+    """Estimate the min/max latency values for the given *cpath* by considering all cuts and singleton group cases."""
     cp_set = set(cpath)
     singleton_lat = sum(par_subchain_latency(tree, v, {v}, cp_set, N) for v in cpath) + (len(cpath) - 1) * delay
     monolith_lats = par_subchain_latency(tree, cpath[0], cp_set, cp_set, N)
@@ -110,12 +110,12 @@ def est_min_max_latency(tree: nx.DiGraph, cpath: list[int], delay: int, N: int =
 
 
 def decode_partitioning(part: list[list[int]], sep: str = '|') -> str:
-    """Decode partitioning  to a compressed format of barrier nodes"""
+    """Decode partitioning  to a compressed format of barrier nodes."""
     return f"[{sep.join(map(str, (f'{p[0][0]}@{p[-1]}' if isinstance(p, tuple) else p[0] for p in part)))}]"
 
 
 def test_cleanup(tmp: str = "/tmp"):
-    """Do cleanup after alg tests"""
+    """Do cleanup after alg tests."""
     for tmp_ext in ('*.lp', '*.sol'):
         for tf in pathlib.Path(tmp).glob(tmp_ext):
             os.remove(tf)
@@ -126,7 +126,7 @@ def test_cleanup(tmp: str = "/tmp"):
 
 def run_all_algs(algs: dict[str, collections.abc.Callable], params: dict[str, int | float | nx.DiGraph],
                  timeout: int = 0, sdelay: int = 0) -> list[int | str]:
-    """Perform test case of all given algorithms with given parameters and return execution statistics"""
+    """Perform test case of all given algorithms with given parameters and return execution statistics."""
     stats = []
     for alg_name, tree_alg in algs.items():
         log.debug(f"Executing {alg_name}")
@@ -161,7 +161,7 @@ def run_all_algs(algs: dict[str, collections.abc.Callable], params: dict[str, in
 def validate(algs: dict[str, collections.abc.Callable], tree: nx.DiGraph, mem_coeff: int | float = 0.5,
              lat_coeff: int | float = 0.5, N: int = 1, timeout: int = 0, sdelay: int = 0,
              **alg_params: dict) -> list[list[str, int]]:
-    """Validate execution of given algorithms based on the given test parameters"""
+    """Validate execution of given algorithms based on the given test parameters."""
     if isinstance(mem_coeff, float):
         m_min = max(tree.nodes[v].get(MEMORY, 0) for v in tree)
         m_max = sum(tree.nodes[v].get(MEMORY, 0) for v in tree)
@@ -252,7 +252,7 @@ def execute_tests(algs: dict[str, collections.abc.Callable], test_file: str, mem
 
 
 def compare_latency_limit_estimation(test_file: str, lat_coeff: float = 0.5):
-    """Compare calculated and estimated values for minimal and maximal latency limits"""
+    """Compare calculated and estimated values for minimal and maximal latency limits."""
     test_file = pathlib.Path(test_file).resolve()
     print("Load trees from file:", test_file)
     diffs = []

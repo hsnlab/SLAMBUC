@@ -15,15 +15,18 @@ import math
 
 import networkx as nx
 
-from slambuc.alg import INFEASIBLE
+from slambuc.alg import INFEASIBLE, T_BARRS_GEN, T_RESULTS
 from slambuc.alg.util import (isubtrees, ipowerset, ibacktrack_chain, ser_subtree_memory, ser_subtree_cost,
                               ser_subchain_latency)
 
 
-def isubtrees_exhaustive(tree: nx.DiGraph, root: int, M: int) -> list[int]:
-    """Calculate all combination of edge cuts and returns only if it is feasible wrt. the memory limit M.
+def isubtrees_exhaustive(tree: nx.DiGraph, root: int, M: int) -> T_BARRS_GEN:
+    """
+    Calculate all combinations of edge cuts and returns only if it is feasible wrt. the memory limit *M*.
 
-    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rate
+    Block metrics are calculated based on serialized execution platform model.
+
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:    root node of the graph
     :param M:       upper memory bound in MB
     :return:        generator of chain partitions
@@ -37,11 +40,13 @@ def isubtrees_exhaustive(tree: nx.DiGraph, root: int, M: int) -> list[int]:
 
 
 def greedy_ser_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
-                                 cp_end: int = None, delay: int = 1) -> list[tuple[list, int, int]]:
+                                 cp_end: int = None, delay: int = 1) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning of a service graph(tree) by iterating over all possible cuttings.
 
-    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rate
+    Block metrics are calculated based on serialized execution platform model.
+
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:    root node of the graph
     :param M:       upper memory bound of the partition blocks (in MB)
     :param L:       latency limit defined on the critical path (in ms)

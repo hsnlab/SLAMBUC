@@ -45,8 +45,10 @@ class Flavor(typing.NamedTuple):
     cfactor: float = 1.0  # Relative cost factor
 
     def __repr__(self):
-        return repr(tuple(self))
+        # return repr(tuple(self))
+        return self.name
 
     @property
-    def name(self):
-        return f"F[{self.mem},{self.ncore}]"
+    def name(self) -> str:
+        """String representation of the given flavor"""
+        return f"F[{self.mem}|{self.ncore}|{self.cfactor}]"

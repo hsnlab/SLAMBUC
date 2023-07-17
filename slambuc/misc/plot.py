@@ -26,7 +26,17 @@ PART_COLORS = ('red', 'orange', "brown", 'green', "purple", "blue", "black", "ma
 
 def draw_tree(tree: nx.DiGraph, partition: list = None, cuts: list = None, draw_weights=False, draw_blocks=False,
               figsize=None, ax=None, **kwargs):
-    """Draw tree and given partitioning in a top-down topological structure"""
+    """
+    Draw tree with given partitioning in a top-down topological structure.
+
+    :param tree:            service tree
+    :param partition:       calculated partitioning (optional)
+    :param cuts:            calculated cuts (optional)
+    :param draw_weights:    draw node/edge weights instead of IDs
+    :param draw_blocks:     draw surrounding blocks
+    :param figsize:         figure dimensions (optional)
+    :param ax:              matplotlib axis (optional)
+    """
     if figsize is None:
         d = nx.dag_longest_path_length(tree)
         figsize = (d, d)
@@ -107,7 +117,13 @@ def draw_tree(tree: nx.DiGraph, partition: list = None, cuts: list = None, draw_
 
 
 def draw_state_dag(dag: nx.DiGraph, chains: list[list[int]], draw_weights: bool = False):
-    """Draw state-space DAG in a vertically-ordered multipartite layout"""
+    """
+    Draw state-space DAG in a vertically-ordered multipartite layout.
+
+    :param dag:             input DAG
+    :param chains:          chain decomposition of the given tree
+    :param draw_weights:    draw node/edge weights instead of IDs
+    """
     h = max(len(c) for c in chains) * 1.5
     plt.figure(figsize=(2 * h, h), dpi=300)
     layers = [START, *itertools.chain.from_iterable(chains), END]

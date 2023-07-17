@@ -18,13 +18,13 @@ import typing
 
 import networkx as nx
 
-from slambuc.alg import INFEASIBLE
+from slambuc.alg import INFEASIBLE, T_RESULTS, T_PART
 from slambuc.alg.service import *
 from slambuc.alg.util import ipostorder_dfs, ibacktrack_chain, verify_limits
 
 
 class TBlock(typing.NamedTuple):
-    """Store subtree attributes for a given subcase"""
+    """Store subtree attributes for a given seq subcase."""
     w: int = None  # Tailing node of the first block of the subtree partitioning
     sum_cost: int = math.inf  # Sum cost of the subtree partitioning
     cumsum: int = 0  # Sum (cumulative) runtime of the first block (with tail node w) in the partitioning
@@ -38,12 +38,20 @@ class TBlock(typing.NamedTuple):
 
 def seq_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N: int = math.inf,
                           L: int = math.inf, cp_end: int = None, delay: int = 1, unit: int = 100,
-                          full: bool = True) -> tuple[list[int], int, int]:
+                          full: bool = True) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning of a service graph(tree) with respect to an upper bound **M** on the total
-    memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes.
+    memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes leveraging
+    a bottom-up tree traversal approach.
 
-    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rate
+    Cost calculation relies on the rounding *unit* and number of vCPU cores *N*, whereas platform invocation *delay*
+    is used for latency calculations.
+
+    Details in: J. Czentye, I. Pelle and B. Sonkoly, "Cost-optimal Operation of Latency Constrained Serverless
+    Applications: From Theory to Practice," NOMS 2023-2023 IEEE/IFIP Network Operations and Management Symposium,
+    Miami, FL, USA, 2023, pp. 1-10, doi: 10.1109/NOMS56928.2023.10154412.
+
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:    root node of the graph
     :param M:       upper memory bound of the partition blocks (in MB)
     :param N:       upper CPU core bound of the partition blocks
@@ -70,14 +78,14 @@ def seq_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N:
 
     @functools.lru_cache(maxsize=(len(tree) - 1))
     def block_cost(pred: int, barr: int, cumsum: int, expand: bool = True) -> tuple[int, int]:
-        """Calculate sum cost of subtree: T_barr and also return the cumulative sum runtime of the block[barr, w]"""
+        """Calculate sum cost of subtree: T_barr and also return the cumulative sum runtime of the block[barr, w]."""
         if expand:
             cumsum += tree.nodes[barr][RUNTIME]
         return tree[pred][barr][RATE] * (math.ceil(cumsum / unit) * unit), cumsum
 
     @functools.lru_cache(maxsize=(len(tree) - 1))
     def block_cpu(pred: int, node: int, max_rate: int, cpu: int) -> tuple[int, int]:
-        """Calculate the nex CPU core need of the block[barr, w] and also return the max internal rate"""
+        """Calculate the nex CPU core need of the block[barr, w] and also return the max internal rate."""
         blk_max_rate = max(max_rate, tree[pred][node][RATE])
         return max(cpu, math.ceil(blk_max_rate / tree[pred][node][RATE])), blk_max_rate
 
@@ -94,8 +102,10 @@ def seq_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N:
                 DP[node][c_n].append(blk)
 
     def qmerge(pred: int, node: int, c_n: int, barr: int, c_b: int, m_cost: int):
-        """Copy DP entries from queue of node *barr* with *c_b* cuts into queue of node *node* with *c_n* cuts
-        while leaving the best subcase in the original queue."""
+        """
+        Copy DP entries from queue of node *barr* with *c_b* cuts into queue of node *node* with *c_n* cuts
+        while leaving the best subcase in the original queue.
+        """
         for blk in DP[barr][c_b]:
             # Ignore infeasible subcases
             if blk.sum_cost < math.inf:
@@ -165,9 +175,19 @@ def seq_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N:
         return [], math.inf, c_opt
 
 
-def extract_blocks(tree: nx.DiGraph, DP: list[dict], root: int, cp_end: int, c_opt: int,
-                   full: bool = True) -> list[int]:
-    """Extract subtree roots of partitioning from the tailing nodes stored in the *DP* matrix"""
+def extract_blocks(tree: nx.DiGraph, DP: list[collections.defaultdict[collections.deque[TBlock]]],
+                   root: int, cp_end: int, c_opt: int, full: bool = True) -> T_PART:
+    """
+    Extract subtree roots of partitioning from the tailing nodes stored in the *DP* matrix.
+
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
+    :param DP:      dynamic programming structure storing intermediate *TBlock* subcases
+    :param root:    root node of the graph
+    :param cp_end:  tail node of the critical path
+    :param c_opt:   calculated optimal cut size
+    :param full:    calculate full blocks
+    :return:        partitioning blocks
+    """
     n = set(filter(lambda v: v is not PLATFORM, tree))
     cpath = set(ibacktrack_chain(tree, root, cp_end))
     p = []

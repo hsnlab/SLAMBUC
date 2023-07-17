@@ -13,14 +13,21 @@
 # limitations under the License.
 import math
 
-from slambuc.alg import INFEASIBLE
+from slambuc.alg import INFEASIBLE, T_RESULTS, T_PART_GEN
 from slambuc.alg.util import ipowerset, split_chain, block_memory, block_cost, block_latency, block_cpu
 
 
-def ichain_blocks(memory: list[int], M: int, rate: list[int], N: int) -> list[list[list[int]]]:
+def ichain_blocks(memory: list[int], rate: list[int], N: int, M: int) -> T_PART_GEN:
     """
-    Calculates all combination of chain cuts with respect to the *memory* values and constraint *M*.
-    The calculation is improved compared to brute force to only start calculating cuts from c_min.
+    Calculates all combination of chain cuts with respect to *memory* and *rate* values and the constraint **M**.
+
+    The calculation is improved compared to brute force to only start calculating cuts from minimal cut size *c_min*.
+
+    :param memory:  list of node memory values
+    :param rate:    list of invocation rate values
+    :param N:       number of vCPU cores
+    :param M:       upper memory limit
+    :return:        Generator over M-feasible cuts.
     """
     n = len(memory)
     for cut in ipowerset(range(1, n), start=math.ceil(sum(memory) / M) - 1):
@@ -32,11 +39,14 @@ def ichain_blocks(memory: list[int], M: int, rate: list[int], N: int) -> list[li
             yield valid
 
 
-def greedy_chain_partitioning(runtime: list, memory: list, rate: list, M: int = math.inf, N: int = math.inf,
-                              L: int = math.inf, start: int = 0, end: int = None, delay: int = 1,
-                              unit: int = 100) -> list[tuple[list[int], int, int]]:
+def greedy_chain_partitioning(runtime: list[int], memory: list[int], rate: list[int], M: int = math.inf,
+                              N: int = math.inf, L: int = math.inf, start: int = 0, end: int = None, 
+                              delay: int = 1, unit: int = 100) -> list[T_RESULTS]:
     """
-    Calculates the minimal-cost partitioning of a given chain by exhaustive search
+    Calculates all minimal-cost partitioning outcomes of a given chain by applying exhaustive search.
+
+    Parameters are the same as the partitioning algorithms in ``slambuc.alg.chain.dp.mtx``
+    and ``slambuc.alg.chain.dp.min``.
 
     :param runtime: running times in ms
     :param memory:  memory requirements in MB
@@ -51,7 +61,7 @@ def greedy_chain_partitioning(runtime: list, memory: list, rate: list, M: int = 
     :return:        list if min-cost partitions, related optimal cost and latency
     """
     best_res, best_cost = [INFEASIBLE], math.inf
-    for partition in ichain_blocks(memory, M, rate, N):
+    for partition in ichain_blocks(memory, rate, N, M):
         if (sum_lat := sum(block_latency(runtime, blk[0], blk[-1], delay, start, end) for blk in partition)) > L:
             continue
         elif (sum_cost := sum(block_cost(runtime, rate, blk[0], blk[-1], unit) for blk in partition)) == best_cost:

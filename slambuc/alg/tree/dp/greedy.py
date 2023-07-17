@@ -13,20 +13,23 @@
 # limitations under the License.
 import itertools
 import math
+from collections.abc import Generator
 
 import networkx as nx
 
-from slambuc.alg import INFEASIBLE
+from slambuc.alg import INFEASIBLE, T_RESULTS
 from slambuc.alg.service import *
 from slambuc.alg.util import (isubtrees, ibacktrack_chain, ipowerset, path_blocks, block_cost, block_latency,
                               block_memory, block_cpu)
 
 
-def ichains_exhaustive(tree: nx.DiGraph, root: int, M: int, N: int) -> list[int]:
-    """Calculate all combination of edge cuts and returns only if it is feasible wrt. the chain connectivity, M, and N.
-    The calculation is improved compared to brute force to only start calculating cuts from c_min.
+def ichains_exhaustive(tree: nx.DiGraph, root: int, M: int, N: int) -> Generator[list[int]]:
+    """
+    Calculate all combination of edge cuts and returns only if it is feasible wrt. the chain connectivity, M, and N.
 
-    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rate
+    Calculation is improved compared to brute force to only start calculating cuts from c_min.
+
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:    root node of the graph
     :param M:       upper memory bound in MB
     :param N:       upper CPU core bound
@@ -47,11 +50,13 @@ def ichains_exhaustive(tree: nx.DiGraph, root: int, M: int, N: int) -> list[int]
             yield barr
 
 
-def ifeasible_chains(tree: nx.DiGraph, root: int, M: int, N: int) -> list[int]:
-    """Calculate only feasible chain partitions and returns the one which meets the limits M and N.
-    The calculation is improved compared to brute force to only calculate chain partitions based on the branching nodes.
+def ifeasible_chains(tree: nx.DiGraph, root: int, M: int, N: int) -> Generator[list[int]]:
+    """
+    Calculate only feasible chain partitions and returns the one which meets the limits M and N.
 
-    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rate
+    Calculation is improved compared to brute force to only calculate chain partitions based on the branching nodes.
+
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:    root node of the graph
     :param M:       upper memory bound in MB
     :param N:       upper CPU core bound
@@ -75,11 +80,11 @@ def ifeasible_chains(tree: nx.DiGraph, root: int, M: int, N: int) -> list[int]:
 
 def greedy_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N: int = math.inf,
                              L: int = math.inf, cp_end: int = None, delay: int = 1, unit: int = 100,
-                             ichains=ifeasible_chains, only_cuts: bool = False) -> list[tuple[list, int, int]]:
+                             ichains=ifeasible_chains, only_cuts: bool = False) -> list[T_RESULTS]:
     """
     Calculates minimal-cost partitioning of a service graph(tree) by iterating over all possible cuttings.
 
-    :param tree:        service graph annotated with node runtime(ms), memory(MB) and edge rate
+    :param tree:        service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:        root node of the graph
     :param M:           upper memory bound of the partition blocks (in MB)
     :param N:           upper CPU core bound of the partition blocks

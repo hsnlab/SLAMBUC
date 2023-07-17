@@ -13,18 +13,27 @@
 # limitations under the License.
 import collections
 import itertools
+from collections.abc import Generator
 
 import networkx as nx
 import pulp as lp
 
-from slambuc.alg import LP_LAT, INFEASIBLE
+from slambuc.alg import LP_LAT, INFEASIBLE, T_FRESULTS, T_FPART
 from slambuc.alg.service.common import *
 from slambuc.alg.util import (ipowerset, ipostorder_dfs, ibacktrack_chain, gen_subtree_memory, gen_subtree_cost,
                               gen_subchain_latency, recreate_subtree_blocks, x_eval)
 
 
-def ifeasible_gen_subtrees(tree: nx.DiGraph, root: int, M: int, N: int = 1) -> tuple[int, list[list[int]]]:
-    """Generate feasible(connected) subtrees and roots in bottom-up way, which meet the memory constraint *M*"""
+def ifeasible_gen_subtrees(tree: nx.DiGraph, root: int, M: int, N: int = 1) -> Generator[tuple[int, set[int]]]:
+    """
+    Generate M-feasible(connected) subtrees and roots in bottom-up way, which meet the memory constraint *M*.
+
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
+    :param root:    root node of the graph
+    :param M:       upper memory bound of the partition blocks (in MB)
+    :param N:       upper CPU core bound of the partition blocks
+    :return:        generator of subtree root and regarding subtree nodes
+    """
     subtrees = collections.defaultdict(list)
     for _, n in ipostorder_dfs(tree, root):
         for children in ipowerset(tuple(tree.successors(n))):
@@ -42,7 +51,8 @@ def build_gen_tree_cfg_model(tree: nx.DiGraph, root: int = 1, flavors: list[Flav
                              L: int = math.inf, cp_end: int = None,
                              delay: int = 1) -> tuple[lp.LpProblem, list[lp.LpVariable]]:
     """
-    Generate the ILP model.
+    Generate the configuration ILP model with the given *flavors*.
+
     :return: tuple of the created model and list of decision variables
     """
     # Model
@@ -78,13 +88,12 @@ def build_gen_tree_cfg_model(tree: nx.DiGraph, root: int = 1, flavors: list[Flav
 
 def tree_gen_hybrid_partitioning(tree: nx.DiGraph, root: int = 1, flavors: list[Flavor] = (Flavor(),),
                                  exec_calc: collections.abc.Callable[[int, int, int], int] = lambda i, t, n: t,
-                                 L: int = math.inf, cp_end: int = None, delay: int = 1,
-                                 solver: lp.LpSolver = None, timeout: int = None,
-                                 **lpargs) -> tuple[list[tuple[list[list[int]], Flavor]], int, int]:
+                                 L: int = math.inf, cp_end: int = None, delay: int = 1, solver: lp.LpSolver = None,
+                                 timeout: int = None, **lpargs) -> T_FRESULTS:
     """
-    Calculate minimal-cost partitioning of a tree based on configuration LP formulation.
+    Calculate minimal-cost partitioning of a tree based on configuration LP formulation and given *flavors*.
 
-    :param tree:        service graph annotated with node runtime(ms), memory(MB) and edge rate
+    :param tree:        service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:        root node of the graph
     :param flavors:     list of flavors resources given by the tuple of available *(memory, relative CPU cores)*
     :param exec_calc:   function that calculates the effective runtimes from reference runtime and available CPU cores
@@ -105,9 +114,14 @@ def tree_gen_hybrid_partitioning(tree: nx.DiGraph, root: int = 1, flavors: list[
         return INFEASIBLE
 
 
-def recreate_st_from_gen_xdict(tree: nx.DiGraph,
-                               X: dict[Flavor, dict[int, list[lp.LpVariable]]]) -> list[tuple[list[int], Flavor]]:
-    """Extract barrier nodes from variable names (x_{b}_{w}) and recreate partitioning blocks"""
+def recreate_st_from_gen_xdict(tree: nx.DiGraph, X: dict[Flavor, dict[int, list[lp.LpVariable]]]) -> T_FPART:
+    """
+    Extract barrier nodes from variable names (x_{b}_{w}) and recreate partitioning blocks.
+
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
+    :param X:       internal structure of decision variables
+    :return:        partition blocks
+    """
     dbarr = {int(x.name.rsplit('_', 2)[1]): f
              for f in X for v in X[f] for x in filter(lambda _x: _x.varValue == 1, X[f][v])}
     return [(p, dbarr[p[0]]) for p in recreate_subtree_blocks(tree=tree, barr=dbarr)]
@@ -121,7 +135,8 @@ def build_gen_tree_mtx_model(tree: nx.DiGraph, root: int = 1, flavors: list[Flav
                              L: int = math.inf, cp_end: int = None,
                              delay: int = 1) -> tuple[lp.LpProblem, dict[int, dict[int, dict[int, lp.LpVariable]]]]:
     """
-    Generate the ILP model.
+    Generate the matrix ILP model with the given *flavors*.
+
     :return: tuple of the created model and list of decision variables
     """
     # Model
@@ -192,11 +207,11 @@ def build_gen_tree_mtx_model(tree: nx.DiGraph, root: int = 1, flavors: list[Flav
 def tree_gen_mtx_partitioning(tree: nx.DiGraph, root: int = 1, flavors: list[Flavor] = (Flavor(),),
                               exec_calc: collections.abc.Callable[[int, int, int], int] = lambda i, t, n: t,
                               L: int = math.inf, cp_end: int = None, delay: int = 1, solver: lp.LpSolver = None,
-                              timeout: int = None, **lpargs) -> tuple[list[tuple[list[list[int]], Flavor]], int, int]:
+                              timeout: int = None, **lpargs) -> T_FRESULTS:
     """
-    Calculate minimal-cost partitioning of a tree based on configuration LP formulation.
+    Calculate minimal-cost partitioning of a tree based on matrix LP formulation and given *flavors*.
 
-    :param tree:        service graph annotated with node runtime(ms), memory(MB) and edge rate
+    :param tree:        service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:        root node of the graph
     :param flavors:     list of flavors resources given by the tuple of available *(memory, relative CPU cores)*
     :param exec_calc:   function that calculates the effective runtimes from reference runtime and available CPU cores
@@ -217,8 +232,13 @@ def tree_gen_mtx_partitioning(tree: nx.DiGraph, root: int = 1, flavors: list[Fla
         return INFEASIBLE
 
 
-def extract_st_from_gen_xmatrix(X: dict[Flavor, dict[int, dict[int, lp.LpVariable]]]) -> list[tuple[list, Flavor]]:
-    """Extract barrier nodes from variable matrix(dict-of-dict) and recreate partitioning blocks"""
+def extract_st_from_gen_xmatrix(X: dict[Flavor, dict[int, dict[int, lp.LpVariable]]]) -> T_FPART:
+    """
+    Extract barrier nodes from variable matrix(dict-of-dict) and recreate partitioning blocks.
+
+    :param X:       internal structure of decision variables
+    :return:        partition blocks
+    """
     return sorted(([i for i in sorted(X[f]) if j in X[f][i] and x_eval(X[f][i][j])], f)
                   for f in X for j in sorted(X[f]) if x_eval(X[f][j][j]))
 
@@ -230,11 +250,11 @@ def all_gen_tree_mtx_partitioning(tree: nx.DiGraph, root: int = 1, flavors: list
                                   exec_calc: collections.abc.Callable[[int, int, int], int] = lambda i, t, n: t,
                                   L: int = math.inf, cp_end: int = None, delay: int = 1,
                                   solver: lp.LpSolver = None, timeout: int = None,
-                                  **lpargs) -> tuple[list[tuple[list[list[int]], Flavor]], int, int]:
+                                  **lpargs) -> list[T_FPART]:
     """
-    Calculate all minimal-cost partitioning variations of a tree based on matrix ILP formulation.
+    Calculate all minimal-cost partitioning variations of a tree based on matrix ILP formulation and *flavors*.
 
-    :param tree:        service graph annotated with node runtime(ms), memory(MB) and edge rate
+    :param tree:        service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:        root node of the graph
     :param flavors:     list of flavors resources given by the tuple of available *(memory, relative CPU cores)*
     :param exec_calc:   function that calculates the effective runtimes from reference runtime and available CPU cores

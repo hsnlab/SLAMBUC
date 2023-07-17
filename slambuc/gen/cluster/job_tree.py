@@ -14,6 +14,7 @@
 import itertools
 import pathlib
 import random
+from collections.abc import Generator
 
 import networkx as nx
 import numpy as np
@@ -43,7 +44,15 @@ DEF_JOB_TREE_PREFIX = "job_tree"
 
 def convert_tasks_to_dag(job_name: str, tasks: pd.DataFrame, mem_max: int = DEF_MEM_MAX,
                          data_mean: int = None) -> tuple[nx.DiGraph, int]:
-    """Convert the task lines of given job *job_name* into a DAG and return it with the generated front-end root node"""
+    """
+    Convert the task lines of given job *job_name* into a DAG and return it with the generated front-end root node.
+
+    :param job_name:    job name in the dataset
+    :param tasks:       tasks imported from the dataset
+    :param mem_max:     maximum memory to convert memory usage into MB
+    :param data_mean:   dataset overhead mean value for generating artificial values
+    :return:            generated DAG and dispatcher node
+    """
     dag = nx.DiGraph(**{NAME: job_name})
     # Build task DAG
     for _, task in tasks.iterrows():
@@ -71,8 +80,14 @@ def convert_tasks_to_dag(job_name: str, tasks: pd.DataFrame, mem_max: int = DEF_
     return dag, DISP_NODE
 
 
-def igenerate_job_tree(job_df: pd.DataFrame, min_size: int = 0) -> nx.DiGraph:
-    """Generate job service trees one-by-one from *min_size*"""
+def igenerate_job_tree(job_df: pd.DataFrame, min_size: int = 0) -> Generator[nx.DiGraph]:
+    """
+    Generate job service trees one-by-one from *min_size*.
+
+    :param job_df:      imported job dataset
+    :param min_size:    minimum tree size
+    :return:            generator of job DAGs
+    """
     jobs = job_df.groupby("job")["task"].count()
     viable_jobs = jobs[min_size <= jobs]
     for job in viable_jobs.index:
@@ -81,8 +96,15 @@ def igenerate_job_tree(job_df: pd.DataFrame, min_size: int = 0) -> nx.DiGraph:
             yield faasify_dag_by_duplication(dag, root)
 
 
-def igenerate_syn_tree(n: int | tuple[int, int], iteration: int = 1, job_lb: int = 10) -> nx.DiGraph:
-    """Generate job service tree based on empirical distributions"""
+def igenerate_syn_tree(n: int | tuple[int, int], iteration: int = 1, job_lb: int = 10) -> Generator[nx.DiGraph]:
+    """
+    Generate random job service trees based on empirical distributions.
+
+    :param n:           tree size interval
+    :param iteration:   number of trees
+    :param job_lb:      minimum tree size
+    :return:            generator of tree DAGs
+    """
     tree_cntr = i = 0
     while tree_cntr < iteration:
         size = random.randint(job_lb, n[1]) if isinstance(n, tuple) else n
@@ -103,7 +125,16 @@ def igenerate_syn_tree(n: int | tuple[int, int], iteration: int = 1, job_lb: int
 
 def generate_all_job_trees(data_dir: str, task_file: str = DEF_TASK_CSV, start: int = 10, end: int = None,
                            step: int = 10, tree_name: str = DEF_JOB_TREE_PREFIX):
-    """Generate all job service trees with size interval between *start* and *end* and save to separate files"""
+    """
+    Generate all job service trees with size interval between *start* and *end* and save them into separate files.
+
+    :param data_dir:    data directory
+    :param task_file:   task file name
+    :param start:       lower bound of size intervals
+    :param end:         upper bound of size intervals
+    :param step:        step size of intervals
+    :param tree_name:   prefix name of tree files
+    """
     print(f"Load data from {task_file}...")
     job_df = pd.read_csv(task_file, usecols=DEF_TASK_CSV_COLS, names=DEF_TASK_CSV_HEADER)
     trees = [tree for tree in igenerate_job_tree(job_df, min_size=start)]
@@ -122,7 +153,17 @@ def generate_all_job_trees(data_dir: str, task_file: str = DEF_TASK_CSV, start: 
 
 def generate_syn_job_trees(data_dir: str, iteration: int = 100, start: int = 10, end: int = 100, step: int = 10,
                            tree_name: str = DEF_JOB_TREE_PREFIX):
-    """Generate synthetic job service trees with size interval between *start* and *end* and save to separate files"""
+    """
+    Generate synthetic job service trees with size interval between *start* and *end* and save to separate files
+    using extracted empirical distributions.
+
+    :param data_dir:    data directory
+    :param iteration:   number of generated trees
+    :param start:       lower bound of size intervals
+    :param end:         upper bound of size intervals
+    :param step:        step size of intervals
+    :param tree_name:   prefix name of tree files
+    """
     for n in range(start, end + 1, step):
         print(f"Generating synthetic task service trees for {n=} by exhaustive iteration...")
         file_name = pathlib.Path(data_dir, f"syn_{tree_name}_n{n}.npy").resolve()
@@ -134,7 +175,17 @@ def generate_syn_job_trees(data_dir: str, iteration: int = 100, start: int = 10,
 
 def generate_mixed_job_trees(data_dir: str, task_file: str = DEF_TASK_CSV, iteration: int = 100, start: int = 10,
                              end: int = 100, step: int = 10, tree_name: str = DEF_JOB_TREE_PREFIX):
-    """Generate job trees from sample data and extend it with synthetic trees"""
+    """
+    Generate job trees from sample data and extend it with synthetic trees if necessary.
+
+    :param data_dir:    data directory
+    :param task_file:   task file name
+    :param iteration:   number of generated trees
+    :param start:       minimum of size intervals
+    :param end:         maximum of size intervals
+    :param step:        step size of intervals
+    :param tree_name:   prefix name of tree files
+    """
     print(f"Load data from {task_file}...")
     job_df = pd.read_csv(task_file, usecols=DEF_TASK_CSV_COLS, names=DEF_TASK_CSV_HEADER)
     trees = [tree for tree in igenerate_job_tree(job_df, min_size=start)]

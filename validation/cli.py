@@ -56,6 +56,7 @@ def main():
 @click.option("-i", "--instance", type=click.IntRange(1, MAX_INST), default=None, help="Tree instance num.")
 @click.option("-t", "--timeout", type=click.IntRange(min=0), default=DEF_TIMEOUT, help="Timeout")
 def perf(alg: str, n: int, cpu: int, data_dir: str, instance: int, timeout: int):
+    """Perform performance tests."""
     match ATYPE(alg):
         case ATYPE.SER:
             perform_tree_size_ser_tests(n=n, data_dir=data_dir, tree_num=instance, timeout=timeout)
@@ -85,6 +86,7 @@ class TestValuesParamType(click.ParamType):
 @click.option("-v", "--value", type=TestValuesParamType(), default=None, help="Comma-separated attr values")
 @click.option("-t", "--timeout", type=click.IntRange(min=0), default=DEF_TIMEOUT, help="Timeout")
 def sens(attr: str, n: int, data_dir: str, instance: int, timeout: int, value: str):
+    """Perform sensitivity tests."""
     match STYPE(attr):
         case STYPE.MEM:
             perform_mem_sens_tests(n=n, data_dir=data_dir, tree_num=instance, value=value, timeout=timeout)
@@ -111,6 +113,7 @@ def sens(attr: str, n: int, data_dir: str, instance: int, timeout: int, value: s
 @click.option("-i", "--instance", type=click.IntRange(1, MAX_INST), default=None, help="Tree instance num.")
 @click.option("-t", "--timeout", type=click.IntRange(min=0), default=DEF_TIMEOUT, help="Timeout")
 def cost(alg: str, tree: str, n: int, cpu: int, data_dir: str, instance: int, timeout: int):
+    """Perform cost tests."""
     match ATYPE(alg):
         case ATYPE.SER:
             perform_cost_ser_tests(tree_type=tree, size_pattern=n, data_dir=data_dir, tree_num=instance,

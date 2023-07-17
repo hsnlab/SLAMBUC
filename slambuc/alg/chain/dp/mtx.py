@@ -18,11 +18,11 @@ import typing
 
 import numpy as np
 
-from slambuc.alg import MEM, CPU, COST, LAT, BARR
+from slambuc.alg import INFEASIBLE, T_BARRS, MEM, CPU, COST, LAT, BARR
 
 
 class State(typing.NamedTuple):
-    """Store block attributes for a given subcase"""
+    """Store block attributes for a given DP subcase."""
     barr: int = None  # Barrier/heading node of the last block in the given subcase partitioning
     cost: int = math.inf  # Sum cost of the partitioning
     lat: int = math.inf  # Sum latency of the partitioning regarding the limited subchain[start, end]
@@ -33,11 +33,18 @@ class State(typing.NamedTuple):
 
 def chain_partitioning(runtime: list, memory: list, rate: list, M: int = math.inf, N: int = math.inf,
                        L: int = math.inf, start: int = 0, end: int = None, delay: int = 1,
-                       unit: int = 100, ret_dp: bool = False) -> tuple[list, int, int]:
+                       unit: int = 100, ret_dp: bool = False) -> tuple[T_BARRS | list[list[State]], int, int]:
     """
     Calculates minimal-cost partitioning of a chain based on the node properties of *running time*, *memory usage* and
     *invocation rate* with respect to an upper bound **M** on the total memory of blocks and a latency constraint **L**
     defined on the subchain between *start* and *end* nodes.
+
+    Cost calculation relies on the rounding *unit* and number of vCPU cores *N*, whereas platform invocation *delay*
+    is used for latency calculations.
+
+    Details in: J. Czentye, I. Pelle and B. Sonkoly, "Cost-optimal Operation of Latency Constrained Serverless
+    Applications: From Theory to Practice," NOMS 2023-2023 IEEE/IFIP Network Operations and Management Symposium,
+    Miami, FL, USA, 2023, pp. 1-10, doi: 10.1109/NOMS56928.2023.10154412.
 
     :param runtime: running times in ms
     :param memory:  memory requirements in MB
@@ -49,7 +56,7 @@ def chain_partitioning(runtime: list, memory: list, rate: list, M: int = math.in
     :param start:   head node of the latency-limited subchain
     :param end:     tail node of the latency-limited subchain
     :param unit:    rounding unit for the cost calculation (default: 100 ms)
-    :param ret_dp:  return the calculated DP matrix instead of the barrier nodes
+    :param ret_dp:  return the calculated DP matrix instead of barrier nodes
     :return:        tuple of barrier nodes, sum cost of the partitioning, and the calculated latency on the subchain
     """
     n = len(runtime)
@@ -82,14 +89,14 @@ def chain_partitioning(runtime: list, memory: list, rate: list, M: int = math.in
         return delay + blk_lat if start < _b else blk_lat
 
     # Check lower bound for latency limit
-    if L < (lat_min := sum(runtime[start: end + 1])):
-        return None, None, lat_min
+    if L < sum(runtime[start: end + 1]):
+        return INFEASIBLE
     # Check if memory constraint allows feasible solutions for the given latency constraint
     k_min = max(math.ceil(sum(memory[start: end + 1]) / M),
                 sum(1 for i, j in itertools.pairwise(rate) if math.ceil(j / i) > N))
     k_max = math.floor(min((L - sum(runtime[start: end + 1])) / delay + 1, n))
     if k_max < k_min:
-        return None, None, None
+        return INFEASIBLE
     # Check single node partitioning
     if len(runtime) == 1:
         return [0], block_cost(0, 0), block_latency(0, 0)
@@ -120,11 +127,17 @@ def chain_partitioning(runtime: list, memory: list, rate: list, M: int = math.in
     if opt_cost < math.inf:
         return DP if ret_dp else extract_barr(DP, k_opt), opt_cost, opt_lat
     else:
-        return None, math.inf, None
+        return INFEASIBLE
 
 
-def extract_barr(DP: list[list[State]], k: int) -> list[int]:
-    """Extract barrier nodes form DP matrix by iteratively backtracking the minimal cost subcases from *k*"""
+def extract_barr(DP: list[list[State]], k: int) -> T_BARRS:
+    """
+    Extract barrier nodes form DP matrix by iteratively backtracking the minimal cost subcases started from *k*.
+
+    :param DP:  DP matrix containing subcase *States*
+    :param k:   number of optimal cuts
+    :return:    list of barrier nodes
+    """
     barr = []
     w = len(DP) - 1
     for k in reversed(range(0, k + 1)):
@@ -141,11 +154,18 @@ def extract_barr(DP: list[list[State]], k: int) -> list[int]:
 
 def vec_chain_partitioning(runtime: list, memory: list, rate: list, M: int = np.inf, N: int = np.inf, L: int = np.inf,
                            start: int = 0, end: int = None, delay: int = 1, unit: int = 100,
-                           ret_dp: bool = False) -> tuple[list, int, int]:
+                           ret_dp: bool = False) -> tuple[T_BARRS | np.ndarray, int, int]:
     """
     Calculates minimal-cost partitioning of a chain based on the node properties of *runtime*, *memory* and *rate* with
     respect to an upper bound **M** on the total memory of blocks and a latency constraint **L** defined on the subchain
     between *start* and *end* nodes leveraging vectorized operations.
+
+    Cost calculation relies on the rounding *unit* and number of vCPU cores *N*, whereas platform invocation *delay*
+    is used for latency calculations.
+
+    Details in: J. Czentye, I. Pelle and B. Sonkoly, "Cost-optimal Operation of Latency Constrained Serverless
+    Applications: From Theory to Practice," NOMS 2023-2023 IEEE/IFIP Network Operations and Management Symposium,
+    Miami, FL, USA, 2023, pp. 1-10, doi: 10.1109/NOMS56928.2023.10154412.
 
     :param runtime: running times in ms
     :param memory:  memory requirements in MB
@@ -200,14 +220,14 @@ def vec_chain_partitioning(runtime: list, memory: list, rate: list, M: int = np.
         return delay + cumsum[LAT] if start < _b else cumsum[LAT]
 
     # Check lower bound for latency limit
-    if L < (lat_min := sum(runtime[start: end + 1])):
-        return None, None, lat_min
+    if L < sum(runtime[start: end + 1]):
+        return INFEASIBLE
     # Check if memory constraint allows feasible solutions for the given latency constraint
     k_min = max(math.ceil(sum(memory[start: end + 1]) / M),
                 sum(1 for i, j in itertools.pairwise(rate) if math.ceil(j / i) > N))
     k_max = math.floor(min((L - sum(runtime[start: end + 1])) / delay + 1, n))
     if k_max < k_min:
-        return None, None, None
+        return INFEASIBLE
     # Check single node partitioning
     if len(runtime) == 1:
         return [0], block_cost(0), block_latency(0, 0)
@@ -239,11 +259,17 @@ def vec_chain_partitioning(runtime: list, memory: list, rate: list, M: int = np.
     if opt_cost < np.inf:
         return DP if ret_dp else extract_vec_barr(DP, k_opt), opt_cost, opt_lat
     else:
-        return None, np.inf, None
+        return INFEASIBLE
 
 
-def extract_vec_barr(DP: np.array, k: int) -> list[int]:
-    """Extract barrier nodes form DP matrix by iteratively backtracking the minimal cost subcases from *k*"""
+def extract_vec_barr(DP: np.ndarray, k: int) -> T_BARRS:
+    """
+    Extract barrier nodes from vectorized DP matrix by iteratively backtracking the minimal cost subcases from *k*.
+
+    :param DP:  DP matrix containing subcase *States*
+    :param k:   number of optimal cuts
+    :return:    list of barrier nodes
+    """
     barr = []
     B = DP[..., BARR]
     w = len(B) - 1

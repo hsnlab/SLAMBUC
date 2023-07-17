@@ -16,14 +16,16 @@ import math
 
 import pulp as lp
 
-from slambuc.alg import LP_LAT, INFEASIBLE
+from slambuc.alg import LP_LAT, INFEASIBLE, T_IBLOCK_GEN, T_RESULTS, T_PART
 from slambuc.alg.util import (ser_block_sublatency, split_chain, ser_block_subcost, ser_block_submemory,
                               iser_mul_factor)
 
 
-def ifeasible_greedy_blocks(memory: list[int], M: int) -> list[list[int]]:
+def ifeasible_greedy_blocks(memory: list[int], M: int) -> T_IBLOCK_GEN:
     """
-    Generate all feasible (connected) blocks that meet the memory constraint *M*.
+    Generate all feasible (connected) blocks that meet the memory constraint *M* in a greedy manner.
+
+    Block memories are calculated assuming serialized platform execution model.
 
     :param memory:  list of node memory values
     :param M:       upper block memory limit
@@ -33,9 +35,9 @@ def ifeasible_greedy_blocks(memory: list[int], M: int) -> list[list[int]]:
     yield from ((i, j) for i in range(n) for j in range(i, n) if ser_block_submemory(memory, i, j) <= M)
 
 
-def ifeasible_blocks(memory: list[int], M: int) -> list[list[int]]:
+def ifeasible_blocks(memory: list[int], M: int) -> T_IBLOCK_GEN:
     """
-    Generate all feasible (connected) blocks that meet the memory constraint *M*.
+    Generate all feasible (connected) blocks that meet the memory constraint *M* assuming serialized executions.
 
     :param memory:  list of node memory values
     :param M:       upper block memory limit
@@ -51,11 +53,15 @@ def ifeasible_blocks(memory: list[int], M: int) -> list[list[int]]:
                 yield i, j
 
 
-def build_chain_cfg_model(runtime: list, memory: list, rate: list, data: list, M: int = math.inf, L: int = math.inf,
-                          start: int = 0, end: int = None, delay: int = 1) -> tuple[lp.LpProblem, dict[lp.LpVariable]]:
+def build_chain_cfg_model(runtime: list[int], memory: list[int], rate: list[int], data: list[int],
+                          M: int = math.inf, L: int = math.inf, start: int = 0, end: int = None,
+                          delay: int = 1) -> tuple[lp.LpProblem, dict[lp.LpVariable]]:
     """
-    Generate the ILP model.
-    :return: tuple of the created model and list of decision variables
+    Generate the configuration ILP model for chains.
+
+    Block metrics are calculated assuming serialized platform execution model.
+
+    :return: tuple of the created LP model and the dict of created decision variables
     """
     # Model
     model = lp.LpProblem(name="Chain_Partitioning", sense=lp.LpMinimize)
@@ -76,11 +82,13 @@ def build_chain_cfg_model(runtime: list, memory: list, rate: list, data: list, M
     return model, X
 
 
-def chain_cfg_partitioning(runtime: list, memory: list, rate: list, data: list, M: int = math.inf,
-                           L: int = math.inf, start: int = 0, end: int = None, delay: int = 1,
-                           solver: lp.LpSolver = None) -> tuple[list[list[int]], int, int]:
+def chain_cfg_partitioning(runtime: list[int], memory: list[int], rate: list[int], data: list[int],
+                           M: int = math.inf, L: int = math.inf, start: int = 0, end: int = None,
+                           delay: int = 1, solver: lp.LpSolver = None) -> T_RESULTS:
     """
-    Calculates minimal-cost partitioning of a chain based on configuration LP formulation.
+    Calculates minimal-cost partitioning of a chain based on the configuration ILP formalization.
+
+    Block metrics are calculated assuming serialized platform execution model.
 
     :param runtime: running times in ms
     :param memory:  memory requirements in MB
@@ -103,24 +111,39 @@ def chain_cfg_partitioning(runtime: list, memory: list, rate: list, data: list, 
         return INFEASIBLE
 
 
-def recreate_blocks_from_xvars(X: dict[tuple[int, int], lp.LpVariable], n: int) -> list[list[int]]:
-    """Extract barrier nodes from variable dict and recreate partitioning blocks"""
+def recreate_blocks_from_xvars(X: dict[tuple[int, int], lp.LpVariable], n: int) -> T_PART:
+    """
+    Extract barrier nodes from variable dict and recreate partitioning blocks.
+
+    :param X:   dict of decision variables
+    :param n:   chain size
+    :return:    partition blocks
+    """
     return split_chain(barr=[b for (b, _), x in X.items() if x.varValue == 1], n=n)
 
 
-def extract_blocks_from_xvars(X: dict[tuple[int, int], lp.LpVariable]) -> list[list[int]]:
-    """Extract interval boundaries [b, w] from variable dict"""
+def extract_blocks_from_xvars(X: dict[tuple[int, int], lp.LpVariable]) -> T_PART:
+    """
+    Extract interval boundaries [b, w] relying on the decision variable's structure.
+
+    :param X:   dict of decision variables
+    :return:    partition blocks
+    """
     return [list(range(b, w + 1)) for (b, w), x in X.items() if x.varValue == 1]
 
 
 ########################################################################################################################
 
 
-def build_greedy_chain_mtx_model(runtime: list, memory: list, rate: list, data: list, M: int = math.inf,
-                                 L: int = math.inf, delay: int = 1) -> tuple[lp.LpProblem, list[list[lp.LpVariable]]]:
+def build_greedy_chain_mtx_model(runtime: list[int], memory: list[int], rate: list[int],
+                                 data: list[int], M: int = math.inf, L: int = math.inf,
+                                 delay: int = 1) -> tuple[lp.LpProblem, list[list[lp.LpVariable]]]:
     """
-    Generate the ILP model.
-    :return: tuple of the created model and list of decision variables
+    Generate the matrix ILP model for chains by calculating block metrics greedily using utility functions.
+
+    Block metrics are calculated assuming serialized platform execution model.
+
+    :return: tuple of the created LP model and the dict of created decision variables
     """
     # Model
     model = lp.LpProblem(name="Chain_Partitioning", sense=lp.LpMinimize)
@@ -162,10 +185,14 @@ def build_greedy_chain_mtx_model(runtime: list, memory: list, rate: list, data: 
     return model, X
 
 
-def build_chain_mtx_model(runtime: list, memory: list, rate: list, data: list, M, L: int = math.inf,
+def build_chain_mtx_model(runtime: list[int], memory: list[int], rate: list[int],
+                          data: list[int], M: int = math.inf, L: int = math.inf,
                           delay: int = 1) -> tuple[lp.LpProblem, list[list[lp.LpVariable]]]:
     """
-    Generate the ILP model.
+    Generate the matrix ILP model for chains.
+
+    Block metrics are calculated assuming serialized platform execution model.
+
     :return: tuple of the created model and list of decision variables
     """
     # Model
@@ -217,10 +244,13 @@ def build_chain_mtx_model(runtime: list, memory: list, rate: list, data: list, M
     return model, X
 
 
-def chain_mtx_partitioning(runtime: list, memory: list, rate: list, data: list, M: int = math.inf, L: int = math.inf,
-                           delay: int = 1, solver: lp.LpSolver = None, **kwargs) -> tuple[list[list[int]], int, int]:
+def chain_mtx_partitioning(runtime: list[int], memory: list[int], rate: list[int], data: list[int],
+                           M: int = math.inf, L: int = math.inf, delay: int = 1, solver: lp.LpSolver = None,
+                           **kwargs) -> T_RESULTS:
     """
-    Calculates minimal-cost partitioning of a chain based on configuration LP formulation.
+    Calculates minimal-cost partitioning of a chain based on the matrix ILP formalization.
+
+    Block metrics are calculated assuming serialized platform execution model.
 
     :param runtime: running times in ms
     :param memory:  memory requirements in MB
@@ -241,12 +271,22 @@ def chain_mtx_partitioning(runtime: list, memory: list, rate: list, data: list, 
         return INFEASIBLE
 
 
-def recreate_blocks_from_xmatrix(X: list[list[lp.LpVariable]]) -> list[list[int]]:
-    """Extract barrier nodes from variable matrix and recreate partitioning blocks"""
+def recreate_blocks_from_xmatrix(X: list[list[lp.LpVariable]]) -> T_PART:
+    """
+    Extract barrier nodes from decision variable matrix and recreate partitioning blocks.
+
+    :param X:   matrix of decision variables
+    :return:    partition blocks
+    """
     return split_chain(barr=list(filter(lambda i: X[i][i].value(), range(len(X)))), n=len(X))
 
 
-def extract_blocks_from_xmatrix(X: list[list[lp.LpVariable]]) -> list[list[int]]:
-    """Extract interval boundaries [b, w] from variable matrix"""
+def extract_blocks_from_xmatrix(X: list[list[lp.LpVariable]]) -> T_PART:
+    """
+    Extract interval boundaries [b, w] directly from decision variable matrix.
+
+    :param X:   matrix of decision variables
+    :return:    partition blocks
+    """
     return [list(itertools.takewhile(lambda i: X[i][j].value(), range(j, len(X))))
             for j in range(len(X)) if X[j][j].value()]

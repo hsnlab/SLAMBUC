@@ -27,13 +27,17 @@ PAGESIZE = resource.getpagesize()
 
 
 def get_total_memory(unit_exp: int = 2) -> int:
-    """Return the total available memory in given *unit_exp* (0 -> bytes, 1 -> KB, 2 -> MB, 3 -> GB, ...)"""
+    """
+    Return the total available memory in given *unit_exp* (0 -> bytes, 1 -> KB, 2 -> MB, 3 -> GB, ...).
+    """
     # return int(os.popen(f"free -t -{unit}").readlines()[1].split()[1])
     return psutil.virtual_memory().total / 1024 ** unit_exp
 
 
 def check_total_used_memory(unit_exp: int = 2) -> int:
-    """Return the total used memory in given *unit_exp* (0 -> bytes, 1 -> KB, 2 -> MB, 3 -> GB, ...)"""
+    """
+    Return the total used memory in given *unit_exp* (0 -> bytes, 1 -> KB, 2 -> MB, 3 -> GB, ...).
+    """
     # return int(os.popen(f"free -t -{unit}").readlines()[1].split()[2])
     # return psutil.virtual_memory().used / 1024 ** unit_exp
     mem = psutil.virtual_memory()
@@ -41,8 +45,12 @@ def check_total_used_memory(unit_exp: int = 2) -> int:
 
 
 def check_process_memory(pid: int | str = 'self', unit_exp: int = 2) -> float:
-    """Return the memory usage of a process given by the *PID* with units based on the given *unit_exp*
-    (0 -> bytes, 1 -> KB, 2 -> MB, 3 -> GB, ...). See also: https://stackoverflow.com/a/53475728"""
+    """
+    Return the memory usage of a process given by the *PID* with units based on the given *unit_exp*
+    (0 -> bytes, 1 -> KB, 2 -> MB, 3 -> GB, ...).
+
+    See also: https://stackoverflow.com/a/53475728
+    """
     try:
         # rss = psutil.Process(None if pid == "self" else pid).memory_full_info().rss
         rss = int(pathlib.Path(f"/proc/{pid}/statm").read_text().split(' ', maxsplit=2)[1]) * PAGESIZE
@@ -52,7 +60,9 @@ def check_process_memory(pid: int | str = 'self', unit_exp: int = 2) -> float:
 
 
 class TestGovernor(multiprocessing.Process):
-    """Watch the given process and send aort signal in case of exceeded memory limit"""
+    """
+    Watch the given process and send aort signal in case of exceeded memory limit.
+    """
     DEF_SLEEP: int = 3
     BACKOFF_WINDOW: int = DEF_SLEEP * 4
     LOG_FILE: str = "governor.log"
@@ -98,7 +108,7 @@ class TestGovernor(multiprocessing.Process):
                 f"backoff: {self.BACKOFF_WINDOW} s")
 
     def set_logger(self, log_level):
-        """Set up logging into file"""
+        """Set up logging into file."""
         self.log = logging.getLogger(self.__class__.__name__)
         self.log.setLevel(log_level)
         fh = logging.FileHandler(self.LOG_FILE, mode='w')
@@ -106,17 +116,17 @@ class TestGovernor(multiprocessing.Process):
         self.log.handlers = [fh]
 
     def clear_timer(self):
-        """Clear overall test execution timer"""
+        """Clear overall test execution timer."""
         self.__tstart = time.time()
 
     def start(self):
-        """Start measuring overall test time and initiate TestGovernor as a subprocess"""
+        """Start measuring overall test time and initiate TestGovernor as a subprocess."""
         self.log.info(f"Start watching process with PID [{self.__pid}] for target process: {self.__target}")
         self.__tstart = time.time()
         super().start()
 
     def run(self):
-        """Implicitly close resources in case of interrupted tests"""
+        """Implicitly close resources in case of interrupted tests."""
         try:
             self.log.debug(f"{self.__class__.__name__} subprocess initiated with pid: {self.pid}")
             super().run()
@@ -124,7 +134,7 @@ class TestGovernor(multiprocessing.Process):
             self.close()
 
     def watch(self):
-        """Start watching given process or all used memory and send specific signal in case of limit violation"""
+        """Start watching given process or all used memory and send specific signal in case of limit violation."""
         while True:
             delta = time.time() - self.__tstart
             if (mem := self.check_mem()) is None:
@@ -150,12 +160,12 @@ class TestGovernor(multiprocessing.Process):
             time.sleep(self.DEF_SLEEP)
 
     def close(self):
-        """Close all used resources"""
+        """Close all used resources."""
         self.log.info(f"End watching process with PID [{self.__pid}] for target process: {self.__target}")
         super().close()
 
     def shutdown(self):
-        """Shutdown"""
+        """Shutdown."""
         if self.is_alive():
             self.terminate()
             self.join()

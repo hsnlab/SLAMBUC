@@ -22,6 +22,7 @@ import networkx as nx
 def wrand_sample(population: list[int | float], weights: list[int], k: int = 1) -> list[int | float]:
     """
     Provide an *k*-size weighted random sample from *population* without replacement according to the given *weights*.
+
     See more: https://stackoverflow.com/questions/43549515/weighted-random-sample-without-replacement-in-python
 
     :param population:  list of items
@@ -46,9 +47,13 @@ def generate_power_ba_graph(n: int, m: int, Alpha: float = 1.0, a: float = 0.0, 
                             create_using: nx.Graph = None) -> nx.Graph:
     """
     Generate Barabasi-Albert (BA) graph where the probability of choosing a vertex *v* for connecting to another node
-    follows a Power law distribution as *P(v) = deg(v)^Alpha + a*. Thus, choosing *Alpha = 1.0* and *a = 0.0* falls
-    back to standard BA graph generation. Choosing *m = 1* ensures the output to be a tree by default. See also:
-    https://networkx.org/documentation/stable/_modules/networkx/generators/random_graphs.html#barabasi_albert_graph
+    follows a Power law distribution as *P(v) = deg(v)^Alpha + a*.
+
+    Thus, choosing *Alpha = 1.0* and *a = 0.0* falls back to standard BA graph generation.
+
+    Choosing *m = 1* ensures the output to be a tree by default.
+
+    See also: https://networkx.org/documentation/stable/_modules/networkx/generators/random_graphs.html#barabasi_albert_graph
     and the related paper: https://dl.acm.org/doi/abs/10.5555/3432601.3432616.
 
     :param n:               number of nodes
@@ -67,4 +72,4 @@ def generate_power_ba_graph(n: int, m: int, Alpha: float = 1.0, a: float = 0.0, 
     return graph
 
 
-generate_power_ba_tree = functools.partial(generate_power_ba_graph, m=1)
+generate_power_ba_tree = functools.partial(generate_power_ba_graph, m=1)  # Generate power BA trees using m=1.

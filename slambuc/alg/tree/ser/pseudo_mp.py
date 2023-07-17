@@ -17,10 +17,11 @@ import itertools
 import math
 import multiprocessing
 import operator
+from collections.abc import Generator
 
 import networkx as nx
 
-from slambuc.alg import INFEASIBLE
+from slambuc.alg import INFEASIBLE, T_RESULTS
 from slambuc.alg.service import *
 from slambuc.alg.tree.ser.pseudo import SubBTreePart, SubLTreePart, OPT
 from slambuc.alg.util import (ipostorder_dfs, ibacktrack_chain, recreate_subtree_blocks, ipostorder_tabu_dfs,
@@ -28,7 +29,15 @@ from slambuc.alg.util import (ipostorder_dfs, ibacktrack_chain, recreate_subtree
 
 
 def isubtree_cutoffs(tree: nx.DiGraph, root: int = 1, lb: int = 1, ub: int = math.inf) -> tuple[tuple[int, int], int]:
-    """Recursively return edges that cut off non-trivial subtrees from *tree* with size between *lb* and *ub*"""
+    """
+    Recursively return edges that cut off non-trivial subtrees from *tree* with size between *lb* and *ub*.
+
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
+    :param root:    root node of the graph
+    :param lb:      lower size bound
+    :param ub:      upper size bound
+    :return:        cut barrier node, branches and subtree root
+    """
     _tmp = {}
     for _, v in ipostorder_dfs(tree, root, inclusive=True):
         # Sum the size of descendant subtrees
@@ -42,15 +51,30 @@ def isubtree_cutoffs(tree: nx.DiGraph, root: int = 1, lb: int = 1, ub: int = mat
 
 
 def get_cpu_splits(tree: nx.DiGraph, root: int = 1, workers: int = None) -> tuple[tuple[int, int]]:
-    """Calculate the cuts for parallelization based on *workers* count and subtree size heuristics"""
+    """
+    Calculate the cuts for parallelization based on *workers* count and subtree size heuristics.
+
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
+    :param root:    root node of the graph
+    :param workers: workers count
+    :return:        cut edges
+    """
     ub = math.sqrt(len(tree) - 1)
     lb = ub if not workers else 1
     n = workers if workers else ub
     return [e for e, _ in heapq.nlargest(n, list(isubtree_cutoffs(tree, root, lb, ub)), key=operator.itemgetter(1))]
 
 
-def isubtree_sync_cutoffs(tree: nx.DiGraph, root: int = 1, size: int = math.inf) -> tuple[tuple[int], int, set[int]]:
-    """Recursively return edges that cut off non-trivial subtrees from *tree* with given *size*"""
+def isubtree_sync_cutoffs(tree: nx.DiGraph, root: int = 1,
+                          size: int = math.inf) -> Generator[tuple[tuple[int], int, set[int]]]:
+    """
+    Recursively return edges that cut off non-trivial subtrees from *tree* with given *size*.
+
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
+    :param root:    root node of the graph
+    :param size:    subtree min size
+    :return:        generator of cut edge, subtree root, and related branches
+    """
     _tmp, sync = {}, collections.defaultdict(set)
     for _, v in ipostorder_dfs(tree, root, inclusive=True):
         # Sum the size of descendant subtrees
@@ -72,8 +96,15 @@ def isubtree_sync_cutoffs(tree: nx.DiGraph, root: int = 1, size: int = math.inf)
             yield (PLATFORM, root), None, sync[root]
 
 
-def isubtree_splits(tree: nx.DiGraph, root: int = 1) -> tuple[tuple[int, int], set[int]]:
-    """Return the heuristic cutoff edges of given *tree* along with the mandatory synchronization points"""
+def isubtree_splits(tree: nx.DiGraph, root: int = 1) -> Generator[tuple[tuple[int], int, set[int]]]:
+    """
+    Return the heuristic cutoff edges of given *tree* along with the mandatory synchronization points by assuming
+    the subtree size equals *sqrt(n)*.
+
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
+    :param root:    root node of the graph
+    :return:        generator of cut edge, subtree root, and related branches
+    """
     yield from ((c, sync) for c, _, sync in isubtree_sync_cutoffs(tree, root, math.ceil(math.sqrt(len(tree) - 1))))
 
 
@@ -85,7 +116,22 @@ def _btree_partitioning(ready: multiprocessing.SimpleQueue, sync: dict[int, mult
                         cpath: set[int] = frozenset(), delay: int = 1,
                         bidirectional: bool = True) -> None | dict[tuple[int, int], dict[int, SubBTreePart]]:
     """
-    Calculates minimal-cost partitioning of a subgraph with *root* while waits for subcases at sync edges.
+    Calculates minimal-cost partitioning of a subgraph with *root* using the bottom-up tree traversal approach
+    while waits for subcases at sync edges.
+
+    This function is designed for running in a separate detached subprocess and synchronizing subresults via
+    *SimpleQueue* objects as an IPC method.
+
+    :param ready:           object for signaling the end of partitioning
+    :param sync:            object regarding subtrees which results need to be waited for
+    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
+    :param root:            root node of the graph
+    :param M:               upper memory bound of the partition blocks in MB
+    :param L:               latency limit defined on the critical path in ms
+    :param cpath:           critical path nodes
+    :param delay:           invocation delay between blocks
+    :param bidirectional:   use bidirectional subcase elimination (may introduce quadratic increase in the worst case)
+    :return:                tuple of optimal partitioning, reached sum cost and latency on the critical path
     """
     # Allocate empty dict for local subcases combined with prior subcase results
     DP = {}
@@ -171,12 +217,18 @@ def _btree_partitioning(ready: multiprocessing.SimpleQueue, sync: dict[int, mult
 
 def pseudo_mp_btree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
                                  L: int = math.inf, cp_end: int = None, delay: int = 1,
-                                 bidirectional: bool = True) -> tuple[list[list[int]], int, int]:
+                                 bidirectional: bool = True) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning of a service graph(tree) with respect to an upper bound **M** on the total
     memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes.
 
-    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rate and data
+    Partitioning is calculated using the bottom-up tree traversal approach.
+
+    Arbitrary disjoint subtrees are partitioned in separate subprocesses.
+
+    Block metrics are calculated based on serialized execution platform model.
+
+    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:            root node of the graph
     :param M:               upper memory bound of the partition blocks in MB
     :param L:               latency limit defined on the critical path in ms
@@ -237,7 +289,22 @@ def _ltree_partitioning(ready: multiprocessing.SimpleQueue, sync: dict[int, mult
                         L: int = math.inf, cpath: set[int] = frozenset(), delay: int = 1,
                         bidirectional: bool = True) -> None | dict[int, dict[int, SubBTreePart]]:
     """
-    Calculates minimal-cost partitioning of a subgraph with *root* while waits for subcases at sync edges.
+    Calculates minimal-cost partitioning of a subgraph with *root* using the left-right tree traversal approach
+    while waits for subcases at sync edges.
+
+    This function is designed for running in a separate detached subprocess and synchronizing subresults via
+    *SimpleQueue* objects as an IPC method.
+
+    :param ready:           object for signaling the end of partitioning
+    :param sync:            object regarding subtrees which results need to be waited for
+    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
+    :param root:            root node of the graph
+    :param M:               upper memory bound of the partition blocks in MB
+    :param L:               latency limit defined on the critical path in ms
+    :param cpath:           critical path nodes
+    :param delay:           invocation delay between blocks
+    :param bidirectional:   use bidirectional subcase elimination (may introduce quadratic increase in the worst case)
+    :return:                tuple of optimal partitioning, reached sum cost and latency on the critical path
     """
     # Allocate empty dict for local subcases combined with prior subcase results
     TDP = {}
@@ -335,12 +402,18 @@ def _ltree_partitioning(ready: multiprocessing.SimpleQueue, sync: dict[int, mult
 
 def pseudo_mp_ltree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
                                  L: int = math.inf, cp_end: int = None, delay: int = 1,
-                                 bidirectional: bool = True) -> tuple[list[list[int]], int, int]:
+                                 bidirectional: bool = True) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning of a service graph(tree) with respect to an upper bound **M** on the total
     memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes.
 
-    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rate and data
+    Partitioning is calculated using the left-right tree traversal approach.
+
+    Arbitrary disjoint subtrees are partitioned in separate subprocesses.
+
+    Block metrics are calculated based on serialized execution platform model.
+
+    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:            root node of the graph
     :param M:               upper memory bound of the partition blocks in MB
     :param L:               latency limit defined on the critical path in ms

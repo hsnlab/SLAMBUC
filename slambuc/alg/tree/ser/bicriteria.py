@@ -19,7 +19,7 @@ import typing
 
 import networkx as nx
 
-from slambuc.alg import INFEASIBLE
+from slambuc.alg import INFEASIBLE, T_RESULTS
 from slambuc.alg.service import *
 from slambuc.alg.service.common import WEIGHT
 from slambuc.alg.util import (ipostorder_dfs, ileft_right_dfs, ibacktrack_chain, recreate_subtree_blocks,
@@ -30,7 +30,7 @@ OPT = 0
 
 
 class WeightedSubBTreePart(typing.NamedTuple):
-    """Store subtree partitioning attributes for a given edge-weighted subcase"""
+    """Store subtree partitioning attributes for a given edge-weighted subcase."""
     weight: int = 0  # Cumulative weights of covered edges in the subtree partitioning
     barr: set[int] = set()  # Barrier/heading nodes of the given subtree partitioning
 
@@ -40,12 +40,23 @@ class WeightedSubBTreePart(typing.NamedTuple):
 
 def biheuristic_btree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
                                    cp_end: int = None, delay: int = 1, Epsilon: float = 0.0, Lambda: float = 0.0,
-                                   bidirectional: bool = True) -> tuple[list[list[int]], int, int]:
+                                   bidirectional: bool = True) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning of a service graph(tree) with respect to an upper bound **M** on the total
-    memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes.
+    memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes, while
+    applying the bottom-up tree traversal approach.
 
-    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rate and data
+    Cost approximation ratio *Epsilon* controls the maximum deviation from the cost-optimal partitioning
+    (Epsilon=0.0 enforces the algorithm to calculate exact solution) in exchange for reduces subcase calculations.
+
+    Latency approximation ratio (*Lambda*) controls the maximum deviation with respect to the latency limit $L$
+    (Lambda=0.0 enforces no rounding) in exchange for reduces subcase calculations.
+    
+    Block metrics are calculated based on serialized execution platform model.
+
+    Provide suboptimal partitioning due to the simplified and inaccurate latency rounding.
+
+    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:            root node of the graph
     :param M:               upper memory bound of the partition blocks in MB
     :param L:               latency limit defined on the critical path in ms
@@ -174,12 +185,17 @@ def biheuristic_btree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = mat
 
 def biheuristic_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
                                   cp_end: int = None, delay: int = 1, Epsilon: float = 0.0, Lambda: float = 0.0,
-                                  bidirectional: bool = True) -> tuple[list[list[int]], int, int]:
+                                  bidirectional: bool = True) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning of a service graph(tree) with respect to an upper bound **M** on the total
-    memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes.
+    memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes, while
+    applying the bottom-up tree traversal approach.
 
-    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rate and data
+    Provide suboptimal partitioning due to the simplified and inaccurate latency rounding.
+
+    Recalculates original sum cost and latency metrics.
+
+    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:            root node of the graph
     :param M:               upper memory bound of the partition blocks in MB
     :param L:               latency limit defined on the critical path in ms
@@ -202,7 +218,7 @@ def biheuristic_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math
 
 
 class WeightedSubLTreePart(typing.NamedTuple):
-    """Store subtree partitioning attributes for a given edge-weighted subcase"""
+    """Store subtree partitioning attributes for a given edge-weighted subcase."""
     weight: int = 0  # Cumulative weights of covered edges in the subtree partitioning
     top_lat: int = 0  # Calculated latency for the topmost partition block
     mul: int = 1  # Last serialization multiplier of the top/first block of the subtree partitioning
@@ -214,12 +230,21 @@ class WeightedSubLTreePart(typing.NamedTuple):
 
 def bifptas_ltree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
                                cp_end: int = None, delay: int = 1, Epsilon: float = 0.0, Lambda: float = 0.0,
-                               bidirectional: bool = True) -> tuple[list[list[int]], int, int]:
+                               bidirectional: bool = True) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning of a service graph(tree) with respect to an upper bound **M** on the total
-    memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes.
+    memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes, while
+    applying the left-right tree traversal approach.
 
-    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rate and data
+    Cost approximation ratio *Epsilon* controls the maximum deviation from the cost-optimal partitioning
+    (Epsilon=0.0 enforces the algorithm to calculate exact solution) in exchange for reduces subcase calculations.
+
+    Latency violation ratio (*Lambda*) controls the maximum violating deviation from the latency limit $L$
+    (Lambda=0.0 enforces no violation)  in exchange for reduces subcase calculations.
+
+    Block metrics are calculated based on serialized execution platform model.
+
+    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:            root node of the graph
     :param M:               upper memory bound of the partition blocks in MB
     :param L:               latency limit defined on the critical path in ms
@@ -369,12 +394,15 @@ def bifptas_ltree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.in
 
 def bifptas_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
                               cp_end: int = None, delay: int = 1, Epsilon: float = 0.0, Lambda: float = 0.0,
-                              bidirectional: bool = True) -> tuple[list[list[int]], int, int]:
+                              bidirectional: bool = True) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning of a service graph(tree) with respect to an upper bound **M** on the total
-    memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes.
+    memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes, while
+    applying the left-right tree traversal approach.
 
-    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rate and data
+    Recalculates original sum cost and latency metrics.
+
+    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:            root node of the graph
     :param M:               upper memory bound of the partition blocks in MB
     :param L:               latency limit defined on the critical path in ms
@@ -397,7 +425,7 @@ def bifptas_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf
 
 
 class WeightedDualSubLTreePart(typing.NamedTuple):
-    """Store subtree partitioning attributes for a given edge-weighted subcase"""
+    """Store subtree partitioning attributes for a given edge-weighted subcase."""
     mem: int = 0  # Memory demand of the topmost block in the subtree partitioning
     top_lat: int = 0  # Calculated latency for the topmost partition block
     mul: int = 1  # Last serialization multiplier of the top/first block of the subtree partitioning
@@ -409,12 +437,24 @@ class WeightedDualSubLTreePart(typing.NamedTuple):
 
 def bifptas_dual_ltree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
                                     cp_end: int = None, delay: int = 1, Epsilon: float = 0.0, Lambda: float = 0.0,
-                                    bidirectional: bool = True) -> tuple[list[list[int]], int, int]:
+                                    bidirectional: bool = True) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning of a service graph(tree) with respect to an upper bound **M** on the total
-    memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes.
+    memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes, while
+    applying the left-right tree traversal approach.
 
-    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rate and data
+    Cost approximation ratio *Epsilon* controls the maximum deviation from the cost-optimal partitioning
+    (Epsilon=0.0 enforces the algorithm to calculate exact solution) in exchange for reduces subcase calculations.
+
+    Latency violation ratio (*Lambda*) controls the maximum violating deviation from the latency limit $L$
+    (Lambda=0.0 enforces no violation)  in exchange for reduces subcase calculations.
+
+    Instead of direct cost calculations, the cumulative overheads of externalized states are subject to minimization
+    as a different formalization of the same optimization problem.
+
+    Block metrics are calculated based on serialized execution platform model.
+
+    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:            root node of the graph
     :param M:               upper memory bound of the partition blocks in MB
     :param L:               latency limit defined on the critical path in ms
@@ -543,12 +583,23 @@ def bifptas_dual_ltree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = ma
 
 def bifptas_dual_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
                                    cp_end: int = None, delay: int = 1, Epsilon: float = 0.0, Lambda: float = 0.0,
-                                   bidirectional: bool = True) -> tuple[list[list[int]], int, int]:
+                                   bidirectional: bool = True) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning of a service graph(tree) with respect to an upper bound **M** on the total
-    memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes.
+    memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes, while
+    applying a different formalization of the optimal partitioning problem.
 
-    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rate and data
+    Cost approximation ratio *Epsilon* controls the maximum deviation from the cost-optimal partitioning
+    (Epsilon=0.0 enforces the algorithm to calculate exact solution) in exchange for reduces subcase calculations.
+
+    Latency violation ratio (*Lambda*) controls the maximum violating deviation from the latency limit $L$
+    (Lambda=0.0 enforces no violation)  in exchange for reduces subcase calculations.
+
+    Block metrics are calculated based on serialized execution platform model.
+
+    Recalculates original sum cost and latency metrics.
+
+    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:            root node of the graph
     :param M:               upper memory bound of the partition blocks in MB
     :param L:               latency limit defined on the critical path in ms

@@ -20,7 +20,7 @@ import warnings
 
 import networkx as nx
 
-from slambuc.alg import INFEASIBLE
+from slambuc.alg import INFEASIBLE, T_RESULTS
 from slambuc.alg.service import *
 from slambuc.alg.tree.ser.pseudo import SubLTreePart, OPT
 from slambuc.alg.util import (ipostorder_dfs, ileft_right_dfs, ibacktrack_chain, recreate_subtree_blocks,
@@ -28,7 +28,7 @@ from slambuc.alg.util import (ipostorder_dfs, ileft_right_dfs, ibacktrack_chain,
 
 
 class SubParBTreePart(typing.NamedTuple):
-    """Store subtree partitioning attributes for a given subcase"""
+    """Store subtree partitioning attributes for a given subcase."""
     cost: int = math.inf  # Optimal sum cost of the subtree partitioning (OPT)
     top_cost: int = math.inf  # Cost of the topmost subtree block
     top_blk: set[int] = set()  # Nodes of the topmost block
@@ -38,14 +38,19 @@ class SubParBTreePart(typing.NamedTuple):
         return repr(tuple(self))
 
 
-def pseudo_par_btree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
-                                  L: int = math.inf, N: int = 1, cp_end: int = None, delay: int = 1,
-                                  bidirectional: bool = True) -> tuple[list[list[int]], int, int]:
+def pseudo_par_btree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf, N: int = 1,
+                                  cp_end: int = None, delay: int = 1, bidirectional: bool = True) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning of a service graph(tree) with respect to an upper bound **M** on the total
-    memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes.
+    memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes, while
+    applying bottom-up tree traversal approach.
 
-    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rate and data
+    Block metrics are calculated based on parallelized execution platform model.
+
+    Provide suboptimal partitioning due to the inaccurate latency calculation that directly comes from the bottom-up
+    tree traversal approach.
+
+    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:            root node of the graph
     :param M:               upper memory bound of the partition blocks in MB
     :param L:               latency limit defined on the critical path in ms
@@ -166,14 +171,16 @@ def pseudo_par_btree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math
 ########################################################################################################################
 
 
-def pseudo_par_ltree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
-                                  L: int = math.inf, N: int = 1, cp_end: int = None, delay: int = 1,
-                                  bidirectional: bool = True) -> tuple[list[list[int]], int, int]:
+def pseudo_par_ltree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf, N: int = 1,
+                                  cp_end: int = None, delay: int = 1, bidirectional: bool = True) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning of a service graph(tree) with respect to an upper bound **M** on the total
-    memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes.
+    memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes, while
+    applying left-right tree traversal approach.
 
-    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rate and data
+    Block metrics are calculated based on parallelized execution platform model.
+
+    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:            root node of the graph
     :param M:               upper memory bound of the partition blocks in MB
     :param L:               latency limit defined on the critical path in ms

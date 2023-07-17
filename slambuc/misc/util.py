@@ -21,22 +21,32 @@ import networkx as nx
 import pulp
 import tabulate
 
-from slambuc.alg import LP_LAT
+from slambuc.alg import LP_LAT, T_PART, T_BARRS
 from slambuc.alg.service.common import *
-from slambuc.alg.util import (ichain, path_blocks, block_memory, block_cost, block_latency, leaf_label_nodes, block_cpu,
-                              ser_block_subcost, ser_block_sublatency, ser_block_submemory, ser_subtree_cost,
-                              ser_subchain_latency, par_subtree_cost, par_subchain_latency)
+from slambuc.alg.util import (ichain, path_blocks, block_memory, block_cost, block_latency, leaf_label_nodes,
+                              block_cpu, ser_block_subcost, ser_block_sublatency, ser_block_submemory,
+                              ser_subtree_cost, ser_subchain_latency, par_subtree_cost, par_subchain_latency)
 from slambuc.misc.plot import draw_tree
 
 
-def get_cplex_path():
+def get_cplex_path() -> str:
+    """
+    Return local CPLEX path.
+
+    :return: path
+    """
     if isinstance(cp := subprocess.run(['which', 'cplex']), str):
         return cp
     return str(pathlib.Path(os.environ.get('CPLEX_HOME', '~/Programs/ibm/ILOG/CPLEX_Studio2211/cplex'),
                             'bin/x86-64_linux/cplex').expanduser())
 
 
-def get_cpo_path():
+def get_cpo_path() -> str:
+    """
+    Return local CPO path.
+
+    :return: path
+    """
     if isinstance(cp := subprocess.run(['which', 'cpoptimizer']), str):
         return cp
     return str(pathlib.Path(os.environ.get('CPO_HOME', '~/Programs/ibm/ILOG/CPLEX_Studio2211/cpoptimizer'),
@@ -44,37 +54,92 @@ def get_cpo_path():
 
 
 def is_compatible(tree1: nx.DiGraph, tree2: nx.DiGraph) -> bool:
-    """Return true if given second *tree2* has the same structure and edge/node attributes as the first *tree1*"""
+    """
+    Return true if given second *tree2* has the same structure and edge/node attributes as the first *tree1*.
+
+    :param tree1:   first tree
+    :param tree2:   second tree
+    :return:        similarity result
+    """
     return (nx.is_isomorphic(tree1, tree2) and
             all(all(tree1[u][v][a] == tree2[u][v][a] for a in tree1[u][v]) and
                 all(tree1.nodes[v][a] == tree2.nodes[v][a] for a in tree1.nodes[v]) for u, v in tree1.edges))
 
 
 def get_chain_k_min(memory: list[int], M: int, rate: list[int], N: int, start: int = 0, end: int = None) -> int:
-    """Return minimal number of blocks due to constraint M and N"""
+    """
+    Return minimal number of blocks due to constraints *M* and *N*.
+
+    :param memory:  list of memory values
+    :param M:       memory upper bound
+    :param rate:    list of rate values
+    :param N:       CPU count
+    :param start:   fist node to consider
+    :param end:     last node to consider
+    :return:        minimal number of blocks
+    """
     end = end if end is not None else len(memory) - 1
     return max(math.ceil(block_memory(memory, start, end) / M),
                sum(1 for i, j in itertools.pairwise(rate[start: end + 1]) if math.ceil(j / i) > N))
 
 
 def get_chain_c_min(memory: list[int], M: int, rate: list[int], N: int, start: int = 0, end: int = None) -> int:
-    """Return minimal number of cuts due to constraint M and N"""
+    """
+    Return minimal number of cuts due to constraints *M* and *N*.
+
+    :param memory:  list of memory values
+    :param M:       memory upper bound
+    :param rate:    list of rate values
+    :param N:       CPU count
+    :param start:   fist node to consider
+    :param end:     last node to consider
+    :return:        minimal number of cuts
+    """
     return get_chain_k_min(memory, M, rate, N, start, end) - 1
 
 
 def get_chain_c_max(runtime: list[int], L: int, b: int, w: int, delay: int, start: int = 0, end: int = None) -> int:
-    """Return maximal number of blocks due to constraint L"""
+    """
+    Return maximal number of cuts due to constraint *L*.
+
+    :param runtime: list of runtime values
+    :param L:       upper latency limit
+    :param b:       barrier node
+    :param w:       end node of chain block
+    :param delay:   platform delay
+    :param start:   fist node to consider
+    :param end:     last node to consider
+    :return:        maximum number of cuts
+    """
     end = end if end is not None else len(runtime) - 1
     return math.floor(min((L - block_latency(runtime, b, w, delay, start, end)) / delay, len(runtime) - 1))
 
 
 def get_chain_k_max(runtime: list[int], L: int, b: int, w: int, delay: int, start: int = 0, end: int = None) -> int:
-    """Return maximal number of blocks due to constraint L"""
+    """
+    Return maximal number of blocks due to constraint *L*.
+
+    :param runtime: list of runtime values
+    :param L:       upper latency limit
+    :param b:       barrier node
+    :param w:       end node of chain block
+    :param delay:   platform delay
+    :param start:   fist node to consider
+    :param end:     last node to consider
+    :return:        maximum number of blocks
+    """
     return get_chain_c_max(runtime, L, b, w, delay, start, end) + 1
 
 
-def get_chain_k_opt(partition: list[list[int]], start: int = 0, end: int = None) -> int:
-    """Return the number of blocks included by the [start, end] interval in partitioning"""
+def get_chain_k_opt(partition: T_PART, start: int = 0, end: int = None) -> int:
+    """
+    Return the number of blocks included by the [*start*, *end*] interval in partitioning.
+
+    :param partition:   chain partitioning
+    :param start:       fist node to consider
+    :param end:         last node to consider
+    :return:            number of blocks
+    """
     end = end if end is not None else partition[-1][-1]
     cntr = 0
     in_chain = False
@@ -89,13 +154,27 @@ def get_chain_k_opt(partition: list[list[int]], start: int = 0, end: int = None)
     return cntr
 
 
-def get_chain_c_opt(partition: list[list[int]], start: int = 0, end: int = None) -> int:
-    """Return the number of cuts included by the [start, end] interval in partitioning"""
+def get_chain_c_opt(partition: T_PART, start: int = 0, end: int = None) -> int:
+    """
+    Return the number of cuts included by the [*start*, *end*] interval in partitioning.
+
+    :param partition:   chain partitioning
+    :param start:       fist node to consider
+    :param end:         last node to consider
+    :return:            number of cuts
+    """
     return get_chain_k_opt(partition, start, end) - 1
 
 
 def prune_chain(tree: nx.DiGraph, node: int, leaf: int) -> tuple[list[int], list[int]]:
-    """Return the nodes of chain [node, leaf] and the branching nodes"""
+    """
+    Return the nodes of chain [*node*, *leaf*] and the branching nodes.
+
+    :param tree:    service tree
+    :param node:    chain's barrier node
+    :param leaf:    end node of chain
+    :return:        nodes of the chain and its branches
+    """
     chain = [node]
     branches = []
     u = node
@@ -113,12 +192,36 @@ def prune_chain(tree: nx.DiGraph, node: int, leaf: int) -> tuple[list[int], list
 
 
 def print_chain_summary(runtime: list[int], memory: list[int], rate: list[int]):
+    """
+    Print chain summary.
+
+    :param runtime: list of runtime values
+    :param memory:  list of memory values
+    :param rate:    list of rate values
+    """
     print("Chain:", "[", *(f"-{r}-> F({t}|M{m})" for t, m, r in zip(runtime, memory, rate)), "]")
 
 
-def evaluate_chain_partitioning(partition: list, opt_cost: int, opt_lat: int, runtime: list, memory: list, rate: list,
+def evaluate_chain_partitioning(partition: T_PART, opt_cost: int, opt_lat: int, runtime: list, memory: list, rate: list,
                                 M: int = math.inf, N: int = math.inf, L: int = math.inf, start: int = 0,
                                 end: int = None, delay: int = 1, unit: int = 100):
+    """
+    Evaluate chain partitioning and print its characteristics.
+
+    :param partition:   chain partitioning
+    :param opt_cost:    optimal cost of the partitioning
+    :param opt_lat:     latency of the partitioning
+    :param runtime:     list of runtime values
+    :param memory:      list of memory values
+    :param rate:        list of rate values
+    :param M:           memory upper bound
+    :param N:           CPU count
+    :param L:           upper latency limit
+    :param start:       fist node to consider
+    :param end:         last node to consider
+    :param delay:       platform delay
+    :param unit:        rounding unit
+    """
     print('#' * 80)
     print(f"Chain partitioning [M={M}, N={N}, L={L}:{(start, end)}] => "
           f"{partition} - opt_cost: {opt_cost}, opt_lat: {opt_lat}")
@@ -129,8 +232,20 @@ def evaluate_chain_partitioning(partition: list, opt_cost: int, opt_lat: int, ru
     print('#' * 80)
 
 
-def print_block_stat(partition: list[list[int]], runtime: list[int], memory: list[int], rate: list[int], delay: float,
+def print_block_stat(partition: T_PART, runtime: list[int], memory: list[int], rate: list[int], delay: float,
                      start: int = 0, end: int = None, unit: int = 100):
+    """
+    Print block statistics.
+
+    :param partition:   chain partitioning
+    :param runtime:     list of runtime values
+    :param memory:      list of memory values
+    :param rate:        list of rate values
+    :param start:       fist node to consider
+    :param end:         last node to consider
+    :param delay:       platform delay
+    :param unit:        rounding unit
+    """
     end = end if end is not None else len(runtime) - 1
     stat = [[str([blk[0], blk[-1]]),
              block_cost(runtime, rate, blk[0], blk[-1], unit),
@@ -141,7 +256,14 @@ def print_block_stat(partition: list[list[int]], runtime: list[int], memory: lis
                             numalign='decimal', stralign='center', tablefmt='pretty'))
 
 
-def print_chain_partition_result(barr: list[int], cost: int, lat: int):
+def print_chain_partition_result(barr: T_BARRS, cost: int, lat: int):
+    """
+    Decode and print chain partitioning result.
+
+    :param barr:    barrier nodes
+    :param cost:    optimal cost
+    :param lat:     latency values
+    """
     if barr is not None:  # [], cost, lat
         print("Minimal-cost solution is calculated.")
     elif cost is not None and lat is None:  # None, inf, None
@@ -153,7 +275,11 @@ def print_chain_partition_result(barr: list[int], cost: int, lat: int):
 
 
 def print_tree_summary(tree: nx.DiGraph):
-    """Print summary of service graphs"""
+    """
+    Print summary of service graphs.
+
+    :param tree:    input tree
+    """
     print(tree)
     for n, nd in tree.nodes(data=True):
         print(f"\t{n}: {nd}")
@@ -161,8 +287,14 @@ def print_tree_summary(tree: nx.DiGraph):
             print(f"\t\t{i} -> {j}: {ed}")
 
 
-def print_tree_block_stat(tree: nx.DiGraph, partition: list[list[int]], unit: int = 100):
-    """Print cost memory and latency values of partition blocks in tabulated format"""
+def print_tree_block_stat(tree: nx.DiGraph, partition: T_PART, unit: int = 100):
+    """
+    Print cost memory and latency values of partition blocks in tabulated format.
+
+    :param tree:        input tree
+    :param partition:   given partitioning
+    :param unit:        rounding unit
+    """
     stat = []
     for blk in partition:
         pred = next(tree.predecessors(blk[0]))
@@ -177,8 +309,15 @@ def print_tree_block_stat(tree: nx.DiGraph, partition: list[list[int]], unit: in
     print(tabulate.tabulate(stat, ['Block', 'Cost', 'Memory', 'CPU', 'Latency'], numalign='decimal', stralign='center'))
 
 
-def print_cpath_stat(tree: nx.DiGraph, partition: list[list[int]], cpath: list[int] = None, delay: int = 10):
-    """Print the related block of the critical path and """
+def print_cpath_stat(tree: nx.DiGraph, partition: T_PART, cpath: list[int] = None, delay: int = 10):
+    """
+    Print the related block of the critical path.
+
+    :param tree:        input tree
+    :param partition:   given partitioning
+    :param cpath:       critical path
+    :param delay:       platform delay value
+    """
     if len(partition) > 0:
         c_blocks = path_blocks(partition, cpath)
         opt_cut = len(c_blocks) - 1
@@ -188,8 +327,22 @@ def print_cpath_stat(tree: nx.DiGraph, partition: list[list[int]], cpath: list[i
               "opt_lat:", sum_lat)
 
 
-def evaluate_tree_partitioning(tree: nx.DiGraph, partition: list[list[int]], opt_cost: int, root: int, cp_end: int,
-                               M: int, N: int, L: int, delay: int, unit: int):
+def evaluate_tree_partitioning(tree: nx.DiGraph, partition: T_PART, opt_cost: int, root: int, cp_end: int, M: int,
+                               N: int, L: int, delay: int, unit: int):
+    """
+    Evaluate tree partitioning and print its characteristics.
+
+    :param tree:        input tree
+    :param partition:   given partitioning
+    :param opt_cost:    optimal partitioning cost
+    :param root:        root node
+    :param cp_end:      end node of critical path
+    :param M:           upper memory limit
+    :param N:           CPU count
+    :param L:           latency limit
+    :param delay:       platform invocation delay
+    :param unit:        rounding unit
+    """
     tree = leaf_label_nodes(tree)
     print(tree.graph.get(NAME, "tree").center(80, '#'))
     print("Runtime:", [tree.nodes[v][RUNTIME] for v in tree.nodes if v is not PLATFORM])
@@ -206,8 +359,14 @@ def evaluate_tree_partitioning(tree: nx.DiGraph, partition: list[list[int]], opt
 ########################################################################################################################
 
 
-def print_ser_tree_block_stat(tree: nx.DiGraph, partition: list[list[int]], cpath: list[int]):
-    """Print cost memory and latency values of partition blocks in tabulated format"""
+def print_ser_tree_block_stat(tree: nx.DiGraph, partition: T_PART, cpath: list[int]):
+    """
+    Print cost memory and latency values of partition blocks in tabulated format.
+
+    :param tree:        input tree
+    :param partition:   given partitioning
+    :param cpath:       critical path
+    """
     stat = []
     for blk in partition:
         blk_cost = ser_subtree_cost(tree, blk[0], blk)
@@ -216,8 +375,15 @@ def print_ser_tree_block_stat(tree: nx.DiGraph, partition: list[list[int]], cpat
     print(tabulate.tabulate(stat, ['Block', 'Cost', 'Memory', 'Latency'], numalign='decimal', stralign='center'))
 
 
-def print_ser_cpath_stat(tree: nx.DiGraph, partition: list[list[int]], cpath: list[int] = None, delay: int = 10):
-    """Print the related block of the critical path"""
+def print_ser_cpath_stat(tree: nx.DiGraph, partition: T_PART, cpath: list[int] = None, delay: int = 10):
+    """
+    Print the related block of the critical path.
+
+    :param tree:        input tree
+    :param partition:   given partitioning
+    :param cpath:       critical path
+    :param delay:       platform delay value
+    """
     cpath = set(cpath)
     if len(partition) > 0:
         restricted_blk = [blk for blk in partition if blk[0] in cpath]
@@ -226,8 +392,22 @@ def print_ser_cpath_stat(tree: nx.DiGraph, partition: list[list[int]], cpath: li
         print("Critical blocks wrt. cpath:", sorted(cpath), "=>", restricted_blk, "-", "opt_lat:", sum_lat)
 
 
-def evaluate_ser_tree_partitioning(tree: nx.DiGraph, partition: list[list[int]], opt_cost: int, opt_lat: int,
-                                   root: int, cp_end: int, M: int, L: int, delay: int, draw: bool = True):
+def evaluate_ser_tree_partitioning(tree: nx.DiGraph, partition: T_PART, opt_cost: int, opt_lat: int, root: int,
+                                   cp_end: int, M: int, L: int, delay: int, draw: bool = True):
+    """
+    Evaluate tree partitioning and print its characteristics assuming serialized platform execution model.
+
+    :param tree:        input tree
+    :param partition:   given partitioning
+    :param opt_cost:    optimal partitioning cost
+    :param opt_lat:     latency value of the partitioning
+    :param root:        root node
+    :param cp_end:      end node of critical path
+    :param M:           upper memory limit
+    :param L:           latency limit
+    :param delay:       platform invocation delay
+    :param draw:        draw tree
+    """
     tree = leaf_label_nodes(tree)
     print(tree.graph.get(NAME, "tree").center(80, '#'))
     print("Runtime:", [tree.nodes[v][RUNTIME] for v in tree.nodes if v is not PLATFORM])
@@ -245,8 +425,15 @@ def evaluate_ser_tree_partitioning(tree: nx.DiGraph, partition: list[list[int]],
     print('#' * 80)
 
 
-def print_par_tree_block_stat(tree: nx.DiGraph, partition: list[list[int]], cpath: list[int], N: int = 1):
-    """Print cost memory and latency values of partition blocks in tabulated format"""
+def print_par_tree_block_stat(tree: nx.DiGraph, partition: T_PART, cpath: list[int], N: int = 1):
+    """
+    Print cost memory and latency values of partition blocks in tabulated format  assuming parallelized execution model.
+
+    :param tree:        input tree
+    :param partition:   given partitioning
+    :param cpath:       critical path
+    :param N:           CPU count
+    """
     stat = []
     for blk in partition:
         blk_cost = par_subtree_cost(tree, blk[0], blk, N)
@@ -255,9 +442,16 @@ def print_par_tree_block_stat(tree: nx.DiGraph, partition: list[list[int]], cpat
     print(tabulate.tabulate(stat, ['Block', 'Cost', 'Memory', 'Latency'], numalign='decimal', stralign='center'))
 
 
-def print_par_cpath_stat(tree: nx.DiGraph, partition: list[list[int]], cpath: list[int] = None, delay: int = 10,
-                         N: int = 1):
-    """Print the related block of the critical path"""
+def print_par_cpath_stat(tree: nx.DiGraph, partition: T_PART, cpath: list[int] = None, delay: int = 10, N: int = 1):
+    """
+    Print the related block of the critical path assuming parallelized execution model.
+
+    :param tree:        input tree
+    :param partition:   given partitioning
+    :param cpath:       critical path
+    :param delay:       platform invocation delay
+    :param N:           CPU count
+    """
     cpath = set(cpath)
     if len(partition) > 0:
         restricted_blk = [blk for blk in partition if blk[0] in cpath]
@@ -266,8 +460,23 @@ def print_par_cpath_stat(tree: nx.DiGraph, partition: list[list[int]], cpath: li
         print("Critical blocks wrt. cpath:", sorted(cpath), "=>", restricted_blk, "-", "opt_lat:", sum_lat)
 
 
-def evaluate_par_tree_partitioning(tree: nx.DiGraph, partition: list[list[int]], opt_cost: int, opt_lat: int,
-                                   root: int, cp_end: int, M: int, L: int, N: int, delay: int, draw: bool = True):
+def evaluate_par_tree_partitioning(tree: nx.DiGraph, partition: T_PART, opt_cost: int, opt_lat: int, root: int,
+                                   cp_end: int, M: int, L: int, N: int, delay: int, draw: bool = True):
+    """
+    Evaluate tree partitioning and print its characteristics assuming parallelized platform execution model.
+
+    :param tree:        input tree
+    :param partition:   given partitioning
+    :param opt_cost:    optimal partitioning cost
+    :param opt_lat:     latency value of the partitioning
+    :param root:        root node
+    :param cp_end:      end node of critical path
+    :param M:           upper memory limit
+    :param L:           latency limit
+    :param N:           CPU count
+    :param delay:       platform invocation delay
+    :param draw:        draw tree
+    """
     tree = leaf_label_nodes(tree)
     print(tree.graph.get(NAME, "tree").center(80, '#'))
     print("Runtime:", [tree.nodes[v][RUNTIME] for v in tree.nodes if v is not PLATFORM])
@@ -284,8 +493,22 @@ def evaluate_par_tree_partitioning(tree: nx.DiGraph, partition: list[list[int]],
     print('#' * 80)
 
 
-def evaluate_gen_tree_partitioning(tree: nx.DiGraph, partition: list[list[int]], opt_cost: int, opt_lat: int,
-                                   root: int, flavors: list, cp_end: int, L: int, delay: int, draw: bool = True):
+def evaluate_gen_tree_partitioning(tree: nx.DiGraph, partition: T_PART, opt_cost: int, opt_lat: int, root: int,
+                                   flavors: list, cp_end: int, L: int, delay: int, draw: bool = True):
+    """
+    Evaluate tree partitioning and print its characteristics assuming parallelized platform execution model.
+
+    :param tree:        input tree
+    :param partition:   given partitioning
+    :param opt_cost:    optimal partitioning cost
+    :param opt_lat:     latency value of the partitioning
+    :param root:        root node
+    :param flavors:     list of flavors
+    :param cp_end:      end node of critical path
+    :param L:           latency limit
+    :param delay:       platform invocation delay
+    :param draw:        draw tree
+    """
     tree = leaf_label_nodes(tree)
     print(tree.graph.get(NAME, "tree").center(80, '#'))
     print("Runtime:", [tree.nodes[v][RUNTIME] for v in tree.nodes if v is not PLATFORM])
@@ -304,11 +527,31 @@ def evaluate_gen_tree_partitioning(tree: nx.DiGraph, partition: list[list[int]],
 
 
 def print_ser_chain_summary(runtime: list[int], memory: list[int], rate: list[int], data: list[int]):
+    """
+    Print chain summary assuming serialized execution model.
+
+    :param runtime:     list of runtime values
+    :param memory:      list of memory values
+    :param rate:        list of rate values
+    :param data:        list of data values
+    """
     print("Chain:", "[", *(f"-{r}-> F(D{d}|T{t}|M{m})" for t, m, r, d in zip(runtime, memory, rate, data)), "]")
 
 
-def print_ser_block_stat(partition: list[list[int]], runtime: list[int], memory: list[int], rate: list[int],
-                         data: list[int], delay: float, start: int = 0, end: int = None):
+def print_ser_block_stat(partition: T_PART, runtime: list[int], memory: list[int], rate: list[int], data: list[int],
+                         delay: float, start: int = 0, end: int = None):
+    """
+    Print block stats of a chain partitioning assuming serialized execution model.
+
+    :param partition:   given partitioning
+    :param runtime:     list of runtime values
+    :param memory:      list of memory values
+    :param rate:        list of rate values
+    :param data:        list of data values
+    :param delay:       platform delay
+    :param start:       fist node to consider
+    :param end:         last node to consider
+    """
     end = end if end is not None else len(runtime) - 1
     stat = [[str([blk[0], blk[-1]]),
              ser_block_subcost(runtime, rate, data, blk[0], blk[-1]),
@@ -318,9 +561,25 @@ def print_ser_block_stat(partition: list[list[int]], runtime: list[int], memory:
                             numalign='decimal', stralign='center', tablefmt='pretty'))
 
 
-def evaluate_ser_chain_partitioning(partition: list, opt_cost: int, opt_lat: int, runtime: list, memory: list,
-                                    rate: list, data: list, M: int = math.inf, L: int = math.inf, start: int = 0,
-                                    end: int = None, delay: int = 1):
+def evaluate_ser_chain_partitioning(partition: T_PART, opt_cost: int, opt_lat: int, runtime: list[int],
+                                    memory: list[int], rate: list[int], data: list[int], M: int = math.inf,
+                                    L: int = math.inf, start: int = 0, end: int = None, delay: int = 1):
+    """
+    Evaluate chain partitioning and print its characteristics assuming serialized execution model.
+
+    :param partition:   given partitioning
+    :param opt_cost:    optimal partitioning cost
+    :param opt_lat:     latency value of the partitioning
+    :param runtime:     list of runtime values
+    :param memory:      list of memory values
+    :param rate:        list of rate values
+    :param data:        list of data values
+    :param M:           upper memory limit
+    :param L:           latency limit
+    :param start:       fist node to consider
+    :param end:         last node to consider
+    :param delay:       platform delay
+    """
     print('#' * 80)
     print(f"Chain partitioning [M={M}, L={L}:{(start, end)}] => "
           f"{partition} - opt_cost: {opt_cost}, opt_lat: {opt_lat}")
@@ -332,7 +591,11 @@ def evaluate_ser_chain_partitioning(partition: list, opt_cost: int, opt_lat: int
 
 
 def print_lp_desc(model: pulp.LpProblem):
-    """Print the lp format of the model"""
+    """
+    Print the lp format of the model.
+
+    :param model:   PuLP model object
+    """
     with tempfile.TemporaryDirectory() as tmp:
         model.writeLP(f"{tmp}/chain_model.lp")
         with open(f"{tmp}/chain_model.lp") as f:
@@ -340,34 +603,63 @@ def print_lp_desc(model: pulp.LpProblem):
 
 
 def convert_var_dict(X: dict[int, dict[int]]) -> list[list[pulp.LpVariable]]:
-    """Convert dict-of-dict variable matrix into list-of-list format"""
+    """
+    Convert dict-of-dict variable matrix into list-of-list format.
+
+    :param X:   specific structure of decision variables
+    :return:    converted format of decision variables
+    """
     return [[X[i][j] if j in X[i] else None for j in range(1, i + 1)] for i in sorted(X)]
 
 
-def print_var_matrix(X: list[list]):
-    """Print matrix of decision variables names in tabular format"""
+def print_var_matrix(X: list[list[pulp.LpVariable]]):
+    """
+    Print matrix of decision variables names in tabular format.
+
+    :param X:   specific structure of decision variables
+    """
     print(tabulate.tabulate([list(map(lambda x: x if isinstance(x, (int, type(None))) else x.name, x_i)) for x_i in X],
                             missingval="-", numalign='center', stralign='center', tablefmt='outline'))
 
 
 def print_pulp_matrix_values(X: list[list[pulp.LpVariable]]):
-    """Print matrix of decision variables values in tabular format"""
+    """
+    Print matrix of decision variables values in tabular format.
+
+    :param X:   specific structure of decision variables
+    """
     print(tabulate.tabulate([list(map(lambda x: x if isinstance(x, (int, type(None))) else pulp.value(x), x_i))
                              for x_i in X], missingval="-", numalign='center', stralign='center', tablefmt='outline'))
 
 
-def print_cplex_matrix_values(X: list[list]):
-    """Print matrix of decision variables values in tabular format"""
+def print_cplex_matrix_values(X: list[list[pulp.LpVariable]]):
+    """
+    Print matrix of decision variables values in tabular format.
+
+    :param X:   specific structure of decision variables
+    """
     print(tabulate.tabulate([list(map(lambda x: x if isinstance(x, (int, type(None))) else round(x.solution_value),
                                       x_i)) for x_i in X],
                             missingval="-", numalign='center', stralign='center', tablefmt='outline'))
 
 
 def print_cost_coeffs(model: pulp.LpProblem, X: list[list[pulp.LpVariable]]):
+    """
+    Print cost coefficients of the given LP *model*.
+
+    :param model:   model object
+    :param X:       specific structure of decision variables
+    """
     print(tabulate.tabulate([[model.objective.get(x) for x in x_i] for x_i in X],
                             missingval="-", numalign='center', stralign='center', tablefmt='outline'))
 
 
 def print_lat_coeffs(model: pulp.LpProblem, X: list[list[pulp.LpVariable]]):
+    """
+    Print latency coefficients of the given LP *model*.
+
+    :param model:   model object
+    :param X:       specific structure of decision variables
+    """
     print(tabulate.tabulate([[model.constraints[LP_LAT].get(x) for x in x_i] for x_i in X],
                             missingval="-", numalign='center', stralign='center', tablefmt='outline'))

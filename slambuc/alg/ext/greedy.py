@@ -18,17 +18,18 @@ import math
 
 import networkx as nx
 
-from slambuc.alg import INFEASIBLE
+from slambuc.alg import INFEASIBLE, T_BLOCK, T_RESULTS
 from slambuc.alg.service import MEMORY, RATE, DATA
 from slambuc.alg.util import ibacktrack_chain, recalculate_partitioning, par_subchain_latency, par_subtree_memory
 
 
 def get_bounded_greedy_block(tree: nx.DiGraph, root: int, M: int, N: int = 1, cp_end: int = None,
-                             cp_cuts: set[int] = frozenset()) -> tuple[set[int], list[int]]:
+                             cp_cuts: set[int] = frozenset()) -> tuple[T_BLOCK, list[int]]:
     """
-    Calculate partition block based on the memory limit *M* by iteratively merging edges with the largest weights
-    started from the given *root*. Filter out mandatory cuts of *cp_cuts* on the cpath form merging, while merges
-    other cpath edges.
+    Calculate a partition block based on the memory limit *M* by iteratively merging edges with the largest weights
+    started from the given *root*.
+
+    Filter out mandatory cuts of *cp_cuts* on the cpath form merging, while merges other cpath edges.
 
     :param tree:    service graph annotated with node runtime(ms), edge rate and edge data unit size
     :param root:    root node of the tree
@@ -62,20 +63,18 @@ def get_bounded_greedy_block(tree: nx.DiGraph, root: int, M: int, N: int = 1, cp
         add_neighbours(v)
     # Collect root nodes of cut subtrees by the given block
     succ = [sn for n in blk for sn in tree[n] if sn not in blk]
-    return blk, succ
+    return sorted(blk), succ
 
 
-def min_weight_greedy_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
-                                   N: int = 1, cp_end: int = None, delay: int = 1,
-                                   metrics: bool = True, **kwargs) -> tuple[list[list[int]], int, int]:
+def min_weight_greedy_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N: int = 1,
+                                   delay: int = 1, metrics: bool = True, **kwargs) -> T_RESULTS:
     """
-    Calculates memory-bounded tree partitioning in a greedy manner.
+    Calculates memory-bounded tree partitioning in a greedy manner without any latency limit.
 
     :param tree:    service graph annotated with node runtime(ms), edge rate and edge data unit size
     :param root:    root node of the tree
     :param M:       upper memory bound of the partition blocks in MB
     :param N:       available CPU core count
-    :param cp_end:  tail node of the critical path in the form of subchain[root -> cp_end]
     :param delay:   invocation delay between blocks
     :param metrics: return calculated sum cost and critical path latency
     :return:        tuple of derived partitioning, sum cost, and the latency on the critical path (root, cp_end)
@@ -85,8 +84,8 @@ def min_weight_greedy_partitioning(tree: nx.DiGraph, root: int = 1, M: int = mat
     while succ:
         blk, next_succ = get_bounded_greedy_block(tree, succ.popleft(), M, N)
         succ.extend(next_succ)
-        partition.append(sorted(blk))
-    sum_cost, sum_lat = recalculate_partitioning(tree, partition, root, N, cp_end, delay) if metrics else (None, None)
+        partition.append(blk)
+    sum_cost, sum_lat = recalculate_partitioning(tree, partition, root, N, None, delay) if metrics else (None, None)
     return partition, sum_cost, sum_lat
 
 
@@ -96,7 +95,7 @@ def min_weight_greedy_partitioning(tree: nx.DiGraph, root: int = 1, M: int = mat
 def get_feasible_cpath_split(tree: nx.DiGraph, root: int, cp_end: int, M: int, L: int, N: int = 1,
                              delay: int = 1) -> set[int]:
     """
-    Calculate feasible splitting of the critical path that meets given memory and latency limits.
+    Calculate feasible splitting of the critical path that meets given memory *M* and latency *L* limits.
 
     :param tree:    service graph annotated with node runtime(ms), edge rate and edge data unit size
     :param root:    root node of the tree
@@ -143,11 +142,10 @@ def get_feasible_cpath_split(tree: nx.DiGraph, root: int, cp_end: int, M: int, L
 
 
 def min_weight_partition_heuristic(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
-                                   N: int = 1, cp_end: int = None, delay: int = 1,
-                                   metrics: bool = True) -> tuple[list[list[int]], int, int]:
+                                   N: int = 1, cp_end: int = None, delay: int = 1, metrics: bool = True) -> T_RESULTS:
     """
-    Heuristic algorithm to calculate partitioning of the given *tree* regarding the given memory *M* and latency *L*
-    limits.
+    Greedy heuristic algorithm to calculate partitioning of the given *tree* regarding the given memory *M* and
+    latency *L* limits.
 
     :param tree:    service graph annotated with node runtime(ms), edge rate and edge data unit size
     :param root:    root node of the tree
@@ -170,6 +168,6 @@ def min_weight_partition_heuristic(tree: nx.DiGraph, root: int = 1, M: int = mat
         v = succ.popleft()
         blk, next_succ = get_bounded_greedy_block(tree, v, M, N, cp_end, cpath_cuts)
         succ.extend(next_succ)
-        partition.append(sorted(blk))
+        partition.append(blk)
     sum_cost, sum_lat = recalculate_partitioning(tree, partition, root, N, cp_end, delay) if metrics else (None, None)
     return partition, sum_cost, sum_lat

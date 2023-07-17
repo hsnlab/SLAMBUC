@@ -17,13 +17,13 @@ import typing
 
 import networkx as nx
 
-from slambuc.alg import INFEASIBLE
+from slambuc.alg import INFEASIBLE, T_BLOCK, T_RESULTS
 from slambuc.alg.service import *
 from slambuc.alg.util import ipostorder_dfs, ibacktrack_chain
 
 
 class MinTBlock(typing.NamedTuple):
-    """Store subtree attributes for a given subcase"""
+    """Store subtree attributes for a given min subcase."""
     w: int = None  # Tailing node of the first block of the subtree partitioning
     c: int = 0  # Number of cuts the given subtree partitioning introduce on the critical path
     sum_cost: int = math.inf  # Sum cost of the subtree partitioning
@@ -36,16 +36,21 @@ class MinTBlock(typing.NamedTuple):
         return repr(tuple(self))
 
 
-def min_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N: int = math.inf,
-                          L: int = math.inf, cp_end: int = None, delay: int = 1, unit: int = 100,
-                          full: bool = True) -> tuple[list[int], int, int]:
+def min_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N: int = math.inf, L: int = math.inf,
+                          cp_end: int = None, delay: int = 1, unit: int = 100, full: bool = True) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning of a service graph(tree) with respect to an upper bound **M** on the total
     memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes.
 
-    It can be only used when the cost function regarding the graph attributes is sub-additive.
+    Cost calculation relies on the rounding *unit* and number of vCPU cores *N*, whereas platform invocation *delay*
+    is used for latency calculations.
 
-    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rate
+    It gives optimal result only in case the cost function regarding the chain attributes is sub-additive,
+    that is k_opt = k_min is guaranteed for each case.
+
+    Instead of full partitioning it only returns the list of barrier nodes.
+
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:    root node of the graph
     :param M:       upper memory bound of the partition blocks (in MB)
     :param N:       upper CPU core bound of the partition blocks
@@ -77,8 +82,10 @@ def min_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N:
                 DP[node].append(blk)
 
     def qmerge(pred: int, node: int, barr: int, m_cost: int, add_cut: bool = False):
-        """Copy DP entries from queue of node *barr* with *c_b* cuts into queue of node *node* with *c_n* cuts
-        while leaving the best subcase in the original queue."""
+        """
+        Copy DP entries from queue of node *barr* with *c_b* cuts into queue of node *node* with *c_n* cuts
+        while leaving the best subcase in the original queue.
+        """
         blk = None
         while len(DP[barr]):
             blk = DP[barr].pop()
@@ -95,7 +102,7 @@ def min_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N:
         DP[barr].append(blk)
 
     def block_cost(pred: int, barr: int, w: int) -> int:
-        """Calculate running time of block: p -> [barr -> w]"""
+        """Calculate running time of block: p -> [barr -> w]."""
         sum_time = tree.nodes[w][RUNTIME]
         while w > barr:
             w = next(tree.predecessors(w))
@@ -133,8 +140,17 @@ def min_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N:
         return INFEASIBLE
 
 
-def extract_min_blocks(tree: nx.DiGraph, DP: list[dict], root: int, full: bool = True) -> list[int]:
-    """Extract subtree roots of partitioning from the tailing nodes stored in the *DP* matrix"""
+def extract_min_blocks(tree: nx.DiGraph, DP: list[collections.deque[MinTBlock]],
+                       root: int, full: bool = True) -> T_BLOCK:
+    """
+    Extract subtree roots of partitioning from the tailing nodes stored in the *DP* matrix.
+
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
+    :param DP:      dynamic programming structure storing intermediate *MinTBlock* subcases
+    :param root:    root node of the graph
+    :param full:    calculate full blocks
+    :return:        partitioning blocks
+    """
     n = set(filter(lambda v: v is not PLATFORM, tree))
     p = []
     barr = {root}

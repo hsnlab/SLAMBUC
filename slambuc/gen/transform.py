@@ -20,9 +20,16 @@ from slambuc.alg.util import ipostorder_dfs
 
 
 def faasify_dag_by_duplication(dag: nx.DiGraph, root: int) -> nx.DiGraph:
-    """One-way transformation of a DAG of modules/components into a tree by iteratively duplicating sub-graphs
+    """
+    One-way transformation of a DAG of modules/components into a tree by iteratively duplicating sub-graphs
     related to nodes with multiple predecessors.
-    The algorithm requires that the input DAG must have only one source node."""
+
+    The algorithm requires that the input DAG must have only one source node.
+
+    :param dag:     input DAG
+    :param root:    root node
+    :return:        generated tree
+    """
     if dag is None:
         return
     while not nx.is_tree(dag):
@@ -55,7 +62,14 @@ def faasify_dag_by_cutting(dag: nx.DiGraph, root: int) -> nx.DiGraph:
 
 
 def transform_autonomous_caching(tree: nx.DiGraph, root: int, copy: bool = False) -> nx.DiGraph:
-    """Transform given **tree** by adding fetching and out-caching overheads to function execution times"""
+    """
+    Transform given *tree* by adding fetching and out-caching overheads to function execution times.
+
+    :param tree:    input tree
+    :param root:    root node
+    :param copy:    use a deep copy of the input instead of modifying the original
+    :return:        transformed tree
+    """
     tf_tree = tree.copy() if copy else tree
     for p, n in ipostorder_dfs(tree, root):
         # Add data fetching and state caching overheads to the function execution time

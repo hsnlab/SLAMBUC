@@ -21,7 +21,16 @@ from slambuc.alg.service.common import *
 
 def get_random_chain_data(nodes: int = 10, runtime: tuple[int, int] = (1, 100), memory: tuple[int, int] = (1, 3),
                           rate: tuple[int, int] = (1, 3), data: tuple[int, int] = (1, 20)) -> list[list[int]]:
-    """Generate random chain(path graph) with properties from given intervals"""
+    """
+    Generate random chain(path graph) data with properties from given intervals.
+
+    :param nodes:   number of nodes
+    :param runtime: interval of runtime values
+    :param memory:  interval of memory values
+    :param rate:    interval of rate values
+    :param data:    interval of data values
+    :return:        generated chain data
+    """
     t = [random.randint(*runtime) for _ in range(nodes)]
     m = [random.randint(*memory) for _ in range(nodes)]
     d = [random.randint(*data) for _ in range(nodes)]
@@ -31,7 +40,16 @@ def get_random_chain_data(nodes: int = 10, runtime: tuple[int, int] = (1, 100), 
 
 def get_random_chain(nodes: int = 10, runtime: tuple[int, int] = (1, 100), memory: tuple[int, int] = (1, 3),
                      rate: tuple[int, int] = (1, 3), data: tuple[int, int] = (1, 20)) -> nx.DiGraph:
-    """Generate random chain(path graph) with properties from given intervals"""
+    """
+    Generate random chain(path graph) with properties from given intervals.
+
+    :param nodes:   number of nodes
+    :param runtime: interval of runtime values
+    :param memory:  interval of memory values
+    :param rate:    interval of rate values
+    :param data:    interval of data values
+    :return:        generated random chain
+    """
     chain = nx.path_graph(range(0, nodes + 1), nx.DiGraph)
     nx.set_node_attributes(chain, {i: random.randint(*runtime) for i in range(1, nodes + 1)}, RUNTIME)
     nx.set_node_attributes(chain, {i: random.randint(*memory) for i in range(1, nodes + 1)}, MEMORY)
@@ -47,7 +65,17 @@ def get_random_chain(nodes: int = 10, runtime: tuple[int, int] = (1, 100), memor
 def get_random_tree(nodes: int = 20, runtime: tuple[int, int] = (1, 100), memory: tuple[int, int] = (1, 3),
                     rate: tuple[int, int] = (1, 3), data: tuple[int, int] = (1, 20),
                     name: str = None) -> nx.DiGraph:
-    """Generate random tree(from Prüfer sequence) with properties from given intervals"""
+    """
+    Generate random tree from Prufer sequence with properties from given intervals.
+
+    :param nodes:   number of nodes
+    :param runtime: interval of runtime values
+    :param memory:  interval of memory values
+    :param rate:    interval of rate values
+    :param data:    interval of data values
+    :param name:    tree name suffix
+    :return:        generated random tree
+    """
     raw_tree = nx.bfs_tree(nx.random_tree(nodes + 1), 0)
     while raw_tree.out_degree[0] > 1:
         raw_tree = nx.bfs_tree(nx.random_tree(nodes + 1), 0)

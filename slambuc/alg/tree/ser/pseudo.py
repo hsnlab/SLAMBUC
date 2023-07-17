@@ -19,7 +19,7 @@ import typing
 
 import networkx as nx
 
-from slambuc.alg import INFEASIBLE
+from slambuc.alg import INFEASIBLE, T_RESULTS
 from slambuc.alg.service import *
 from slambuc.alg.util import ipostorder_dfs, ileft_right_dfs, ibacktrack_chain, recreate_subtree_blocks, verify_limits
 
@@ -28,7 +28,7 @@ OPT = 0
 
 
 class SubBTreePart(typing.NamedTuple):
-    """Store subtree partitioning attributes for a given subcase"""
+    """Store subtree partitioning attributes for a given subcase."""
     cost: int = math.inf  # Sum cost of the subtree partitioning
     barr: set[int] = set()  # Barrier/heading nodes of the given subtree partitioning
 
@@ -37,12 +37,15 @@ class SubBTreePart(typing.NamedTuple):
 
 
 def pseudo_btree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf, cp_end: int = None,
-                              delay: int = 1, bidirectional: bool = True) -> tuple[list[list[int]], int, int]:
+                              delay: int = 1, bidirectional: bool = True) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning of a service graph(tree) with respect to an upper bound **M** on the total
-    memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes.
+    memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes, while
+    applying bottom-up tree traversal approach.
+    
+    Block metrics are calculated based on serialized execution platform model.
 
-    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rate and data
+    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:            root node of the graph
     :param M:               upper memory bound of the partition blocks in MB
     :param L:               latency limit defined on the critical path in ms
@@ -141,7 +144,7 @@ def pseudo_btree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf
 
 
 class SubLTreePart(typing.NamedTuple):
-    """Store subtree partitioning attributes for a given subcase"""
+    """Store subtree partitioning attributes for a given subcase."""
     cost: int = math.inf  # Sum cost of the subtree partitioning
     mul: int = 1  # Last serialization multiplier of the top/first block of the subtree partitioning
     barr: set[int] = set()  # Barrier/heading nodes of the given subtree partitioning
@@ -151,12 +154,15 @@ class SubLTreePart(typing.NamedTuple):
 
 
 def pseudo_ltree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf, cp_end: int = None,
-                              delay: int = 1, bidirectional: bool = True) -> tuple[list[list[int]], int, int]:
+                              delay: int = 1, bidirectional: bool = True) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning of a service graph(tree) with respect to an upper bound **M** on the total
-    memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes.
+    memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes, while
+    applying left-right tree traversal approach.
+    
+    Block metrics are calculated based on serialized execution platform model.
 
-    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rate and data
+    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:            root node of the graph
     :param M:               upper memory bound of the partition blocks in MB
     :param L:               latency limit defined on the critical path in ms

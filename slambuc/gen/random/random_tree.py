@@ -28,6 +28,14 @@ DEF_RAND_TREE_PREFIX = "random_tree"
 
 
 def generate_random_trees(n: int, data_dir: str, iteration: int = 1000, file_prefix: str = DEF_RAND_TREE_PREFIX):
+    """
+    Generate random trees with attributes uniformly drawn form intervals.
+
+    :param n:           tree size
+    :param data_dir:    directory of saved trees
+    :param iteration:   number of generated trees
+    :param file_prefix: prefix name of tree files
+    """
     print(f"Generating random trees with size {n}...")
     trees = [get_random_tree(nodes=n, runtime=RUNTIME, memory=MEMORY, rate=RATE, data=DATA) for _ in range(iteration)]
     file_name = pathlib.Path(data_dir, f"{file_prefix}_n{n}.npy").resolve()
@@ -37,7 +45,16 @@ def generate_random_trees(n: int, data_dir: str, iteration: int = 1000, file_pre
 
 def generate_all_random_trees(data_dir: str, iteration: int = 100, start: int = 10, end: int = 100, step: int = 10,
                               file_prefix: str = DEF_RAND_TREE_PREFIX):
-    """Generate random service trees with attributes from uniform distribution"""
+    """
+    Generate random service trees with random sizes from given intervals.
+
+    :param data_dir:    directory of saved trees
+    :param iteration:   number of generated trees
+    :param start:       minimum of size intervals
+    :param end:         maximum of size intervals
+    :param step:        step size of intervals
+    :param file_prefix: prefix name of tree files
+    """
     for min_size, max_size in itertools.pairwise(range(start, end + step, step)):
         print(f"Generating random trees with {min_size} <= size <= {max_size}...")
         trees = [get_random_tree(nodes=random.randint(min_size, max_size), runtime=RUNTIME, memory=MEMORY,

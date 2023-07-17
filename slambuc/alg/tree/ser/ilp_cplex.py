@@ -18,14 +18,13 @@ import warnings
 
 import docplex
 import docplex.cp.model as cpo
-import docplex.mp.dvar as var
 import docplex.mp.model as cpx
 import networkx as nx
 
 if sys.version_info.minor > 10 and docplex.docplex_version_minor <= 25:
     warnings.warn(f"docplex[{docplex.version.docplex_version_string}] package does not support Python version >3.10!")
 
-from slambuc.alg import LP_LAT, INFEASIBLE
+from slambuc.alg import LP_LAT, INFEASIBLE, T_RESULTS, T_PART
 from slambuc.alg.service import *
 from slambuc.alg.tree.ser.ilp import ifeasible_subtrees
 from slambuc.alg.util import (ibacktrack_chain, induced_subtrees, ser_subchain_latency, ser_subtree_cost,
@@ -40,6 +39,7 @@ def build_tree_cfg_cpo_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
                              isubtrees: iter = ifeasible_subtrees) -> tuple[cpo.CpoModel, list[cpo.CpoIntVar]]:
     """
     Generate the configuration CP model.
+
     :return: tuple of the created model and list of decision variables
     """
     # Model
@@ -85,7 +85,7 @@ def _set_cpo_context():
 
 
 def tree_cpo_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf, cp_end: int = None,
-                          delay: int = 1, **kwargs) -> tuple[list[list[int]], int, int]:
+                          delay: int = 1, **kwargs) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning of a tree based on configuration CP formulation.
 
@@ -113,8 +113,15 @@ def tree_cpo_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L:
 
 
 def recreate_subtrees_from_cpo_xdict(tree: nx.DiGraph, result: cpo.CpoSolveResult,
-                                     Xn: dict[int, list[cpo.CpoIntVar]]) -> list[list[int]]:
-    """Extract barrier nodes from variable names (x_{b}_{w}) and recreate partitioning blocks"""
+                                     Xn: dict[int, list[cpo.CpoIntVar]]) -> T_PART:
+    """
+    Extract barrier nodes from variable names (x_{b}_{w}) and recreate partitioning blocks.
+
+    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
+    :param result:  result object
+    :param Xn:      specific structure of decision variables
+    :return:        calculated partitioning
+    """
     barr = set(int(next(filter(lambda x: result[x], x_n)).name.split('_', 2)[1]) for x_n in Xn.values())
     return recreate_subtree_blocks(tree=tree, barr=barr)
 
@@ -124,9 +131,10 @@ def recreate_subtrees_from_cpo_xdict(tree: nx.DiGraph, result: cpo.CpoSolveResul
 
 def build_greedy_tree_cplex_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
                                   L: int = math.inf, cpath: set[int] = frozenset(),
-                                  delay: int = 1) -> tuple[cpx.Model, dict[int, dict[int, var]]]:
+                                  delay: int = 1) -> tuple[cpx.Model, dict[int, dict[int, docplex.mp.dvar]]]:
     """
     Generate the matrix ILP model using CPLEX Python binding.
+
     :return: tuple of the created model and list of decision variables
     """
     # Model
@@ -181,9 +189,10 @@ def build_greedy_tree_cplex_model(tree: nx.DiGraph, root: int = 1, M: int = math
 
 def build_tree_cplex_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
                            L: int = math.inf, cpath: set[int] = frozenset(),
-                           delay: int = 1) -> tuple[cpx.Model, dict[int, dict[int, var]]]:
+                           delay: int = 1) -> tuple[cpx.Model, dict[int, dict[int, docplex.mp.dvar]]]:
     """
     Generate the matrix ILP model using CPLEX Python binding.
+
     :return: tuple of the created model and list of decision variables
     """
     # Model
@@ -238,8 +247,8 @@ def build_tree_cplex_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
     return model, X
 
 
-def tree_cplex_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf, cp_end: int = None,
-                            delay: int = 1, **kwargs) -> tuple[list[list[int]], int, int]:
+def tree_cplex_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
+                            cp_end: int = None, delay: int = 1, **kwargs) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning of a tree based on matrix CPLEX ILP formulation.
 
@@ -266,7 +275,12 @@ def tree_cplex_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, 
         return INFEASIBLE
 
 
-def extract_subtrees_from_cplex_xmatrix(X: dict[int, dict[int, var]]) -> list[list[int]]:
-    """Extract barrier nodes from variable matrix(dict-of-dict) and recreate partitioning blocks"""
+def extract_subtrees_from_cplex_xmatrix(X: dict[int, dict[int, docplex.mp.dvar]]) -> T_PART:
+    """
+    Extract barrier nodes from variable matrix(dict-of-dict) and recreate partitioning blocks.
+
+    :param X:   specific structure of decision variables
+    :return:    calculated partitioning
+    """
     return [[i for i in sorted(X) if j in X[i] and round(X[i][j].solution_value, ndigits=6) == 1]
             for j in sorted(X) if round(X[j][j].solution_value, ndigits=6) == 1]

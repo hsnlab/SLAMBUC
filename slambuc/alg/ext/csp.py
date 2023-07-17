@@ -15,12 +15,13 @@ import collections
 import itertools
 import math
 import time
+from collections.abc import Generator, Callable
 
 import cspy
 import networkx as nx
 import numpy as np
 
-from slambuc.alg import INFEASIBLE
+from slambuc.alg import INFEASIBLE, T_BLOCK, T_RESULTS, T_PART
 from slambuc.alg.service.common import SEP, ASSIGN, Flavor
 from slambuc.alg.util import (leaf_label_nodes, ibacktrack_chain, iflattened_tree, gen_subtree_memory, gen_subtree_cost,
                               gen_subchain_latency, verify_limits)
@@ -30,24 +31,36 @@ START, END = 'Source', 'Sink'
 COST, LAT = 'weight', 'res_cost'
 
 
-def encode_state(grp: list[int], flavor: Flavor) -> str:
-    """Encode DAG node name with flavor's memory as a unique str (hashable)"""
+def encode_state(grp: T_BLOCK, flavor: Flavor) -> str:
+    """
+    Encode DAG node name with flavor's memory as a unique str (hashable).
+
+    :param grp:     partition block
+    :param flavor:  assigned *flavor*
+    :return:        encoded partition block
+    """
     return f"{SEP.join(map(str, grp))}{ASSIGN}{SEP.join(map(str, flavor))}"
 
 
-def decode_state(name: str) -> list[list[int], int]:
-    """Decode DAG node name from encoded str into partition block (list of int) and flavor's memory (mem)"""
+def decode_state(name: str) -> list[T_BLOCK, str]:
+    """
+    Decode DAG node name from encoded str into partition block (list of int) and flavor's memory (mem).
+
+    :param name:    encoded partition block
+    :return:        decoded block and assigned flavor
+    """
     parts = name.rsplit(ASSIGN, maxsplit=1)
     return list(map(int, parts[0].split(SEP))), Flavor(*parts[1].split(SEP)).name
 
 
 def ibuild_gen_csp_dag(tree: nx.DiGraph, root: int = 1, flavors: list[Flavor] = (Flavor(),),
-                       exec_calc: collections.abc.Callable[[int, int, int], int] = lambda i, t, n: t,
-                       cpath: set[int] = frozenset(), delay: int = 1) -> tuple[nx.DiGraph, list[list[int]]]:
+                       exec_calc: Callable[[int, int, int], int] = lambda i, t, n: t,
+                       cpath: set[int] = frozenset(), delay: int = 1) -> Generator[nx.DiGraph, list[list[int]]]:
     """
-    Calculate the state-space DAGs of the given *tree* based on the alternative chain decompositions.
-    The given flavors as list of (memory, CPU, cost_factor) tuple defines the available memory (and group upper limit),
-    available relative vCPU cores and
+    Calculate all state-space DAGs of the given *tree* based on the alternative chain decompositions.
+
+    The given flavors as list of (memory, CPU, cost_factor) tuples define the available memory (and group upper limit),
+    available relative vCPU cores and relative cost multiplier.
 
     :param tree:        service graph annotated with node runtime(ms), memory(MB) and edge rate
     :param root:        root node of the graph
@@ -98,11 +111,12 @@ def ibuild_gen_csp_dag(tree: nx.DiGraph, root: int = 1, flavors: list[Flavor] = 
         yield dag, chains
 
 
-def csp_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf, N: int = 1,
-                          cp_end: int = None, delay: int = 1, exhaustive: bool = True, solver=cspy.BiDirectional,
-                          timeout: int = None, **cspargs) -> tuple[list[list[int]], int, int]:
+def csp_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
+                          N: int = 1, cp_end: int = None, delay: int = 1, exhaustive: bool = True,
+                          solver=cspy.BiDirectional, timeout: int = None, **cspargs) -> T_RESULTS:
     """
-    Calculate minimal-cost partitioning of a *tree* based on constrained shortest path (CSP) formalization.
+    Calculate minimal-cost partitioning of a *tree* based on constrained shortest path (CSP) formalization
+    without considering flavor assignment.
 
     Details in: T. Elgamal at al.: “Costless: Optimizing Cost of Serverless Computing through Function Fusion
     and Placement,” in 2018 IEEE/ACM Symposium on Edge Computing (SEC), 2018, pp. 300–312. doi: 10.1109/SEC.2018.00029.
@@ -132,7 +146,8 @@ def csp_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L:
             model = solver(dag, max_res=[len(dag.edges), L], min_res=[1, 0], time_limit=timeout, **cspargs)
             model.run()
             if model.path is not None and model.total_cost < best_res[1]:
-                best_res = extract_grp_from_path(model.path, flav=False), model.total_cost, model.consumed_resources[-1]
+                best_res = extract_grp_from_path(model.path, flavors=False), model.total_cost, model.consumed_resources[
+                    -1]
                 if not exhaustive:
                     # Stop at first feasible solution
                     break
@@ -148,9 +163,10 @@ def csp_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L:
 def csp_gen_tree_partitioning(tree: nx.DiGraph, root: int = 1, flavors: list[tuple[int, int]] = ((math.inf, 1),),
                               exec_calc: collections.abc.Callable[[int, int], int] = lambda i, t, n: t,
                               L: int = math.inf, cp_end: int = None, delay: int = 1, solver=cspy.BiDirectional,
-                              timeout: int = None, **cspargs) -> tuple[list[list[int]], int, int]:
+                              timeout: int = None, **cspargs) -> T_RESULTS:
     """
-    Calculate minimal-cost partitioning of a *tree* based on constrained shortest path (CSP) formalization.
+    Calculate minimal-cost partitioning of a *tree* based on constrained shortest path (CSP) formalization with
+    incorporated flavor assignment.
 
     Details in: T. Elgamal at al.: “Costless: Optimizing Cost of Serverless Computing through Function Fusion
     and Placement,” in 2018 IEEE/ACM Symposium on Edge Computing (SEC), 2018, pp. 300–312. doi: 10.1109/SEC.2018.00029.
@@ -187,6 +203,12 @@ def csp_gen_tree_partitioning(tree: nx.DiGraph, root: int = 1, flavors: list[tup
     return best_res
 
 
-def extract_grp_from_path(path: list[str], flav: bool = True) -> list[list[int]]:
-    """Extract partitioning from *path* and recreate blocks"""
-    return sorted(decode_state(grp) if flav else decode_state(grp)[0] for grp in path[1:-1])
+def extract_grp_from_path(path: list[str], flavors: bool = True) -> T_PART:
+    """
+    Extract partitioning from *path* and recreate partition blocks.
+
+    :param path:    solution path of the CSP graph
+    :param flavors: whether return flavors or not
+    :return:        resulted partitioning blocks
+    """
+    return sorted(decode_state(grp) if flavors else decode_state(grp)[0] for grp in path[1:-1])

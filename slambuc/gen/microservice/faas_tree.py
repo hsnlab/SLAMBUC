@@ -14,6 +14,7 @@
 import itertools
 import pathlib
 import random
+from collections.abc import Generator
 
 import networkx as nx
 import numpy as np
@@ -56,13 +57,27 @@ LEAF_ATTR_LOW, LEAF_ATTR_HIGH = 0.1, 3.25
 DEF_FAAS_TREE_PREFIX = f"faas_tree"
 
 
-def ifunc_attributes(n: int, dist: scipy.stats.rv_continuous, transform=np.round) -> int:
-    """Generate attribute values of the given size *n* base on the given distribution *dist*"""
+def ifunc_attributes(n: int, dist: scipy.stats.rv_continuous, transform=np.round) -> Generator[int]:
+    """
+    Generate attribute values of the given size *n* base on the given distribution *dist*.
+
+    :param n:           number of attributes
+    :param dist:        build distribution object
+    :param transform:   transform function applied on every attribute value
+    :return:            generator of attributes
+    """
     yield from transform(dist.rvs(size=n)).astype(int)
 
 
 def get_faas_tree(n: int, Alpha: float, a: float) -> nx.DiGraph:
-    """Generate service tree with attributes drawn from the predefined distributions"""
+    """
+    Generate service tree with attributes drawn from the predefined distributions.
+
+    :param n:       number of nodes
+    :param Alpha:   power of preferential attachment (default: 1.0)
+    :param a:       attractiveness of vertices with no edges (default: 0.0)
+    :return:        generated tree
+    """
     tree = nx.bfs_tree(generate_power_ba_graph(n=n, m=1, Alpha=Alpha, a=a, root=1), source=1, sort_neighbors=sorted)
     runtimes, memories = ifunc_attributes(n, RT_DIST), ifunc_attributes(n, MEM_DIST)
     rates, data = ifunc_attributes(n, RATE_DIST, transform=np.floor), ifunc_attributes(n, DATA_DIST)
@@ -76,7 +91,11 @@ def get_faas_tree(n: int, Alpha: float, a: float) -> nx.DiGraph:
 
 
 def verify_faas_tree(n: int = 10):
-    """Plot random generated serverless tree"""
+    """
+    Plot random generated serverless tree.
+
+    :param n:   tree size
+    """
     t = get_faas_tree(n)
     draw_tree(t, draw_weights=True)
 
@@ -84,7 +103,18 @@ def verify_faas_tree(n: int = 10):
 def generate_all_faas_trees(data_dir: str, Alpha: float = PREF_ATT_HIGH, a: float = LEAF_ATTR_HIGH,
                             iteration: int = 100, start: int = 10, end: int = 100, step: int = 10,
                             tree_name: str = DEF_FAAS_TREE_PREFIX):
-    """Generate Serverless/Faas service trees with attributes from predefined and extracted distributions"""
+    """
+    Generate Serverless/Faas service trees with attributes from predefined and extracted distributions.
+
+    :param data_dir:    directory of saved trees
+    :param Alpha:       power of preferential attachment (default: 1.0)
+    :param a:           attractiveness of vertices with no edges (default: 0.0)
+    :param iteration:   number of generated trees
+    :param start:       minimum of size intervals
+    :param end:         maximum of size intervals
+    :param step:        step size of intervals
+    :param tree_name:   prefix name of tree files
+    """
     for min_size, max_size in itertools.pairwise(range(start, end + step, step)):
         print(f"Generating Serverless/FaaS trees with {min_size} <= size <= {max_size}...")
         trees = [get_faas_tree(n=random.randint(min_size, max_size), Alpha=Alpha, a=a)

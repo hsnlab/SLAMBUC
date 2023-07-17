@@ -18,7 +18,7 @@ import operator
 
 import networkx as nx
 
-from slambuc.alg import INFEASIBLE
+from slambuc.alg import INFEASIBLE, T_RESULTS
 from slambuc.alg.service import *
 from slambuc.alg.tree.ser.pseudo import SubBTreePart, SubLTreePart, OPT
 from slambuc.alg.tree.ser.pseudo_mp import isubtree_splits
@@ -31,7 +31,23 @@ def _par_ltree_partitioning(ready: multiprocessing.SimpleQueue, sync: dict[int, 
                             N: int = 1, cpath: set[int] = frozenset(), delay: int = 1,
                             bidirectional: bool = True) -> None | dict[int, SubBTreePart]:
     """
-    Calculates minimal-cost partitioning of a subgraph with *root* while waits for subcases at sync edges.
+    Calculates minimal-cost partitioning of a subgraph with *root* node using the left-right tree traversal approach
+    while waits for subcases at *sync* edges.
+
+    This function is designed for running in a separate detached subprocess and synchronizing subresults via
+    *SimpleQueue* objects as an IPC method.
+
+    :param ready:           object for signaling the end of partitioning
+    :param sync:            object regarding subtrees which results need to be waited for
+    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
+    :param root:            root node of the graph
+    :param M:               upper memory bound of the partition blocks in MB
+    :param L:               latency limit defined on the critical path in ms
+    :param N:               available CPU core count
+    :param cpath:           critical path nodes
+    :param delay:           invocation delay between blocks
+    :param bidirectional:   use bidirectional subcase elimination (may introduce quadratic increase in the worst case)
+    :return:                tuple of optimal partitioning, reached sum cost and latency on the critical path
     """
     # Allocate empty dict for local subcases combined with prior subcase results
     TDP = {}
@@ -148,12 +164,18 @@ def _par_ltree_partitioning(ready: multiprocessing.SimpleQueue, sync: dict[int, 
 
 def pseudo_par_mp_ltree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
                                      N: int = 1, cp_end: int = None, delay: int = 1,
-                                     bidirectional: bool = True) -> tuple[list[list[int]], int, int]:
+                                     bidirectional: bool = True) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning of a service graph(tree) with respect to an upper bound **M** on the total
     memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes.
 
-    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rate and data
+    Partitioning is calculated using the left-right tree traversal approach.
+
+    Arbitrary disjoint subtrees are partitioned in separate subprocesses.
+
+    Block metrics are calculated based on parallelized execution platform model.
+
+    :param tree:            service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:            root node of the graph
     :param M:               upper memory bound of the partition blocks in MB
     :param L:               latency limit defined on the critical path in ms
