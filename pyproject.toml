@@ -76,9 +76,7 @@ type = "python"
 search_path = ["slambuc"]
 
 [[tool.pydoc-markdown.processors]]
-type = "filter"
-type = "smart"
-type = "crossref"
+type = ["filter", "smart", "crossref"]
 
 [tool.pydoc-markdown.renderer]
 type = "mkdocs"
