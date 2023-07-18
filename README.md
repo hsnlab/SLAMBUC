@@ -1,10 +1,9 @@
 # Serverless Layout Adaptation with Memory-Bounds and User Constraints (SLAMBUC)
 
-![PyPI](https://img.shields.io/pypi/v/SLAMBUC)
+[![PyPI](https://img.shields.io/pypi/v/SLAMBUC)](https://pypi.org/project/SLAMBUC/)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/SLAMBUC)
-![PyPI - License](https://img.shields.io/pypi/l/SLAMBUC)
-![Algorithm tests](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-tests.yml/badge.svg?branch=main)
-
+[![PyPI - License](https://img.shields.io/pypi/l/SLAMBUC)](LICENSE)
+[![Algorithm tests](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-tests.yml/badge.svg)](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-tests.yml)
 
 Collection of graph partitioning algorithms implemented in Python for composing cloud-native
 applications from standalone serverless functions in a cost-efficient and latency-constrained manner.
@@ -106,33 +105,9 @@ python3.11 -m pip install slambuc[tests]      # For executing tests
 python3.11 -m pip install slambuc[validation] # For using our test harness framework
 ```
 
-## Package structure
-
-* [slambuc](slambuc) - [Main package]
-    * [alg](slambuc/alg) - [algorithms]
-        * [chain](slambuc/alg/chain) - [Single Chain Partitioning]
-            * [dp](slambuc/alg/chain/dp) - [dynamic programming]
-            * [ser](slambuc/alg/chain/ser) - [linear programming]
-        * [ext](slambuc/alg/ext) - [External algorithms and Baselines]
-        * [service](slambuc/alg/service) - [Service Properties]
-        * [tree](slambuc/alg/tree) - [Tree Partitioning]
-            * [dp](slambuc/alg/tree/dp) - [chain-based algorithms]
-            * [layout](slambuc/alg/tree/layout) - [general partitioning]
-            * [par](slambuc/alg/tree/par) - [parallel executions models]
-            * [ser](slambuc/alg/tree/ser) - [serialized execution models]
-    * [gen](slambuc/gen) - [Input Generators]
-        * [cluster](slambuc/gen/cluster) - [data-parallel job trees]
-        * [microservice](slambuc/gen/microservice) - [serverless trees]
-        * [random](slambuc/gen/random) - [random trees]
-    * [misc](slambuc/misc) - [Miscellaneous utility codes]
-* [tests](tests) - [tests]
-* [validation](validation) - [Validation Framework]
-    * [data](validation/data) - [generated test data]
-    * [results](validation/results) - [measured result files]
-
 ## Usage
 
-Refer to the wiki for [formats, execution parameters, and examples](https://github.com/hsnlab/SLAMBUC/wiki).
+Refer to the wiki for [formats, execution parameters, examples, and API documentation](https://github.com/hsnlab/SLAMBUC/wiki).
 
 ## Example
 
