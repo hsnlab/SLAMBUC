@@ -21,9 +21,9 @@ jobs:
         sudo apt update && sudo apt install -y graphviz graphviz-dev
     - name: Install Python dependencies
       run: |
-        python3.11 -m pip install --upgrade pip
-        python3.11 -m pip install -U -r requirements.txt
-        python3.11 -m pip install --no-deps -e .
+        python3.11 -m pip install -v --upgrade pip
+        python3.11 -m pip install -v -U -r requirements.txt
+        python3.11 -m pip install -vv --no-deps -e .
     - name: Test with own validation script
       run: |
         python3.11 tests/validate_algs.py
