@@ -34,10 +34,6 @@ dependencies = [
 "Homepage" = "https://github.com/hsnlab/SLAMBUC/wiki"
 "Issue Tracker" = "https://github.com/hsnlab/SLAMBUC/issues"
 
-[tool.setuptools.dynamic]
-version = { attr = "slambuc.__version__" }
-readme = { file = ["README.md"], content-type = 'text/markdown' }
-
 [project.optional-dependencies]
 tests = [
     'pygraphviz~=1.10',
@@ -51,6 +47,10 @@ validation = [
 doc = [
     'pydoc-markdown~=4.8.2'
 ]
+
+[tool.setuptools.dynamic]
+version = { attr = "slambuc.__version__" }
+readme = { file = ["README.md"], content-type = 'text/markdown' }
 
 [tool.setuptools.packages.find]
 exclude = [
@@ -69,9 +69,16 @@ include-package-data = true
     '*.csv'
 ]
 
+## Documentation
+
 [[tool.pydoc-markdown.loaders]]
 type = "python"
-search_path = [ "slambuc" ]
+search_path = ["slambuc"]
+
+[[tool.pydoc-markdown.processors]]
+type = "filter"
+type = "smart"
+type = "crossref"
 
 [tool.pydoc-markdown.renderer]
 type = "mkdocs"
@@ -79,4 +86,8 @@ type = "mkdocs"
 [[tool.pydoc-markdown.renderer.pages]]
 title = "SLAMBUC API Documentation"
 name = "index"
-contents = [ "slambuc.*" ]
+contents = ["slambuc", "slambuc.*"]
+
+[[tool.pydoc-markdown.renderer.mkdocs_config]]
+site_name = "SLAMBUC"
+repo_url = "https://github.com/hsnlab/SLAMBUC"
