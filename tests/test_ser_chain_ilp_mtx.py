@@ -16,13 +16,15 @@ import pprint
 import time
 
 import pulp
+import pytest
 
 from slambuc.alg import LP_LAT
 from slambuc.alg.chain.ser.ilp import (build_chain_mtx_model, chain_mtx_partitioning, recreate_blocks_from_xmatrix,
                                        extract_blocks_from_xmatrix, build_greedy_chain_mtx_model)
 from slambuc.misc.generator import get_random_chain_data
 from slambuc.misc.util import (print_lp_desc, evaluate_ser_chain_partitioning, print_ser_chain_summary,
-                               print_var_matrix, print_pulp_matrix_values, print_cost_coeffs, print_lat_coeffs)
+                               print_var_matrix, print_pulp_matrix_values, print_cost_coeffs, print_lat_coeffs,
+                               get_cplex_path)
 
 
 def test_mtx_model_creation(save_file: bool = False):
@@ -108,6 +110,7 @@ def test_mtx_model_solution():
     print(f"{model.solutionCpuTime = }")
 
 
+@pytest.mark.skipif(get_cplex_path() is None, reason="CPLEX is not available!")
 def test_mtx_model_solution_cplex():
     params = dict(runtime=[20, 10, 30, 20],
                   memory=[3, 3, 2, 1],

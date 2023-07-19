@@ -17,6 +17,7 @@ import time
 
 import networkx as nx
 import pulp
+import pytest
 import tabulate
 
 from slambuc.alg.service import *
@@ -25,7 +26,7 @@ from slambuc.alg.tree.ser.ilp import (ifeasible_subtrees, ifeasible_greedy_subtr
                                       recreate_subtrees_from_xdict)
 from slambuc.alg.util import ibacktrack_chain
 from slambuc.misc.generator import get_random_tree
-from slambuc.misc.util import print_lp_desc, evaluate_ser_tree_partitioning
+from slambuc.misc.util import print_lp_desc, evaluate_ser_tree_partitioning, get_cplex_path
 
 
 def test_feasible_subtrees(branch: int = 2, depth: int = 2):
@@ -132,6 +133,7 @@ def test_model_solution(tree_file: str = "data/graph_test_tree_ser.gml"):
     print(f"{model.solutionCpuTime = }")
 
 
+@pytest.mark.skipif(get_cplex_path() is None, reason="CPLEX is not available!")
 def test_model_solution_cplex():
     tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-ser_ilp_cfg"

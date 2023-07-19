@@ -42,7 +42,7 @@ def test_tree_partitioning():
     run_test(**params)
 
 
-@pytest.mark.skip("No input tree of failed test is provided.")
+@pytest.mark.skip("No failed input tree is provided.")
 def test_failed_tree_partitioning(graph_path: str, L=math.inf):
     tree = nx.read_gml(graph_path, destringizer=int)
     tree.graph[NAME] += "-min"

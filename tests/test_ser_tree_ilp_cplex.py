@@ -16,6 +16,7 @@ import pprint
 import time
 
 import networkx as nx
+import pytest
 
 from slambuc.alg import LP_LAT
 from slambuc.alg.service import NAME
@@ -25,9 +26,10 @@ from slambuc.alg.tree.ser.ilp_cplex import (build_greedy_tree_cplex_model, build
 from slambuc.alg.util import ibacktrack_chain
 from slambuc.misc.generator import get_random_tree
 from slambuc.misc.util import (evaluate_ser_tree_partitioning, print_var_matrix, convert_var_dict,
-                               print_cplex_matrix_values)
+                               print_cplex_matrix_values, get_cpo_path, get_cplex_path)
 
 
+@pytest.mark.skipif(get_cpo_path() is None, reason="CPO is not available!")
 def test_cpo_model_creation(save_file: bool = False):
     tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-cplex_ser"
@@ -54,6 +56,7 @@ def test_cpo_model_creation(save_file: bool = False):
         model.export_model("chain_model.lp")
 
 
+@pytest.mark.skipif(get_cpo_path() is None, reason="CPO is not available!")
 def test_cpo_model_solution():
     tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-cplex_ser"
@@ -87,6 +90,7 @@ def test_cpo_model_solution():
 ########################################################################################################################
 
 
+@pytest.mark.skipif(get_cplex_path() is None, reason="CPLEX is not available!")
 def test_cplex_model_creation(save_file: bool = False):
     tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-cplex_ser"
@@ -122,6 +126,7 @@ def test_cplex_model_creation(save_file: bool = False):
         model.export_as_lp("tree_cplex_model.lp")
 
 
+@pytest.mark.skipif(get_cplex_path() is None, reason="CPLEX is not available!")
 def test_cplex_model_solution():
     tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-cplex_ser"
@@ -167,6 +172,7 @@ def run_test(tree: nx.DiGraph, root: int, cp_end: int, M: int, L: int, delay: in
     return partition, opt_cost, opt_lat
 
 
+@pytest.mark.skipif(get_cplex_path() is None, reason="CPLEX is not available!")
 def test_ser_tree():
     tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-cplex_ser"
@@ -180,6 +186,7 @@ def test_ser_tree():
     run_test(**params)
 
 
+@pytest.mark.skipif(get_cplex_path() is None, reason="CPLEX is not available!")
 def test_random_ser_tree(n: int = 10):
     tree = get_random_tree(n)
     tree.graph[NAME] += "-cplex_ser"

@@ -22,7 +22,7 @@ publish: release
 ######## Testing
 
 test:
-	cd tests && python3.10 -m pytest -vv .
+	cd tests && python3.10 -m pytest -v .
 
 test-publish: build check
 	twine upload --repository testpypi dist/*

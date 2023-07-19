@@ -16,12 +16,13 @@ import pprint
 import time
 
 import pulp
+import pytest
 import tabulate
 
 from slambuc.alg.chain.ser.ilp import (ifeasible_blocks, ifeasible_greedy_blocks, build_chain_cfg_model,
                                        chain_cfg_partitioning, recreate_blocks_from_xvars, extract_blocks_from_xvars)
 from slambuc.misc.generator import get_random_chain_data
-from slambuc.misc.util import print_lp_desc, evaluate_ser_chain_partitioning, print_ser_chain_summary
+from slambuc.misc.util import print_lp_desc, evaluate_ser_chain_partitioning, print_ser_chain_summary, get_cplex_path
 
 
 def test_feasible_blocks(n: int = 10):
@@ -108,6 +109,7 @@ def test_cfg_model_solution():
     print(f"{model.solutionCpuTime = }")
 
 
+@pytest.mark.skipif(get_cplex_path() is None, reason="CPLEX is not available!")
 def test_cfg_model_solution_cplex():
     params = dict(runtime=[20, 10, 30, 20],
                   memory=[3, 3, 2, 1],
@@ -227,8 +229,8 @@ if __name__ == '__main__':
     # test_feasible_blocks(n=20)
     # test_restricted_feasible_blocks()
     # test_cfg_model_creation(save_file=False)
-    test_cfg_model_solution()
-    # test_cfg_model_solution_cplex()
+    # test_cfg_model_solution()
+    test_cfg_model_solution_cplex()
     # test_cfg_model_solution_glpk()
     # evaluate_cfg_model()
     # test_ser_chain()
