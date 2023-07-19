@@ -23,6 +23,7 @@ from slambuc.alg.service import *
 from slambuc.alg.tree.ser.ilp import (ifeasible_subtrees, ifeasible_greedy_subtrees, build_tree_cfg_model,
                                       tree_hybrid_partitioning, extract_subtrees_from_xdict,
                                       recreate_subtrees_from_xdict)
+from slambuc.alg.util import ibacktrack_chain
 from slambuc.misc.generator import get_random_tree
 from slambuc.misc.util import print_lp_desc, evaluate_ser_tree_partitioning
 
@@ -34,7 +35,7 @@ def test_feasible_subtrees(branch: int = 2, depth: int = 2):
     print("  All blocks (exhaustive)  ".center(80, '='))
     print(f"{tree = !s}")
     _start = time.perf_counter()
-    blocks = list(ifeasible_greedy_subtrees(tree, M=math.inf))
+    blocks = list(ifeasible_greedy_subtrees(tree, root=None, M=math.inf))
     _stop = time.perf_counter()
     print(f"Number of generated blocks: {len(blocks)}")
     print(f"Sum time: {(_stop - _start) * 1000} ms")
@@ -58,11 +59,11 @@ def test_restricted_feasible_subtrees():
     print("  Restricted blocks (exhaustive)  ".center(80, '='))
     print(f"{tree = !s}")
     _start = time.perf_counter()
-    blocks = list(ifeasible_greedy_subtrees(tree, M=M))
+    blocks = list(ifeasible_greedy_subtrees(tree, root=None, M=M))
     _stop = time.perf_counter()
     print(f"Number of generated blocks: {len(blocks)}")
     print(f"Sum time: {(_stop - _start) * 1000} ms")
-    mem_data = [[memory[v] for v in b] for b in blocks]
+    mem_data = [[memory[v] for v in b] for _, b in blocks]
     greedy_blocks_data = list(zip(blocks, mem_data, map(sum, mem_data)))
     print(tabulate.tabulate(greedy_blocks_data, ('Block', 'Memory', 'Sum')))
 
@@ -81,9 +82,10 @@ def test_restricted_feasible_subtrees():
 def test_model_creation(tree_file: str = "data/graph_test_tree_ser.gml", save_file: bool = False):
     tree = nx.read_gml(tree_file, destringizer=int)
     tree.graph[NAME] += "-ser_ilp_cfg"
+    cpath = set(ibacktrack_chain(tree, 1, 10))
     params = dict(tree=tree,
                   root=1,
-                  cp_end=10,
+                  cpath=cpath,
                   M=6,
                   L=430,
                   delay=10)
@@ -104,9 +106,10 @@ def test_model_creation(tree_file: str = "data/graph_test_tree_ser.gml", save_fi
 def test_model_solution(tree_file: str = "data/graph_test_tree_ser.gml"):
     tree = nx.read_gml(tree_file, destringizer=int)
     tree.graph[NAME] += "-ser_ilp_cfg"
+    cpath = set(ibacktrack_chain(tree, 1, 10))
     params = dict(tree=tree,
                   root=1,
-                  cp_end=10,
+                  cpath=cpath,
                   M=6,
                   L=430,
                   delay=10)

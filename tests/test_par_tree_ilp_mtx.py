@@ -23,6 +23,7 @@ from slambuc.alg.service import NAME
 from slambuc.alg.tree.par.ilp import (build_greedy_par_tree_mtx_model, build_par_tree_mtx_model,
                                       tree_par_mtx_partitioning)
 from slambuc.alg.tree.ser.ilp import extract_subtrees_from_xmatrix
+from slambuc.alg.util import ibacktrack_chain
 from slambuc.misc.generator import get_random_tree
 from slambuc.misc.util import (print_lp_desc, print_var_matrix, evaluate_par_tree_partitioning,
                                print_pulp_matrix_values, convert_var_dict, print_cost_coeffs, print_lat_coeffs)
@@ -31,9 +32,10 @@ from slambuc.misc.util import (print_lp_desc, print_var_matrix, evaluate_par_tre
 def test_par_mtx_model_creation(tree_file: str = "data/graph_test_tree_par.gml", save_file: bool = False):
     tree = nx.read_gml(tree_file, destringizer=int)
     tree.graph[NAME] += "-par_ilp_mtx"
+    cpath = set(ibacktrack_chain(tree, 1, 10))
     params = dict(tree=tree,
                   root=1,
-                  cp_end=10,
+                  cpath=cpath,
                   M=6,
                   L=430,
                   N=2,
@@ -76,9 +78,10 @@ def test_par_mtx_model_creation(tree_file: str = "data/graph_test_tree_par.gml",
 def test_par_mtx_model_solution():
     tree = nx.read_gml("data/graph_test_tree_par.gml", destringizer=int)
     tree.graph[NAME] += "-par_ilp_mtx"
+    cpath = set(ibacktrack_chain(tree, 1, 10))
     params = dict(tree=tree,
                   root=1,
-                  cp_end=10,
+                  cpath=cpath,
                   M=6,
                   L=430,
                   N=2,
@@ -136,11 +139,11 @@ def evaluate_ilp_par_mtx_model():
 
 ########################################################################################################################
 
-def run_test(tree: nx.DiGraph, root: int, cp_end: int, M: int, L: int, delay: int):
-    partition, opt_cost, opt_lat = tree_par_mtx_partitioning(tree, root, M, L, cp_end, delay,
+def run_test(tree: nx.DiGraph, root: int, cp_end: int, M: int, L: int, N: int, delay: int):
+    partition, opt_cost, opt_lat = tree_par_mtx_partitioning(tree, root, M, L, N, cp_end, delay,
                                                              solver=pulp.PULP_CBC_CMD(mip=True, warmStart=False,
                                                                                       msg=False))
-    evaluate_par_tree_partitioning(tree, partition, opt_cost, opt_lat, root, cp_end, M, L, delay)
+    evaluate_par_tree_partitioning(tree, partition, opt_cost, opt_lat, root, cp_end, M, L, N, delay)
     return partition, opt_cost, opt_lat
 
 

@@ -22,6 +22,7 @@ from slambuc.alg.service import NAME
 from slambuc.alg.tree.ser.ilp_cplex import (build_greedy_tree_cplex_model, build_tree_cplex_model,
                                             tree_cplex_partitioning, extract_subtrees_from_cplex_xmatrix,
                                             build_tree_cfg_cpo_model, CPO_PATH, recreate_subtrees_from_cpo_xdict)
+from slambuc.alg.util import ibacktrack_chain
 from slambuc.misc.generator import get_random_tree
 from slambuc.misc.util import (evaluate_ser_tree_partitioning, print_var_matrix, convert_var_dict,
                                print_cplex_matrix_values)
@@ -30,9 +31,10 @@ from slambuc.misc.util import (evaluate_ser_tree_partitioning, print_var_matrix,
 def test_cpo_model_creation(save_file: bool = False):
     tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-cplex_ser"
+    cpath = set(ibacktrack_chain(tree, 1, 10))
     params = dict(tree=tree,
                   root=1,
-                  cp_end=10,
+                  cpath=cpath,
                   M=6,
                   L=430,
                   delay=10)
@@ -55,9 +57,10 @@ def test_cpo_model_creation(save_file: bool = False):
 def test_cpo_model_solution():
     tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-cplex_ser"
+    cpath = set(ibacktrack_chain(tree, 1, 10))
     params = dict(tree=tree,
                   root=1,
-                  cp_end=10,
+                  cpath=cpath,
                   M=6,
                   # L=math.inf,
                   L=430,
@@ -87,9 +90,10 @@ def test_cpo_model_solution():
 def test_cplex_model_creation(save_file: bool = False):
     tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-cplex_ser"
+    cpath = set(ibacktrack_chain(tree, 1, 10))
     params = dict(tree=tree,
                   root=1,
-                  cp_end=10,
+                  cpath=cpath,
                   M=6,
                   L=430,
                   delay=10)
@@ -121,9 +125,10 @@ def test_cplex_model_creation(save_file: bool = False):
 def test_cplex_model_solution():
     tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-cplex_ser"
+    cpath = set(ibacktrack_chain(tree, 1, 10))
     params = dict(tree=tree,
                   root=1,
-                  cp_end=10,
+                  cpath=cpath,
                   M=6,
                   # L=math.inf,
                   L=430,

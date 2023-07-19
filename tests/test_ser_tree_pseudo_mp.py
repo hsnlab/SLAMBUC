@@ -138,6 +138,7 @@ if __name__ == '__main__':
     # test_subtree_split(size=2)
     # test_subtree_split()
     # test_rand_cpu_cutoff(n=15, workers=3, draw=True)
+    # test_rand_cpu_cutoff(n=15, workers=None, draw=True)
     # test_rand_subtree_splits(n=15, draw=True)
 
     test_ser_tree_pseudo_partitioning()

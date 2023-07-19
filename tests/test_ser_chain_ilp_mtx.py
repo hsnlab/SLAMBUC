@@ -83,13 +83,13 @@ def test_mtx_model_solution():
     #
     print(" Greedy model ".center(80, '='))
     model, X = build_greedy_chain_mtx_model(**params)
-    status = model.solve(solver=pulp.PULP_CBC_CMD(mip=True, warmStart=True, msg=True))
+    status = model.solve(solver=pulp.PULP_CBC_CMD(mip=True, msg=True))
     print(f"Partitioning status: {status} / {pulp.LpStatus[status]}")
     print(f"Cost/Lat: {pulp.value(model.objective)}, {pulp.value(model.constraints[LP_LAT])}")
     #
     print(" Direct model ".center(80, '='))
     model, X = build_chain_mtx_model(**params)
-    status = model.solve(solver=pulp.PULP_CBC_CMD(mip=True, warmStart=True, msg=True))
+    status = model.solve(solver=pulp.PULP_CBC_CMD(mip=True, msg=True))
     print(f"Partitioning status: {status} / {pulp.LpStatus[status]}")
     print(f"Cost/Lat: {pulp.value(model.objective)}, {pulp.value(model.constraints[LP_LAT])}")
     #
@@ -119,7 +119,7 @@ def test_mtx_model_solution_cplex():
                   end=2,
                   delay=10)
     print("  Run CPLEX solver  ".center(80, '='))
-    partition, opt_cost, opt_lat = chain_mtx_partitioning(**params, solver=pulp.CPLEX_PY(mip=True, warmStart=True))
+    partition, opt_cost, opt_lat = chain_mtx_partitioning(**params, solver=pulp.CPLEX_PY(mip=True))
     print(f"Partitioning: {partition}, {opt_cost = }, {opt_lat = }")
 
 
@@ -134,7 +134,7 @@ def test_mtx_model_solution_glpk():
                   end=2,
                   delay=10)
     print("  Run GLPK solver  ".center(80, '='))
-    partition, opt_cost, opt_lat = chain_mtx_partitioning(**params, solver=pulp.GLPK_CMD(mip=True, warmStart=True))
+    partition, opt_cost, opt_lat = chain_mtx_partitioning(**params, solver=pulp.GLPK_CMD(mip=True))
     print(f"Partitioning: {partition}, {opt_cost = }, {opt_lat = }")
 
 
@@ -149,11 +149,11 @@ def evaluate_mtx_model():
                   end=2,
                   delay=10)
     print("  CBC solver  ".center(80, '='))
-    partition, opt_cost, opt_lat = chain_mtx_partitioning(**params, solver=pulp.PULP_CBC_CMD(mip=True, warmStart=True))
+    partition, opt_cost, opt_lat = chain_mtx_partitioning(**params, solver=pulp.PULP_CBC_CMD(mip=True))
     print(f"Partitioning: {partition}, {opt_cost = }, {opt_lat = }")
     evaluate_ser_chain_partitioning(partition, opt_cost, opt_lat, **params)
     print("  CPLEX solver  ".center(80, '='))
-    partition, opt_cost, opt_lat = chain_mtx_partitioning(**params, solver=pulp.CPLEX_PY(mip=True, warmStart=True))
+    partition, opt_cost, opt_lat = chain_mtx_partitioning(**params, solver=pulp.CPLEX_PY(mip=True))
     print(f"Partitioning: {partition}, {opt_cost = }, {opt_lat = }")
     evaluate_ser_chain_partitioning(partition, opt_cost, opt_lat, **params)
 
@@ -161,11 +161,10 @@ def evaluate_mtx_model():
 ########################################################################################################################
 
 
-def run_test(runtime: list, memory: list, rate: list, data: list, M: int = math.inf, L: int = math.inf, start: int = 0,
-             end: int = None, delay: int = 1):
-    partition, opt_cost, opt_lat = chain_mtx_partitioning(runtime, memory, rate, data, M, L, start, end, delay,
-                                                          solver=pulp.PULP_CBC_CMD(mip=True, warmStart=True, msg=False))
-    evaluate_ser_chain_partitioning(partition, opt_cost, opt_lat, runtime, memory, rate, data, M, L, start, end, delay)
+def run_test(runtime: list, memory: list, rate: list, data: list, M: int = math.inf, L: int = math.inf, delay: int = 1):
+    partition, opt_cost, opt_lat = chain_mtx_partitioning(runtime, memory, rate, data, M, L, delay,
+                                                          solver=pulp.PULP_CBC_CMD(mip=True, msg=False))
+    evaluate_ser_chain_partitioning(partition, opt_cost, opt_lat, runtime, memory, rate, data, M, L, 0, None, delay)
     return partition, opt_cost, opt_lat
 
 
@@ -176,9 +175,7 @@ def test_ser_chain():
                   data=[5, 3, 5, 2, 1, 3, 2, 3, 5, 1],
                   delay=10,
                   M=6,
-                  L=800,
-                  start=0,
-                  end=9)
+                  L=800)
     print_ser_chain_summary(params['runtime'], params['memory'], params['rate'], params['data'])
     run_test(**params)
 
@@ -191,9 +188,7 @@ def test_random_ser_chain(n: int = 10):
                   data=data,
                   delay=10,
                   M=6,
-                  L=700,
-                  start=0,
-                  end=n - 1)
+                  L=700)
     print_ser_chain_summary(runtime, memory, rate, data)
     run_test(**params)
 
@@ -205,9 +200,7 @@ def test_partial_ser_chain():
                   data=[5, 3, 5, 2, 1, 3, 2, 3, 5, 1],
                   delay=10,
                   M=6,
-                  L=math.inf,
-                  start=0,
-                  end=9)
+                  L=math.inf)
     print_ser_chain_summary(params['runtime'], params['memory'], params['rate'], params['data'])
     # No restriction
     run_test(**params)

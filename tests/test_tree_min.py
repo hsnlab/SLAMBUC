@@ -14,6 +14,7 @@
 import math
 
 import networkx as nx
+import pytest
 
 from slambuc.alg.service import NAME
 from slambuc.alg.tree.dp.min import min_tree_partitioning
@@ -41,6 +42,7 @@ def test_tree_partitioning():
     run_test(**params)
 
 
+@pytest.mark.skip("No input tree of failed test is provided.")
 def test_failed_tree_partitioning(graph_path: str, L=math.inf):
     tree = nx.read_gml(graph_path, destringizer=int)
     tree.graph[NAME] += "-min"

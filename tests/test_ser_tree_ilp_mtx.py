@@ -24,7 +24,7 @@ from slambuc.alg import LP_LAT
 from slambuc.alg.service import NAME, PLATFORM
 from slambuc.alg.tree.ser.ilp import (build_tree_mtx_model, tree_mtx_partitioning, recreate_subtrees_from_xmatrix,
                                       extract_subtrees_from_xmatrix, build_greedy_tree_mtx_model)
-from slambuc.alg.util import induced_subtrees
+from slambuc.alg.util import induced_subtrees, ibacktrack_chain
 from slambuc.misc.generator import get_random_tree
 from slambuc.misc.plot import draw_tree
 from slambuc.misc.util import (print_lp_desc, evaluate_ser_tree_partitioning, print_var_matrix,
@@ -60,9 +60,10 @@ def test_reachable_nodes(branch: int = 2, depth: int = 3, random_nodes: int = 0)
 def test_mtx_model_creation(tree_file: str = "data/graph_test_tree_ser.gml", save_file: bool = False):
     tree = nx.read_gml(tree_file, destringizer=int)
     tree.graph[NAME] += "-ser_ilp_mtx"
+    cpath = set(ibacktrack_chain(tree, 1, 10))
     params = dict(tree=tree,
                   root=1,
-                  cp_end=10,
+                  cpath=cpath,
                   M=6,
                   L=430,
                   delay=10)
@@ -104,9 +105,10 @@ def test_mtx_model_creation(tree_file: str = "data/graph_test_tree_ser.gml", sav
 def test_mtx_model_solution(tree_file: str = "data/graph_test_tree_ser.gml"):
     tree = nx.read_gml(tree_file, destringizer=int)
     tree.graph[NAME] += "-ser_ilp_mtx"
+    cpath = set(ibacktrack_chain(tree, 1, 10))
     params = dict(tree=tree,
                   root=1,
-                  cp_end=10,
+                  cpath=cpath,
                   M=6,
                   L=430,
                   delay=10)
@@ -147,9 +149,10 @@ def test_mtx_model_solution(tree_file: str = "data/graph_test_tree_ser.gml"):
 def test_mtx_model_solution_cplex():
     tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-ser_ilp_mtx"
+    cpath = set(ibacktrack_chain(tree, 1, 10))
     params = dict(tree=tree,
                   root=1,
-                  cp_end=10,
+                  cpath=cpath,
                   M=6,
                   L=430,
                   delay=10)
