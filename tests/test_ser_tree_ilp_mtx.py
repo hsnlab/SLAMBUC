@@ -29,7 +29,8 @@ from slambuc.alg.util import induced_subtrees, ibacktrack_chain
 from slambuc.misc.generator import get_random_tree
 from slambuc.misc.plot import draw_tree
 from slambuc.misc.util import (print_lp_desc, evaluate_ser_tree_partitioning, print_var_matrix, get_cplex_path,
-                               print_pulp_matrix_values, convert_var_dict, print_cost_coeffs, print_lat_coeffs)
+                               print_pulp_matrix_values, convert_var_dict, print_cost_coeffs, print_lat_coeffs,
+                               get_glpk_path)
 
 
 def test_reachable_nodes(branch: int = 2, depth: int = 3, random_nodes: int = 0):
@@ -178,6 +179,7 @@ def test_mtx_model_solution_cplex():
         print("CPLEX stat:", solver.solverModel.get_stats())
 
 
+@pytest.mark.skipif(get_glpk_path() is None, reason="GLPK is not available!")
 def test_mtx_model_solution_glpk():
     tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-ser_ilp_mtx"

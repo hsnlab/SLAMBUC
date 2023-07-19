@@ -35,8 +35,8 @@ def get_cplex_path() -> str:
 
     :return: path
     """
-    if isinstance(cp := subprocess.run(['which', 'cplex']), str):
-        return cp
+    if cplex_path := subprocess.run(['which', 'cplex'], stdout=subprocess.PIPE).stdout.decode().strip():
+        return cplex_path
     cplex_path = pathlib.Path(os.environ.get('CPLEX_HOME', '~/Programs/ibm/ILOG/CPLEX_Studio2211/cplex'),
                               'bin/x86-64_linux/cplex').expanduser()
     return str(cplex_path) if cplex_path.exists() else None
@@ -48,11 +48,23 @@ def get_cpo_path() -> str:
 
     :return: path
     """
-    if isinstance(cp := subprocess.run(['which', 'cpoptimizer']), str):
-        return cp
+    if cpo_path := subprocess.run(['which', 'cpoptimizer'], stdout=subprocess.PIPE).stdout.decode().strip():
+        return cpo_path
     cpo_path = pathlib.Path(os.environ.get('CPO_HOME', '~/Programs/ibm/ILOG/CPLEX_Studio2211/cpoptimizer'),
                             'bin/x86-64_linux/cpoptimizer').expanduser()
     return str(cpo_path) if cpo_path.exists() else None
+
+
+def get_glpk_path() -> str:
+    """
+    Return local GLPK path.
+
+    :return: path
+    """
+    if glpk_path := subprocess.run(['which', 'glpsol'], stdout=subprocess.PIPE).stdout.decode().strip():
+        return glpk_path
+    else:
+        return None
 
 
 def is_compatible(tree1: nx.DiGraph, tree2: nx.DiGraph) -> bool:

@@ -22,7 +22,8 @@ import tabulate
 from slambuc.alg.chain.ser.ilp import (ifeasible_blocks, ifeasible_greedy_blocks, build_chain_cfg_model,
                                        chain_cfg_partitioning, recreate_blocks_from_xvars, extract_blocks_from_xvars)
 from slambuc.misc.generator import get_random_chain_data
-from slambuc.misc.util import print_lp_desc, evaluate_ser_chain_partitioning, print_ser_chain_summary, get_cplex_path
+from slambuc.misc.util import print_lp_desc, evaluate_ser_chain_partitioning, print_ser_chain_summary, get_cplex_path, \
+    get_glpk_path
 
 
 def test_feasible_blocks(n: int = 10):
@@ -125,6 +126,7 @@ def test_cfg_model_solution_cplex():
     print(f"Partitioning: {partition}, {opt_cost = }, {opt_lat = }")
 
 
+@pytest.mark.skipif(get_glpk_path() is None, reason="GLPK is not available!")
 def test_cfg_model_solution_glpk():
     params = dict(runtime=[20, 10, 30, 20],
                   memory=[3, 3, 2, 1],

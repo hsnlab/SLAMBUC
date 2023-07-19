@@ -24,7 +24,7 @@ from slambuc.alg.chain.ser.ilp import (build_chain_mtx_model, chain_mtx_partitio
 from slambuc.misc.generator import get_random_chain_data
 from slambuc.misc.util import (print_lp_desc, evaluate_ser_chain_partitioning, print_ser_chain_summary,
                                print_var_matrix, print_pulp_matrix_values, print_cost_coeffs, print_lat_coeffs,
-                               get_cplex_path)
+                               get_cplex_path, get_glpk_path)
 
 
 def test_mtx_model_creation(save_file: bool = False):
@@ -126,6 +126,7 @@ def test_mtx_model_solution_cplex():
     print(f"Partitioning: {partition}, {opt_cost = }, {opt_lat = }")
 
 
+@pytest.mark.skipif(get_glpk_path() is None, reason="GLPK is not available!")
 def test_mtx_model_solution_glpk():
     params = dict(runtime=[20, 10, 30, 20],
                   memory=[3, 3, 2, 1],
