@@ -46,7 +46,7 @@ setuptools.setup(
         'PuLP~=2.7.0',
         'matplotlib~=3.7.1',
         'pandas~=2.0.3',
-        'scipy~=1.11.1'
+        'scipy~=1.11.1',
         'cspy~=1.0.3',
     ],
     extras_require={'tests': ['pytest~=7.4.0',
