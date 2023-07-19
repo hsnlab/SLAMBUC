@@ -1,4 +1,4 @@
-name: SLAMBUC algorithm validations
+name: Algorithm validations
 
 on:
   push:
