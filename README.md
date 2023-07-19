@@ -1,7 +1,8 @@
 # Serverless Layout Adaptation with Memory-Bounds and User Constraints (SLAMBUC)
 
 [![PyPI](https://img.shields.io/pypi/v/SLAMBUC)](https://pypi.org/project/SLAMBUC/)
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/SLAMBUC)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/SLAMBUC)](https://pypi.org/project/SLAMBUC/#history)
+[![Downloads](https://static.pepy.tech/badge/slambuc)](https://pepy.tech/project/slambuc)
 [![PyPI - License](https://img.shields.io/pypi/l/SLAMBUC)](LICENSE)
 [![Algorithm tests](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-tests.yml/badge.svg)](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-tests.yml)
 

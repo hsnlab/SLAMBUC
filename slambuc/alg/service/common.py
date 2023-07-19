@@ -39,7 +39,7 @@ ASSIGN = '@'
 
 
 class Flavor(typing.NamedTuple):
-    """Store subtree partitioning attributes for a given subcase"""
+    """Store subtree partitioning attributes for a given subcase."""
     mem: int = math.inf  # Available memory
     ncore: int = 1  # Available relative vCPU cores
     cfactor: float = 1.0  # Relative cost factor
@@ -50,5 +50,5 @@ class Flavor(typing.NamedTuple):
 
     @property
     def name(self) -> str:
-        """String representation of the given flavor"""
+        """String representation of the given flavor."""
         return f"F[{self.mem},{self.ncore},{self.cfactor}]"

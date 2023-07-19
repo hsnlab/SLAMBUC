@@ -21,10 +21,9 @@ from collections.abc import Callable
 import networkx as nx
 import tabulate
 
-from slambuc.alg import Flavor
 from slambuc.alg.chain import *
 from slambuc.alg.ext import *
-from slambuc.alg.service import RUNTIME, MEMORY, RATE, DATA
+from slambuc.alg.service import RUNTIME, MEMORY, RATE, DATA, Flavor
 from slambuc.alg.tree import *
 from slambuc.alg.tree.dp.seq_state import cacheless_chain_partitioning, stateful_chain_partitioning
 from slambuc.alg.tree.par.pseudo import pseudo_par_btree_partitioning
