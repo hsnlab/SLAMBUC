@@ -16,3 +16,4 @@ scipy~=1.11.1
 Click~=8.1.4
 psutil~=5.9.4
 pydoc-markdown~=4.8.2
+pytest~=7.4.0

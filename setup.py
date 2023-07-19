@@ -50,6 +50,7 @@ setuptools.setup(
         'scipy~=1.11.1'
     ],
     extras_require={'tests': ['pygraphviz~=1.10',
+                              'pytest~=7.4.0',
                               'tabulate~=0.9.0'],
                     'validation': ['tabulate~=0.9.0',
                                    'Click~=8.1.3',

@@ -1,6 +1,7 @@
 clean:
 	rm -rf *.egg-info
 	rm -rf ./build ./dist
+	rm -rf .pytest_cache
 
 build: clean
 	#python3.11 setup.py sdist bdist_wheel
@@ -14,13 +15,19 @@ release: build check
 	git pull origin main
 	git push --all --tags
 
-test-publish: build check
-	twine upload --repository testpypi dist/*
 
 publish: release
 	twine upload --repository pypi dist/*
 
-########################################################################################################################
+######## Testing
+
+test:
+	cd tests && python3.10 -m pytest -vv .
+
+test-publish: build check
+	twine upload --repository testpypi dist/*
+
+######## Installation
 
 install-req:
 	python3.11 -m pip install -U -r requirements.txt
@@ -35,7 +42,7 @@ test-install: build
 uninstall:
 	python3.11 -m pip uninstall slambuc
 
-########################################################################################################################
+######## Documentation
 
 doc:
 	pydoc-markdown --with-processors --dump | docspec -m --dump-tree
