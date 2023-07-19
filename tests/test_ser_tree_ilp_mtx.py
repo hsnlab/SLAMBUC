@@ -18,6 +18,7 @@ import time
 import networkx as nx
 import numpy as np
 import pulp
+import pytest
 import tabulate
 
 from slambuc.alg import LP_LAT
@@ -27,7 +28,7 @@ from slambuc.alg.tree.ser.ilp import (build_tree_mtx_model, tree_mtx_partitionin
 from slambuc.alg.util import induced_subtrees, ibacktrack_chain
 from slambuc.misc.generator import get_random_tree
 from slambuc.misc.plot import draw_tree
-from slambuc.misc.util import (print_lp_desc, evaluate_ser_tree_partitioning, print_var_matrix,
+from slambuc.misc.util import (print_lp_desc, evaluate_ser_tree_partitioning, print_var_matrix, get_cplex_path,
                                print_pulp_matrix_values, convert_var_dict, print_cost_coeffs, print_lat_coeffs)
 
 
@@ -146,6 +147,7 @@ def test_mtx_model_solution(tree_file: str = "data/graph_test_tree_ser.gml"):
     print(f"{solver.solution_time = } s")
 
 
+@pytest.mark.skipif(get_cplex_path() is None, reason="CPLEX is not available!")
 def test_mtx_model_solution_cplex():
     tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-ser_ilp_mtx"
