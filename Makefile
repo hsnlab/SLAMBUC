@@ -13,7 +13,8 @@ check:
 release: build check
 	git tag -a `python3.11 -c "import slambuc;print(slambuc.__version__)"` -m  "New version release"
 	git pull origin main
-	git push --all --tags
+	git push origin main
+	git push --tags
 
 
 publish: release
