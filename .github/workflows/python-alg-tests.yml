@@ -1,4 +1,4 @@
-name: SLAMBUC algorithm tests
+name: Pytest
 
 on:
   push:
