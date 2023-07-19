@@ -24,7 +24,8 @@ jobs:
     - name: Install Python dependencies
       run: |
         python3.10 -m pip install -v --upgrade pip
-        python3.10 -m pip install -vv -e .[tests]
+        python3.10 -m pip install -v -U -r requirements_py3.10.txt
+        python3.10 -m pip install -vv -e .
     - name: Test with pytest
       run: |
         cd tests && python3.10 -m pytest -vv .
