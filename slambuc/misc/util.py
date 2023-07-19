@@ -37,8 +37,9 @@ def get_cplex_path() -> str:
     """
     if isinstance(cp := subprocess.run(['which', 'cplex']), str):
         return cp
-    return str(pathlib.Path(os.environ.get('CPLEX_HOME', '~/Programs/ibm/ILOG/CPLEX_Studio2211/cplex'),
-                            'bin/x86-64_linux/cplex').expanduser())
+    cplex_path = pathlib.Path(os.environ.get('CPLEX_HOME', '~/Programs/ibm/ILOG/CPLEX_Studio2211/cplex'),
+                              'bin/x86-64_linux/cplex').expanduser()
+    return str(cplex_path) if cplex_path.exists() else None
 
 
 def get_cpo_path() -> str:
@@ -49,8 +50,9 @@ def get_cpo_path() -> str:
     """
     if isinstance(cp := subprocess.run(['which', 'cpoptimizer']), str):
         return cp
-    return str(pathlib.Path(os.environ.get('CPO_HOME', '~/Programs/ibm/ILOG/CPLEX_Studio2211/cpoptimizer'),
-                            'bin/x86-64_linux/cpoptimizer').expanduser())
+    cpo_path = pathlib.Path(os.environ.get('CPO_HOME', '~/Programs/ibm/ILOG/CPLEX_Studio2211/cpoptimizer'),
+                            'bin/x86-64_linux/cpoptimizer').expanduser()
+    return str(cpo_path) if cpo_path.exists() else None
 
 
 def is_compatible(tree1: nx.DiGraph, tree2: nx.DiGraph) -> bool:
