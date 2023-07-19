@@ -67,8 +67,8 @@ def test_random_bicriteria_tree_partitioning(n: int = 10):
     run_validation_test(**params)
 
 
-def test_accuracy(n: int = 10, M: int = 6, L: int = math.inf, Epsilon: float = 0.0, Lambda: float = 0.0,
-                  stop_failed: bool = False):
+def get_accuracy_stats(n: int = 10, M: int = 6, L: int = math.inf, Epsilon: float = 0.0, Lambda: float = 0.0,
+                       stop_failed: bool = False):
     tree = get_random_tree(n)
     tree.graph[NAME] += "-ser_bic"
     params = dict(tree=tree,
@@ -183,9 +183,13 @@ def test_accuracy(n: int = 10, M: int = 6, L: int = math.inf, Epsilon: float = 0
             (ltree_time * 1000, dlc_exact_time * 1000, dlc_bic_time * 1000, dl_cost_err, dl_lat_err))  # Ltree stats
 
 
+def test_accuracy():
+    print(get_accuracy_stats())
+
+
 def stress_test(iteration: int = 100, n: int = 10, M: int = 6, L: int = math.inf, Epsilon: float = 0.5,
                 Lambda: float = 0.5, stop_failed: bool = False):
-    b_stat, l_stat, dl_stat = zip(*[test_accuracy(n, M, L, Epsilon, Lambda, stop_failed=stop_failed)
+    b_stat, l_stat, dl_stat = zip(*[get_accuracy_stats(n, M, L, Epsilon, Lambda, stop_failed=stop_failed)
                                     for _ in range(iteration)])
     b_df = pd.DataFrame(b_stat, columns=['Btree', 'BiBtree_exact_time', 'BiBtree_time', 'B_omega', 'B_lambda'])
     l_df = pd.DataFrame(l_stat, columns=['Ltree', 'BiLtree_exact_time', 'BiLtree_time', 'L_omega', 'L_lambda'])

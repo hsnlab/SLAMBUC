@@ -62,7 +62,8 @@ def get_cpu_splits(tree: nx.DiGraph, root: int = 1, workers: int = None) -> tupl
     ub = math.sqrt(len(tree) - 1)
     lb = ub if not workers else 1
     n = workers if workers else ub
-    return [e for e, _ in heapq.nlargest(n, list(isubtree_cutoffs(tree, root, lb, ub)), key=operator.itemgetter(1))]
+    return [e for e, _ in heapq.nlargest(round(n),
+                                         list(isubtree_cutoffs(tree, root, lb, ub)), key=operator.itemgetter(1))]
 
 
 def isubtree_sync_cutoffs(tree: nx.DiGraph, root: int = 1,
