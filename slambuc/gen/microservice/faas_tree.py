@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import importlib.resources
 import itertools
 import pathlib
 import random
@@ -41,7 +42,7 @@ MEM_DIST = scipy.stats.burr12(c=MEM_C, d=MEM_K, loc=0.0, scale=MEM_LAMBDA)
 
 # Empirical distribution parameters of function calls extracted from Alibaba traces
 # See also: https://github.com/alibaba/clusterdata/tree/master/cluster-trace-microservices-v2021
-HIST_DIR = pathlib.Path(__file__).parent / 'hist'
+HIST_DIR = importlib.resources.files("slambuc.gen.microservice").joinpath("hist")
 # Invocation rate per services
 RATE_HIST_NAME = "func_inv_rate_hist"
 RATE_DIST = scipy.stats.rv_histogram(load_hist_params(HIST_DIR, RATE_HIST_NAME), density=True)
@@ -69,7 +70,7 @@ def ifunc_attributes(n: int, dist: scipy.stats.rv_continuous, transform=np.round
     yield from transform(dist.rvs(size=n)).astype(int)
 
 
-def get_faas_tree(n: int, Alpha: float, a: float) -> nx.DiGraph:
+def get_faas_tree(n: int, Alpha: float = 1.0, a: float = 0.0) -> nx.DiGraph:
     """
     Generate service tree with attributes drawn from the predefined distributions.
 
@@ -125,5 +126,5 @@ def generate_all_faas_trees(data_dir: str, Alpha: float = PREF_ATT_HIGH, a: floa
 
 
 if __name__ == '__main__':
-    # verify_faas_tree(n=20)
-    generate_all_faas_trees("../../../validation/data")
+    verify_faas_tree(n=20)
+    # generate_all_faas_trees("../../../validation/data")

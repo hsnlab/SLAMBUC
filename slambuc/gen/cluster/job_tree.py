@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import importlib.resources
 import itertools
 import pathlib
 import random
@@ -27,8 +28,9 @@ from slambuc.gen.io import save_trees_to_file
 from slambuc.gen.transform import faasify_dag_by_duplication
 
 # Default sample job/task file of the installed spar package
-DEF_TASK_CSV = pathlib.Path(pathlib.Path(__file__).parent / "samples/sample_tasks.csv")
-DEF_BATCH_CSV = pathlib.Path(pathlib.Path(__file__).parent / "samples/batch_task.csv")
+SAMPLES_DIR = importlib.resources.files("slambuc.gen.cluster").joinpath("samples")
+DEF_TASK_CSV = SAMPLES_DIR / "sample_tasks.csv"
+DEF_BATCH_CSV = SAMPLES_DIR / "batch_task.csv"
 DEF_TASK_CSV_HEADER = ('job', 'task', 'duration', 'cpu', 'mem', 'num')
 DEF_TASK_CSV_COLS = (1, 2, 3, 4, 5, 6)
 # Default attributes for the front-end dispatcher function

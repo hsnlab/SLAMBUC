@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import collections
+import importlib.resources
 import itertools
 import math
-import pathlib
 import pickle
 import random
 
@@ -24,7 +24,7 @@ import scipy
 # Random job generation source code is moved from package *spar* with adaptations to newer versions of Python3.11
 # and Scipy 1.10.  See also: https://github.com/All-less/trace-generator/blob/master/spar/generate.py
 
-HIST_DATA_DIR = pathlib.Path(__file__).parent / "hist"
+HIST_DATA_DIR = importlib.resources.files("slambuc.gen.cluster").joinpath("hist")
 DIST_CACHE = {}
 
 
