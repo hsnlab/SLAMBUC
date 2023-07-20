@@ -113,6 +113,27 @@ Refer to the wiki for [formats, execution parameters, examples, and API document
 
 ## Example
 
+```python
+from slambuc.alg.tree.ser.pseudo import pseudo_ltree_partitioning
+from slambuc.misc.generator import get_random_tree
+
+# Get input parameters
+tree = get_random_tree(nodes=10)
+params = dict(tree=tree,
+              root=1,
+              M=6,
+              L=450,
+              cp_end=10,
+              delay=10)
+
+# Partitioning
+res = pseudo_ltree_partitioning(**params)
+print(f"Part: {res[0]}, opt. cost: {res[1]}, latency: {res[2]}")
+"Part: [[1, 2], [3, 4], [5, 6, 7, 8], [9], [10]], opt. cost: 1252, latency: 449"
+```
+
+## Algorithms
+
 Validation results of a subset of our algorithms with a fully-serialized block execution model,
 which are executed with our [validation script](tests/validate_algs.py) using different configurations 
 and a [random-generated input call graph](tests/data/graph_test_tree_ser.gml) of size 10.
@@ -154,7 +175,7 @@ environment can be set up with the following commands.
 ```bash
 git clone https://github.com/hsnlab/SLAMBUC.git
 python3.11 -m pip install -U -r SLAMBUC/requirements.txt
-python3.11 -m pip install --ignore-requires-python --no-deps -e SLAMBUC/
+python3.11 -m pip install --no-deps -e SLAMBUC/
 # OR
 cd SLAMBUC && make install-req && make dev-install
 

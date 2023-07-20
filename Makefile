@@ -33,8 +33,8 @@ test-publish: build check
 install-req:
 	python3.11 -m pip install -U -r requirements.txt
 
-dev-install:
-	python3.11 -m pip install --no-cache-dir --ignore-requires-python --no-deps -e .
+dev-install: install-req
+	python3.11 -m pip install --no-cache-dir --no-deps -e .
 
 test-install: build
 	python3.11 -m pip install --no-cache-dir --index-url https://test.pypi.org/simple/ \
@@ -49,5 +49,5 @@ doc:
 	pydoc-markdown --with-processors --dump | docspec -m --dump-tree
 	pydoc-markdown -p slambuc -v --py3 --render-toc > docs/slambuc_api.md
 
-.PHONY: clean check install-req dev-install uninstall doc
+.PHONY: clean check test install-req uninstall doc
 .DEFAULT_GOAL := build
