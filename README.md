@@ -118,21 +118,22 @@ from slambuc.alg.tree.ser.pseudo import pseudo_ltree_partitioning
 from slambuc.misc.generator import get_random_tree
 
 # Get input parameters
-tree = get_random_tree(nodes=10)
+tree = get_random_tree(nodes=10)  # Assuming random memory demands are in GB
 params = dict(tree=tree,
-              root=1,
-              M=6,
-              L=450,
-              cp_end=10,
-              delay=10)
+              root=1,     # Root node ID
+              M=6,        # Memory upper limit
+              L=450,      # Latency upper limit
+              cp_end=10,  # Critical path: [root -> cp_end]
+              delay=10    # Patform delay in ms
+              )
 
 # Partitioning
 res = pseudo_ltree_partitioning(**params)
-print(f"Part: {res[0]}, opt. cost: {res[1]}, latency: {res[2]}")
-"Part: [[1, 2], [3, 4], [5, 6, 7, 8], [9], [10]], opt. cost: 1252, latency: 449"
+print(f"Part: {res[0]}, opt. cost: {params['M'] * (res[1] / 1000)} GBs, latency: {res[2]} ms")
+"Part: [[1, 2], [3, 4], [5, 6, 7, 8], [9], [10]], opt. cost: 7.512 GBs, latency: 449 ms"
 ```
 
-## Algorithms
+## Example
 
 Validation results of a subset of our algorithms with a fully-serialized block execution model,
 which are executed with our [validation script](tests/validate_algs.py) using different configurations 
@@ -165,7 +166,7 @@ Execution results:
 | PSEUDO_L           | [[1, 3, 4, 5], [2], [6, 7, 8, 9], [10]]             |    858 | 471                                | 0.00083811 |
 | BIFPTAS_L          | [[1, 3, 4, 5], [2], [6, 7, 8, 9], [10]]             |    858 | 471                                | 0.00082326 |
 | _BASELINE_NO_PART_ | [[1], [2], [3], [4], [5], [6], [7], [8], [9], [10]] |   1090 | 472                                | 9.38e-05   |
-| _BASELINE_SINGLE_  | [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]                   |    822 | <span style="color:red">686</span> | 6.718e-05  |
+| _BASELINE_SINGLE_  | [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]                   |    822 | 686                                | 6.718e-05  |
 
 ## Development and contribution
 
