@@ -10,14 +10,14 @@ build: clean
 check:
 	twine check dist/*
 
+publish: build check
+	twine upload --repository pypi dist/*
+
 release: build check
 	git tag -a `python3.11 -c "import slambuc;print(slambuc.__version__)"` -m  "New version release"
 	git pull origin main
 	git push origin main
 	git push --tags
-
-
-publish: release
 	twine upload --repository pypi dist/*
 
 ######## Testing
