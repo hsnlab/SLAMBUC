@@ -191,6 +191,26 @@ make uninstall
 If you use one of our algorithms published in this package or our test harness, please consider citing 
 one of our related works.
 
+#### [Tree partitioning algorithms with explicit state externalization:](https://doi.org/10.1016/j.future.2023.12.010)
+
+J. Czentye and B. Sonkoly,
+"Serverless application composition leveraging function fusion: Theory and algorithms,"
+_Future Generation Computer Systems_ 153 pp. 403-418., 16 p. (2024),
+doi: 10.1016/j.future.2023.12.010.
+
+```bibtex
+@ARTICLE{Czentye2024fgcs,
+    author = {J{\'{a}}nos Czentye and Bal{\'{a}}zs Sonkoly}
+    title = {{Serverless application composition leveraging function fusion: Theory and algorithms}},
+    journal = {{Future Generation Computer Systems}},
+    volume = {153},
+    pages = {403--418},
+    year = {2024},
+    issn = {0167-739X},
+    doi = {https://doi.org/10.1016/j.future.2023.12.010}
+}
+```
+
 #### [Polynomial-time algorithms based on chain-based tree partitioning:](https://doi.org/10.1109/noms56928.2023.10154412)
 
 J. Czentye, I. Pelle and B. Sonkoly,
