@@ -192,7 +192,7 @@ def test_gen_mtx_subchain_model_solution():
 
 ########################################################################################################################
 
-def run_test(tree: nx.DiGraph, root: int, flavors: list[Flavor], cp_end: int, L: int, subchains: bool, delay: int):
+def run_test(tree: nx.DiGraph, root: int, flavors: list[Flavor], cp_end: int, L: int, delay: int):
     partition, opt_cost, opt_lat = tree_gen_hybrid_partitioning(tree, root, flavors, L=L, cp_end=cp_end, delay=delay,
                                                                 solver=pulp.PULP_CBC_CMD(mip=True, warmStart=False,
                                                                                          msg=False))
