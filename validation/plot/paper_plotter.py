@@ -344,6 +344,10 @@ def check_part_feasibility(row: list, npy_file: str) -> bool:
         return True
 
 
+def check_part_solvable(row: list) -> bool:
+    return False if pd.isna(row['Lat']) else True
+
+
 def plot_cost_ser_valid(tree_type: str = "faas", n=40, show: bool = True, feasible: bool = True, ext: str = "pgf"):
     plt.style.use('fast')
     plt.rc('font', size=5)
@@ -359,6 +363,7 @@ def plot_cost_ser_valid(tree_type: str = "faas", n=40, show: bool = True, feasib
     df2['Lat'] = (df['Lat'] - df['L']) / df['L']
     if feasible:
         df2['Feasible'] = df.apply(check_part_feasibility, axis=1, args=[f"../data/{tree_type}_tree_n{n}-{n + 10}.npy"])
+        df2['Solvable'] = df.apply(check_part_solvable, axis=1)
     # df2.dropna(subset=['Lat'], inplace=True)
     fig = plt.figure(figsize=(COLUMN_W, COLUMN_W - 0.5))
     gs = fig.add_gridspec(3, 3)
@@ -367,16 +372,20 @@ def plot_cost_ser_valid(tree_type: str = "faas", n=40, show: bool = True, feasib
         ax.axhline(0, color='k', linewidth=0.5)
         ax.axvline(0, color='k', linewidth=0.5)
         # df2[df2.Alg == alg][['Cost', 'Lat']].plot.scatter(x="Cost", y="Lat", ax=ax)
-        data = df2[df2.Alg == alg][['Cost', 'Lat', 'Feasible']]
+        data = df2[df2.Alg == alg][['Cost', 'Lat', 'Feasible', 'Solvable']]
         # ax.scatter(x=data["Cost"], y=data["Lat"], s=2, c='g', marker=".", zorder=2)
         # color = data.apply(lambda r: 'green' if r['Feasible'] else 'gray', axis=1)
         # ax.scatter(x=data["Cost"], y=data["Lat"], s=2, c=color, marker=".", zorder=2)
         data_infeasible = data[~data['Feasible']]
         ax.scatter(x=data_infeasible["Cost"], y=data_infeasible["Lat"], s=2, c='red', marker=".",
                    label="Overbooked" if alg == "BASELINE_SINGLE" else None, zorder=2)
+        print(f"{alg} - Infeasible:", data_infeasible['Cost'].count())
         data_feasible = data[data['Feasible']]
         ax.scatter(x=data_feasible["Cost"], y=data_feasible["Lat"], s=2, c='green', marker=".",
                    label="$M$-feasible" if alg == "BASELINE_NO_PART" else None, zorder=2)
+        print(f"{alg} - Feasible:", data_feasible['Cost'].count())
+        print(f"{alg} - Unsolvable:", data[~data['Solvable']]['Cost'].count())
+        print('-' * 10)
         ax.grid(linestyle='dotted', zorder=-2)
         ax.set_title(CALGS[alg], pad=3)
         if alg == "BIFPTAS":
@@ -434,19 +443,24 @@ def plot_cost_par_valid(tree_type: str = "faas", n=40, show: bool = True, feasib
     df2['Lat'] = (df['Lat'] - df['L']) / df['L']
     if feasible:
         df2['Feasible'] = df.apply(check_part_feasibility, axis=1, args=[f"../data/{tree_type}_tree_n{n}-{n + 10}.npy"])
+        df2['Solvable'] = df.apply(check_part_solvable, axis=1)
     fig = plt.figure(figsize=(COLUMN_W, (COLUMN_W - 0.5) / 3))
     gs = fig.add_gridspec(1, 3)
     axes = gs.subplots(sharex=True, sharey=True).flatten()
     for alg, ax in zip(PCALGS, axes):
         ax.axhline(0, color='k', linewidth=0.5)
         ax.axvline(0, color='k', linewidth=0.5)
-        data = df2[df2.Alg == alg][['Cost', 'Lat', 'Feasible']]
+        data = df2[df2.Alg == alg][['Cost', 'Lat', 'Feasible', 'Solvable']]
         data_infeasible = data[~data['Feasible']]
         ax.scatter(x=data_infeasible["Cost"], y=data_infeasible["Lat"], s=2, c='red', marker=".",
                    label="Overbooked" if alg == "BASELINE_NO_PART" else None, zorder=2)
+        print(f"{alg} - Infeasible:", data_infeasible['Cost'].count())
         data_feasible = data[data['Feasible']]
         ax.scatter(x=data_feasible["Cost"], y=data_feasible["Lat"], s=2, c='green', marker=".",
                    label="$M$-feasible" if alg == "PSEUDO_L_PAR" else None, zorder=2)
+        print(f"{alg} - Feasible:", data_feasible['Cost'].count())
+        print(f"{alg} - Unsolvable:", data[~data['Solvable']]['Cost'].count())
+        print('-' * 10)
         ax.grid(linestyle='dotted', zorder=-2)
         ax.set_title(PCALGS[alg], pad=3)
     fig.supxlabel("Cost deviation from optimum (parMtxILP)", ha="center", x=0.57)
@@ -476,6 +490,76 @@ def plot_cost_par_valid(tree_type: str = "faas", n=40, show: bool = True, feasib
         plt.show()
     else:
         plt.savefig(f"figs/alg_cost_par_valid_{tree_type}.{ext}")
+
+
+_RED = (1.000000, 0.752941, 0.796078)
+_GREEN = (0.564706, 0.933333, 0.564706)
+_BLUE = (0.678431, 0.847059, 0.901961)
+
+_LRED = (1.000000, 0.874509, 0.894117)
+_LGREEN = (0.780392, 0.964705, 0.780392)
+_LBLUE = (0.835294, 0.921568, 0.949019)
+
+def plot_cost_valid_bar(n=40, show: bool = True, ext: str = "pgf"):
+    plt.style.use('fast')
+    plt.rc('font', size=5)
+    plt.rc('axes', labelsize=5)
+    plt.rc('legend', fontsize=5)
+    plt.rc('axes', linewidth=0.5)
+
+    fig, ax = plt.subplots(figsize=(COLUMN_W + 0.5, COLUMN_W / 3 + 0.2))
+    idx = np.array(range(1, len(CALGS) + 1))
+
+    for _type, off in zip(("job", "faas"), (-0.2, 0.2)):
+        df = pd.read_csv(f"../results/cost/test_alg_cost_{_type}_tree_n{n}-{n + 10}.csv")
+        df.loc[df.Cost == np.inf, "Time"] = 1000.0
+        df2 = df[['Tree', 'Alg', 'Cost']]
+        df2 = df2.set_index(['Tree', 'Alg'])
+        for t in df.Tree.unique():
+            df2.loc[[t]] = (df2.loc[[t]] - df2.loc[t, "OPT"].Cost) / df2.loc[t, "OPT"].Cost
+        df2.reset_index(inplace=True)
+        df2['Lat'] = (df['Lat'] - df['L']) / df['L']
+        df2['Feasible'] = df.apply(check_part_feasibility, axis=1, args=[f"../data/{_type}_tree_n{n}-{n + 10}.npy"])
+        df2['Solvable'] = df.apply(check_part_solvable, axis=1)
+        cnt = {"F": [], "I": [], "U": []}
+        for alg in CALGS.keys():
+            data = df2[df2.Alg == alg][['Cost', 'Lat', 'Feasible', 'Solvable']]
+            c_feasible = data[data['Feasible'] & data['Lat'].le(0)]['Cost'].count()
+            c_infeasible = data[~data['Feasible'] & data['Solvable'] | data['Lat'].gt(0)]['Cost'].count()
+            c_unsolvable = data[~data['Solvable']]['Cost'].count()
+            print(alg, c_feasible, c_infeasible, c_unsolvable)
+            cnt["F"].append(c_feasible)
+            cnt["I"].append(c_infeasible)
+            cnt["U"].append(c_unsolvable)
+
+        # plt.grid(linestyle='dotted', zorder=2)
+        cnt_label = {"F": r"Feasible", "I": r"Infeasible wrt. $M$ and/or $L_\pi$", "U": r"Unsolvable"}
+        bottom = np.zeros(len(CALGS))
+        for k, cb, ce, h in zip(cnt.keys(), (_LGREEN, _LRED, _LBLUE), (_GREEN, _RED, _BLUE), ("", "", "")):
+            v = np.array(cnt[k])
+            v_plot = np.where(v == 0, np.nan, v)
+            ax.bar(idx + off, v_plot, bottom=bottom, width=0.4, label=cnt_label[k] if _type == "job" else None,
+                   color=cb, edgecolor=ce, lw=0.5, hatch=h, zorder=2)
+            bottom += v
+
+        for c in ax.containers:
+            labels = [int(v.get_height()) if v.get_height() > 0 else '' for v in c]
+            ax.bar_label(c, label_type='center', labels=labels)  # add a container object "c" as first argument
+
+    plt.ylim(top=124)
+    plt.xlim(0.4, 9.6)
+    plt.yticks(rotation=90, ha="center", va="center")
+    plt.ylabel("Number of test cases")
+    plt.xticks(idx, CALGS.values())
+    plt.xlabel("Tree Partitioning Methods")
+    plt.grid(linestyle='dotted', zorder=0)
+    plt.legend(loc="upper center", fancybox=True, framealpha=1, ncol=3)
+    plt.tight_layout(pad=0.8, w_pad=0.1)
+
+    if show:
+        plt.show()
+    else:
+        plt.savefig(f"figs/alg_cost_valid_bar.{ext}")
 
 
 if __name__ == '__main__':
@@ -508,8 +592,8 @@ if __name__ == '__main__':
     # plot_sens_runtimes(param="cpu", show=False, ext="pgf")
     # plot_sens_runtimes(param="cpu", show=False, ext="pdf")
     #
-    plot_bicrit_heatmap(show=False, ext="pgf")
-    plot_bicrit_heatmap(show=False, ext="pdf")
+    # plot_bicrit_heatmap(show=False, ext="pgf")
+    # plot_bicrit_heatmap(show=False, ext="pdf")
     #
     # plot_cost_runtimes(tree_type="random", show=False, ext="pgf")
     # plot_cost_runtimes(tree_type="random", show=False, ext="pdf")
@@ -531,3 +615,7 @@ if __name__ == '__main__':
     # plot_cost_par_valid(tree_type="job", n=40, show=False, ext="pdf")
     # plot_cost_par_valid(tree_type="faas", n=40, show=False, ext="pgf")
     # plot_cost_par_valid(tree_type="faas", n=40, show=False, ext="pdf")
+    #
+    # plot_cost_valid_bar(tree_type="job", n=40, show=True, ext="pdf")
+    # plot_cost_valid_bar(n=40, show=True, ext="pgf")
+    plot_cost_valid_bar(n=40, show=False, ext="pgf")
