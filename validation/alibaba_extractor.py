@@ -172,6 +172,10 @@ def extract_all_call_params(csv_dir: str, use_cache: bool = True):
     sum_inv_data = list(itertools.chain.from_iterable(sum_inv_data))
     print("Collected inv rate data size", len(sum_inv_data))
     print(pd.Series(sum_inv_data).describe())
+    if use_cache and not pathlib.Path(f"{RATE_HIST_NAME}.npy").exists():
+        with open(f"{RATE_HIST_NAME}.npy", 'wb') as f:
+            print(">>>> Dump inv. rate data into", f.name)
+            np.save(f, sum_inv_data, allow_pickle=False)
     print("Create inv. rate histograms...")
     inv_hist = np.histogram(sum_inv_data, bins=RATE_BIN_CALC_METHOD, range=RATE_RANGE, density=DENSITY)
     with open(f"{RATE_HIST_NAME}.pkl", 'wb') as f:
@@ -181,6 +185,67 @@ def extract_all_call_params(csv_dir: str, use_cache: bool = True):
     sum_rw_data = list(itertools.chain.from_iterable(sum_rw_data))
     print("Collected R/W data size", len(sum_rw_data))
     print(pd.Series(sum_rw_data).describe())
+    if use_cache and not pathlib.Path(f"{DATA_HIST_NAME}.npy").exists():
+        with open(f"{DATA_HIST_NAME}.npy", 'wb') as f:
+            print(">>>> Dump R/W data into", f.name)
+            np.save(f, sum_inv_data, allow_pickle=False)
+    print("Create R/W data histograms...")
+    data_hist = np.histogram(sum_rw_data, bins=DATA_BIN_CALC_METHOD, range=DATA_RANGE, density=DENSITY)
+    with open(f"{DATA_HIST_NAME}.pkl", 'wb') as f:
+        print("Dump R/W hist params into:", f.name)
+        pickle.dump(data_hist, f, protocol=5, fix_imports=True)
+
+
+def extract_all_call_params_from_cache(cache_dir: str):
+    """Combined invocation rate and R/W data extraction for faster trace processing"""
+    sum_inv_data, sum_rw_data = [], []
+    try:
+        csv_dir = pathlib.Path(cache_dir).resolve()
+        print(f"Iterate over .npy files in {csv_dir} ".center(100, '#'))
+        for i in range(1, 145):
+            # Collect inv rate data
+            rate_cache_file = pathlib.Path(pathlib.Path(f"MSCallGraph_{i}").stem + "_rate").with_suffix('.npy')
+            if rate_cache_file.exists():
+                with open(rate_cache_file, 'rb') as f:
+                    print("Load inv data from cache", f.name)
+                    sum_inv_data.append(np.load(f))
+            else:
+                print(f">>>> Cache file: {rate_cache_file} is missing!")
+            # Collect R/W data
+            data_cache_file = pathlib.Path(pathlib.Path(f"MSCallGraph_{i}").stem + "_data").with_suffix('.npy')
+            if data_cache_file.exists():
+                with open(data_cache_file, 'rb') as f:
+                    print("Load R/W overhead data from cache", f.name)
+                    sum_rw_data.append(np.load(f))
+            else:
+                print(f">>>> Cache file: {data_cache_file} is missing!")
+    except KeyboardInterrupt:
+        pass
+    if not (sum_inv_data and sum_rw_data):
+        print("No data are collected!")
+        return
+    print("Assemble inv. data...")
+    sum_inv_data = list(itertools.chain.from_iterable(sum_inv_data))
+    print("Collected inv rate data size", len(sum_inv_data))
+    print(pd.Series(sum_inv_data).describe())
+    if not pathlib.Path(f"{RATE_HIST_NAME}.npy").exists():
+        with open(f"{RATE_HIST_NAME}.npy", 'wb') as f:
+            print(">>>> Dump inv. rate data into", f.name)
+            np.save(f, sum_inv_data, allow_pickle=False)
+    print("Create inv. rate histograms...")
+    inv_hist = np.histogram(sum_inv_data, bins=RATE_BIN_CALC_METHOD, range=RATE_RANGE, density=DENSITY)
+    with open(f"{RATE_HIST_NAME}.pkl", 'wb') as f:
+        print("Dump rate hist params into:", f.name)
+        pickle.dump(inv_hist, f, protocol=5, fix_imports=True)
+    print("Assemble R/W data...")
+    sum_rw_data = list(itertools.chain.from_iterable(sum_rw_data))
+    print("Collected R/W data size", len(sum_rw_data))
+    print(pd.Series(sum_rw_data).describe())
+    if not pathlib.Path(f"{DATA_HIST_NAME}.npy").exists():
+        with open(f"{DATA_HIST_NAME}.npy", 'wb') as f:
+            print(">>>> Dump R/W data into", f.name)
+            np.save(f, sum_inv_data, allow_pickle=False)
+    print("Create R/W data histograms...")
     data_hist = np.histogram(sum_rw_data, bins=DATA_BIN_CALC_METHOD, range=DATA_RANGE, density=DENSITY)
     with open(f"{DATA_HIST_NAME}.pkl", 'wb') as f:
         print("Dump R/W hist params into:", f.name)
