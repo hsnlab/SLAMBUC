@@ -67,6 +67,7 @@ def test_mtx_model_creation(save_file: bool = False):
     print_lat_coeffs(model, X)
     print("  Generated LP model  ".center(80, '='))
     print_lp_desc(model_greedy)
+    print_lp_desc(model)
     if save_file:
         model_greedy.writeLP("chain_mtx_model.lp")
 
@@ -117,7 +118,7 @@ def test_mtx_model_solution_cplex():
                   rate=[1, 2, 2, 1],
                   data=[5, 2, 5, 3],
                   M=6,
-                  L=50,
+                  L=150,
                   start=1,
                   end=2,
                   delay=10)
@@ -133,7 +134,7 @@ def test_mtx_model_solution_glpk():
                   rate=[1, 2, 2, 1],
                   data=[5, 2, 5, 3],
                   M=6,
-                  L=50,
+                  L=150,
                   start=1,
                   end=2,
                   delay=10)
@@ -221,9 +222,10 @@ def test_partial_ser_chain():
 
 
 if __name__ == '__main__':
-    test_mtx_model_creation(save_file=False)
+    # test_mtx_model_creation(save_file=False)
     # test_mtx_model_solution()
     # test_mtx_model_solution_cplex()
+    test_mtx_model_solution_glpk()
     # evaluate_mtx_model()
     # test_ser_chain()
     # test_random_ser_chain()

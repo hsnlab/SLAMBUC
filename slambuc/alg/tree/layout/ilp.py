@@ -132,7 +132,7 @@ def recreate_st_from_gen_xdict(tree: nx.DiGraph, X: dict[Flavor, dict[int, list[
 
 def build_gen_tree_mtx_model(tree: nx.DiGraph, root: int = 1, flavors: list[Flavor] = (Flavor(),),
                              exec_calc: collections.abc.Callable[[int, int, int], int] = lambda i, t, n: t,
-                             L: int = math.inf, cp_end: int = None,
+                             L: int = math.inf, cp_end: int = None, subchains: bool = False,
                              delay: int = 1) -> tuple[lp.LpProblem, dict[int, dict[int, dict[int, lp.LpVariable]]]]:
     """
     Generate the matrix ILP model with the given *flavors*.
@@ -179,6 +179,12 @@ def build_gen_tree_mtx_model(tree: nx.DiGraph, root: int = 1, flavors: list[Flav
         for j in X[f]:
             for u, v in nx.dfs_edges(tree, source=j):
                 model += X[f][u][j] - X[f][v][j] >= 0, f"Cc_{fi}_{j:02d}_{u:02d}_{v:02d}"
+    # Path-tree constraints
+    if subchains:
+        for fi, f in enumerate(X):
+            for pt in ((lp.lpSum(X[f][i][j] for i in tree.successors(v)) <= 1, f"Cp_{fi}_{j:02d}_{v:02d}")
+                       for v in X[f] for j in X[f][v] if tree.succ[v]):
+                model += pt
     # Latency constraint
     cpath = set(ibacktrack_chain(tree, root, cp_end))
     sum_lat = lp.LpAffineExpression()
@@ -206,8 +212,8 @@ def build_gen_tree_mtx_model(tree: nx.DiGraph, root: int = 1, flavors: list[Flav
 
 def tree_gen_mtx_partitioning(tree: nx.DiGraph, root: int = 1, flavors: list[Flavor] = (Flavor(),),
                               exec_calc: collections.abc.Callable[[int, int, int], int] = lambda i, t, n: t,
-                              L: int = math.inf, cp_end: int = None, delay: int = 1, solver: lp.LpSolver = None,
-                              timeout: int = None, **lpargs) -> T_FRESULTS:
+                              L: int = math.inf, cp_end: int = None, subchains: bool = False, delay: int = 1,
+                              solver: lp.LpSolver = None, timeout: int = None, **lpargs) -> T_FRESULTS:
     """
     Calculate minimal-cost partitioning of a tree based on matrix LP formulation and given *flavors*.
 
@@ -217,13 +223,14 @@ def tree_gen_mtx_partitioning(tree: nx.DiGraph, root: int = 1, flavors: list[Fla
     :param exec_calc:   function that calculates the effective runtimes from reference runtime and available CPU cores
     :param L:           latency limit defined on the critical path (in ms)
     :param cp_end:      tail node of the critical path in the form of subchain[root -> c_pend]
+    :param subchains:   only subchain blocks are considered (path-tree)
     :param delay:       invocation delay between blocks
     :param solver:      specific solver class (default: COIN-OR CBC)
     :param timeout:     time limit in sec
     :param lpargs:      additional LP solver parameters
     :return:            tuple of list of best partitions, sum cost of the partitioning, and resulted latency
     """
-    model, X = build_gen_tree_mtx_model(tree, root, flavors, exec_calc, L, cp_end, delay)
+    model, X = build_gen_tree_mtx_model(tree, root, flavors, exec_calc, L, cp_end, subchains, delay)
     status = model.solve(solver=solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False, timeLimit=timeout, **lpargs))
     if status == lp.LpStatusOptimal:
         opt_cost, opt_lat = round(lp.value(model.objective), 0), round(lp.value(model.constraints[LP_LAT]), 0)
@@ -248,9 +255,8 @@ def extract_st_from_gen_xmatrix(X: dict[Flavor, dict[int, dict[int, lp.LpVariabl
 
 def all_gen_tree_mtx_partitioning(tree: nx.DiGraph, root: int = 1, flavors: list[Flavor] = (Flavor(),),
                                   exec_calc: collections.abc.Callable[[int, int, int], int] = lambda i, t, n: t,
-                                  L: int = math.inf, cp_end: int = None, delay: int = 1,
-                                  solver: lp.LpSolver = None, timeout: int = None,
-                                  **lpargs) -> list[T_FPART]:
+                                  L: int = math.inf, cp_end: int = None, subchains: bool = False, delay: int = 1,
+                                  solver: lp.LpSolver = None, timeout: int = None, **lpargs) -> list[T_FPART]:
     """
     Calculate all minimal-cost partitioning variations of a tree based on matrix ILP formulation and *flavors*.
 
@@ -260,6 +266,7 @@ def all_gen_tree_mtx_partitioning(tree: nx.DiGraph, root: int = 1, flavors: list
     :param exec_calc:   function that calculates the effective runtimes from reference runtime and available CPU cores
     :param L:           latency limit defined on the critical path (in ms)
     :param cp_end:      tail node of the critical path in the form of subchain[root -> c_pend]
+    :param subchains:   only subchain blocks are considered (path-tree)
     :param delay:       invocation delay between blocks
     :param solver:      specific solver class (default: COIN-OR CBC)
     :param timeout:     time limit in sec
@@ -267,7 +274,7 @@ def all_gen_tree_mtx_partitioning(tree: nx.DiGraph, root: int = 1, flavors: list
     :return:            tuple of list of best partitions, sum cost of the partitioning, and resulted latency
     """
     # Get model
-    model, X = build_gen_tree_mtx_model(tree, root, flavors, exec_calc, L, cp_end, delay)
+    model, X = build_gen_tree_mtx_model(tree, root, flavors, exec_calc, L, cp_end, subchains, delay)
     # Init for min-cost results
     results, min_cost = [], math.inf
     solver = solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False, timeLimit=timeout, **lpargs)

@@ -202,7 +202,7 @@ def recreate_subtrees_from_xdict(tree: nx.DiGraph, Xn: dict[int, list[lp.LpVaria
 
 
 def build_greedy_tree_mtx_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
-                                L: int = math.inf, cpath: set[int] = frozenset(),
+                                L: int = math.inf, cpath: set[int] = frozenset(), subchains: bool = False,
                                 delay: int = 1) -> tuple[lp.LpProblem, dict[int, dict[int, lp.LpVariable]]]:
     """
     Generate the matrix ILP model in a greedy manner.
@@ -223,7 +223,7 @@ def build_greedy_tree_mtx_model(tree: nx.DiGraph, root: int = 1, M: int = math.i
         for v in nx.dfs_preorder_nodes(tree, source=j):
             nodes |= {v}
             cost_vj = ser_subtree_cost(tree, j, nodes)
-            X[v][j] = lp.LpVariable(f'x_{v:02d}_{j:02d}', cat=lp.LpBinary)
+            X[v][j] = lp.LpVariable(f'x_{v:02d}_{j:02d}', cat=lp.LpBinary) if v != root else 1
             sum_cost += (cost_vj - cost_pre) * X[v][j]
             cost_pre = cost_vj
     model += sum_cost
@@ -238,6 +238,12 @@ def build_greedy_tree_mtx_model(tree: nx.DiGraph, root: int = 1, M: int = math.i
     for j in X:
         for u, v in nx.dfs_edges(tree, source=j):
             model += X[u][j] - X[v][j] >= 0, f"Cc_{j:02d}_{u:02d}_{v:02d}"
+    # Path-tree constraints
+    if subchains:
+        for j in X:
+            for v in nx.dfs_preorder_nodes(tree, source=j):
+                if tree.succ[v]:
+                    model += lp.lpSum(X[i][j] for i in tree.successors(v)) <= 1, f"Cp_{j:02d}_{v:02d}"
     # Latency constraint
     sum_lat = lp.LpAffineExpression()
     for j in X:
@@ -262,7 +268,7 @@ def build_greedy_tree_mtx_model(tree: nx.DiGraph, root: int = 1, M: int = math.i
 
 
 def build_tree_mtx_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
-                         L: int = math.inf, cpath: set[int] = frozenset(),
+                         L: int = math.inf, cpath: set[int] = frozenset(), subchains: bool = False,
                          delay: int = 1) -> tuple[lp.LpProblem, dict[int, dict[int, lp.LpVariable]]]:
     """
     Generate the matrix ILP model directly from formulas.
@@ -316,6 +322,11 @@ def build_tree_mtx_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
     # Feasibility constraints, X[root][root] = 1 can be omitted else it ensures that X[root][root] must be 1
     for i in filter(lambda x: x != root, X):
         model += lp.lpSum(X[i].values()) == 1, f"Cf_{i:02d}"
+    # Path-tree constraints
+    if subchains:
+        for pt in ((lp.lpSum(X[i][j] for i in tree.successors(v)) <= 1, f"Cp_{j:02d}_{v:02d}")
+                   for v in X for j in X[v] if tree.succ[v]):
+            model += pt
     # Latency constraint
     if L < math.inf:
         model += sum_lat <= L, LP_LAT
@@ -326,23 +337,24 @@ def build_tree_mtx_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
 
 
 def tree_mtx_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
-                          cp_end: int = None, delay: int = 1, solver: lp.LpSolver = None,
-                          timeout: int = None, **lpargs) -> T_RESULTS:
+                          cp_end: int = None, delay: int = 1, subchains: bool = False,
+                          solver: lp.LpSolver = None, timeout: int = None, **lpargs) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning of a tree based on the matrix ILP formulation.
 
     Block metrics are calculated based on serialized execution platform model.
 
-    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rate
-    :param root:    root node of the graph
-    :param M:       upper memory bound of the partition blocks (in MB)
-    :param L:       latency limit defined on the critical path (in ms)
-    :param cp_end:  tail node of the critical path in the form of subchain[root -> c_pend]
-    :param delay:   invocation delay between blocks
-    :param solver:  specific solver class (default: COIN-OR CBC)
-    :param timeout: time limit in sec
-    :param lpargs:  additional LP solver parameters
-    :return:        tuple of list of best partitions, sum cost of the partitioning, and resulted latency
+    :param tree:        service graph annotated with node runtime(ms), memory(MB) and edge rate
+    :param root:        root node of the graph
+    :param M:           upper memory bound of the partition blocks (in MB)
+    :param L:           latency limit defined on the critical path (in ms)
+    :param cp_end:      tail node of the critical path in the form of subchain[root -> c_pend]
+    :param delay:       invocation delay between blocks
+    :param subchains:   only subchain blocks are considered (path-tree)
+    :param solver:      specific solver class (default: COIN-OR CBC)
+    :param timeout:     time limit in sec
+    :param lpargs:      additional LP solver parameters
+    :return:            tuple of list of best partitions, sum cost of the partitioning, and resulted latency
     """
     # Critical path
     cpath = set(ibacktrack_chain(tree, root, cp_end))
@@ -350,7 +362,7 @@ def tree_mtx_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L:
     if not all(verify_limits(tree, cpath, M, L)):
         # No feasible solution due to too strict limits
         return INFEASIBLE
-    model, X = build_tree_mtx_model(tree, root, M, L, cpath, delay)
+    model, X = build_tree_mtx_model(tree, root, M, L, cpath, subchains, delay)
     status = model.solve(solver=solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False, timeLimit=timeout, **lpargs))
     if status == lp.LpStatusOptimal:
         opt_cost, opt_lat = round(lp.value(model.objective), 0), round(lp.value(model.constraints[LP_LAT]), 0)
@@ -384,23 +396,24 @@ def extract_subtrees_from_xmatrix(X: dict[int, dict[int, lp.LpVariable]]) -> T_P
 
 
 def all_tree_mtx_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
-                              cp_end: int = None, delay: int = 1, solver: lp.LpSolver = None,
+                              cp_end: int = None, delay: int = 1, subchains: bool = False, solver: lp.LpSolver = None,
                               timeout: int = None, **lpargs) -> tuple[list[list[int]], int, int]:
     """
     Calculates all minimal-cost partitioning variations of a tree based on matrix ILP formulation.
     
     Block metrics are calculated based on serialized execution platform model.
 
-    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
-    :param root:    root node of the graph
-    :param M:       upper memory bound of the partition blocks (in MB)
-    :param L:       latency limit defined on the critical path (in ms)
-    :param cp_end:  tail node of the critical path in the form of subchain[root -> c_pend]
-    :param delay:   invocation delay between blocks
-    :param solver:  specific solver class (default: COIN-OR CBC)
-    :param timeout: time limit in sec
-    :param lpargs:  additional LP solver parameters
-    :return:        tuple of list of best partitions, sum cost of the partitioning, and resulted latency
+    :param tree:        service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
+    :param root:        root node of the graph
+    :param M:           upper memory bound of the partition blocks (in MB)
+    :param L:           latency limit defined on the critical path (in ms)
+    :param cp_end:      tail node of the critical path in the form of subchain[root -> c_pend]
+    :param delay:       invocation delay between blocks
+    :param subchains:   only subchain blocks are considered (path-tree)
+    :param solver:      specific solver class (default: COIN-OR CBC)
+    :param timeout:     time limit in sec
+    :param lpargs:      additional LP solver parameters
+    :return:            tuple of list of best partitions, sum cost of the partitioning, and resulted latency
     """
     # Critical path
     cpath = set(ibacktrack_chain(tree, root, cp_end))
@@ -409,7 +422,7 @@ def all_tree_mtx_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf
         # No feasible solution due to too strict limits
         return INFEASIBLE
     # Get model
-    model, X = build_tree_mtx_model(tree, root, M, L, cpath, delay)
+    model, X = build_tree_mtx_model(tree, root, M, L, cpath, subchains, delay)
     # Init for min-cost results
     results, min_cost = [], math.inf
     solver = solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False, timeLimit=timeout, **lpargs)

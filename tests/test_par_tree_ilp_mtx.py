@@ -137,6 +137,28 @@ def evaluate_ilp_par_mtx_model():
     evaluate_par_tree_partitioning(partition=partition, opt_cost=opt_cost, opt_lat=opt_lat, **params)
 
 
+def evaluate_ilp_par_subchain_mtx_model():
+    tree = nx.read_gml("data/graph_test_tree_par.gml", destringizer=int)
+    tree.graph[NAME] += "-par_ilp_mtx"
+    params = dict(tree=tree,
+                  root=1,
+                  cp_end=10,
+                  M=6,
+                  L=430,
+                  N=2,
+                  delay=10)
+    print("  CBC solver  ".center(80, '='))
+    partition, opt_cost, opt_lat = tree_par_mtx_partitioning(**params, subchains=True,
+                                                             solver=pulp.PULP_CBC_CMD(mip=True, warmStart=False))
+    print(f"Partitioning: {partition}, {opt_cost = }, {opt_lat = }")
+    evaluate_par_tree_partitioning(partition=partition, opt_cost=opt_cost, opt_lat=opt_lat, **params)
+    print("  CPLEX solver  ".center(80, '='))
+    partition, opt_cost, opt_lat = tree_par_mtx_partitioning(**params, subchains=True,
+                                                             solver=pulp.CPLEX_PY(mip=True, warmStart=False))
+    print(f"Partitioning: {partition}, {opt_cost = }, {opt_lat = }")
+    evaluate_par_tree_partitioning(partition=partition, opt_cost=opt_cost, opt_lat=opt_lat, **params)
+
+
 ########################################################################################################################
 
 def run_test(tree: nx.DiGraph, root: int, cp_end: int, M: int, L: int, N: int, delay: int):
@@ -178,6 +200,7 @@ if __name__ == '__main__':
     # test_par_mtx_model_creation()
     # test_par_mtx_model_solution()
     evaluate_ilp_par_mtx_model()
+    # evaluate_ilp_par_subchain_mtx_model()
     # test_par_mtx_model_creation(tree_file="failed_random_tree_1675189959.6335204-ser_partition_L358_M6.gml")
     # test_par_tree()
     # test_random_par_tree()

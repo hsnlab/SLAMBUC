@@ -68,6 +68,7 @@ def test_mtx_model_creation(tree_file: str = "data/graph_test_tree_ser.gml", sav
                   cpath=cpath,
                   M=6,
                   L=430,
+                  subchains=True,
                   delay=10)
     print("  Test input  ".center(80, '='))
     pprint.pprint(params)
@@ -213,6 +214,27 @@ def evaluate_ilp_mtx_model():
     evaluate_ser_tree_partitioning(partition=partition, opt_cost=opt_cost, opt_lat=opt_lat, **params)
 
 
+def evaluate_ilp_mtx_subchains_model():
+    tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
+    tree.graph[NAME] += "-ser_ilp_mtx"
+    params = dict(tree=tree,
+                  root=1,
+                  cp_end=10,
+                  M=6,
+                  L=430,
+                  delay=10)
+    print("  CBC solver  ".center(80, '='))
+    partition, opt_cost, opt_lat = tree_mtx_partitioning(**params, subchains=True,
+                                                         solver=pulp.PULP_CBC_CMD(mip=True, warmStart=False))
+    print(f"Partitioning: {partition}, {opt_cost = }, {opt_lat = }")
+    evaluate_ser_tree_partitioning(partition=partition, opt_cost=opt_cost, opt_lat=opt_lat, **params)
+    print("  CPLEX solver  ".center(80, '='))
+    partition, opt_cost, opt_lat = tree_mtx_partitioning(**params, subchains=True,
+                                                         solver=pulp.CPLEX_PY(mip=True, warmStart=False))
+    print(f"Partitioning: {partition}, {opt_cost = }, {opt_lat = }")
+    evaluate_ser_tree_partitioning(partition=partition, opt_cost=opt_cost, opt_lat=opt_lat, **params)
+
+
 ########################################################################################################################
 
 
@@ -256,5 +278,6 @@ if __name__ == '__main__':
     # test_mtx_model_solution_cplex()
     # test_mtx_model_solution_glpk()
     # evaluate_ilp_mtx_model()
+    # evaluate_ilp_mtx_subchains_model()
     # test_ser_tree()
     # test_random_ser_tree()

@@ -155,9 +155,44 @@ def test_gen_mtx_model_solution():
     print(f"{solver.solution_time = } s")
 
 
+def test_gen_mtx_subchain_model_solution():
+    tree = nx.read_gml("data/graph_test_tree_par.gml", destringizer=int)
+    tree.graph[NAME] += "-par_ilp_mtx"
+    params = dict(tree=tree,
+                  root=1,
+                  cp_end=10,
+                  flavors=[Flavor(6, 1, 1),
+                           Flavor(9, 3, 1.1)],  # Higher memory with more core, but 10% more expensive
+                  L=430,
+                  subchains=True,
+                  delay=10)
+    print("  Run CBC solver  ".center(80, '='))
+    #
+    print(" General MTX model ".center(80, '='))
+    model, X = build_gen_tree_mtx_model(**params)
+    solver = pulp.PULP_CBC_CMD(mip=True, warmStart=False, msg=True)
+    status = model.solve(solver=solver)
+    print(f"Partitioning status: {status} / {pulp.LpStatus[status]}")
+    print(f"Cost/Lat: {pulp.value(model.objective)}, {pulp.value(model.constraints[LP_LAT])}")
+    print("Solution:")
+    for f in X:
+        print(f"Flavor: {f}")
+        print_pulp_matrix_values(convert_var_dict(X[f]))
+    #
+    _s = time.perf_counter()
+    ext_partition = extract_st_from_gen_xmatrix(X)
+    _d = time.perf_counter() - _s
+    print(f"Extract:  {_d * 1000} ms")
+    print(f"Partitioning: {ext_partition = }")
+    print(f"{model.solutionTime    = } s")
+    print(f"{model.solutionCpuTime = }")
+    print(f"{solver.solution_time = } s")
+    evaluate_gen_tree_partitioning(tree, ext_partition, 0, 0, 0, [[0, 0, 0]], 0, 0, 0)
+
+
 ########################################################################################################################
 
-def run_test(tree: nx.DiGraph, root: int, flavors: list[Flavor], cp_end: int, L: int, delay: int):
+def run_test(tree: nx.DiGraph, root: int, flavors: list[Flavor], cp_end: int, L: int, subchains: bool, delay: int):
     partition, opt_cost, opt_lat = tree_gen_hybrid_partitioning(tree, root, flavors, L=L, cp_end=cp_end, delay=delay,
                                                                 solver=pulp.PULP_CBC_CMD(mip=True, warmStart=False,
                                                                                          msg=False))
@@ -216,8 +251,9 @@ if __name__ == '__main__':
     # test_gen_cfg_model_solution()
     # test_gen_mtx_model_creation()
     # test_gen_mtx_model_solution()
+    test_gen_mtx_subchain_model_solution()
     #
     # test_gen_tree()
     # test_random_gen_tree()
     #
-    test_all_gen_tree()
+    # test_all_gen_tree()
