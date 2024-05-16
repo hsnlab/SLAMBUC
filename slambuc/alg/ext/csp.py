@@ -72,7 +72,7 @@ def ibuild_gen_csp_dag(tree: nx.DiGraph, root: int = 1, flavors: list[Flavor] = 
     """
     # Annotate nodes with reachable leafs of tree
     tree = leaf_label_nodes(tree)
-    # Iterate over the feasible chain-flattened of the tree
+    # Iterate over the feasible chain-flattened tree
     for chains in iflattened_tree(tree, root):
         # Initiate data structure for DAG
         _cache = collections.defaultdict(list)
@@ -188,7 +188,7 @@ def csp_gen_tree_partitioning(tree: nx.DiGraph, root: int = 1, flavors: list[tup
     # Critical path
     cpath = set(ibacktrack_chain(tree, root, cp_end))
     # Verify the min values of limits for a feasible solution
-    if not all(verify_limits(tree, set(ibacktrack_chain(tree, root, cp_end)), max(m for m, *_ in flavors), L)):
+    if not all(verify_limits(tree, cpath, max(m for m, *_ in flavors), L)):
         # No feasible solution due to too strict limits
         return INFEASIBLE
     for dag, chains in ibuild_gen_csp_dag(tree, root, flavors, exec_calc, cpath, delay):

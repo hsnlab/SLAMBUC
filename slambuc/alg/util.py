@@ -26,7 +26,7 @@ from slambuc.alg.service.common import *
 
 def verify_limits(tree: nx.DiGraph, cpath: set[int], M: int | float, L: int | float) -> tuple[bool, bool]:
     """
-    Verify that given limits *M*, *L*, and *N* based on the given *tree* allow feasible solution.
+    Verify that given limits *M* and *L* based on the given *tree* allow feasible solution.
 
     :param tree:    input tree
     :param cpath:   nodes of critical path

@@ -22,6 +22,9 @@ from slambuc.alg import INFEASIBLE, T_BLOCK, T_RESULTS
 from slambuc.alg.service import MEMORY, RATE, DATA
 from slambuc.alg.util import ibacktrack_chain, recalculate_partitioning, par_subchain_latency, par_subtree_memory
 
+# Naming convention for state-space DAG required by *cspy* lib
+START, END = 'Source', 'Sink'
+
 
 def get_bounded_greedy_block(tree: nx.DiGraph, root: int, M: int, N: int = 1, cp_end: int = None,
                              cp_cuts: set[int] = frozenset()) -> tuple[T_BLOCK, list[int]]:
@@ -141,11 +144,59 @@ def get_feasible_cpath_split(tree: nx.DiGraph, root: int, cp_end: int, M: int, L
     return {root, *(cpath[c] for c in cuts)}
 
 
+def get_min_cpath_split(tree: nx.DiGraph, root: int, cp_end: int, M: int, L: int, N: int = 1,
+                        delay: int = 1) -> set[int]:
+    """
+    Calculate min-latency splitting of the critical path that meets given memory *M* and latency *L* limits.
+
+    :param tree:    service graph annotated with node runtime(ms), edge rate and edge data unit size
+    :param root:    root node of the tree
+    :param cp_end:  tail node of the critical path in the form of subchain[root -> cp_end]
+    :param M:       upper memory bound of the partition blocks in MB
+    :param L:       latency limit defined on the critical path in ms
+    :param N:       available CPU core count
+    :param delay:   invocation delay between blocks
+    :return:        set of barrier nodes of calculated critical path blocks
+    """
+    cpath = list(reversed(list(ibacktrack_chain(tree, root, cp_end))))
+    cp_set = set(cpath)
+    # Check trivial single block subcase
+    if par_subchain_latency(tree, root, cp_set, cp_set, N) <= L and par_subtree_memory(tree, root, cpath, N) <= M:
+        return {root}
+    # Initiate data structure for DAG
+    _cache = collections.defaultdict(list)
+    _cache.update({START: [START], END: [END]})
+    dag = nx.DiGraph(directed=True, **tree.graph)
+    for i, (prev, b) in enumerate(itertools.pairwise(itertools.chain([START], cpath))):
+        blk = set()
+        for w in cpath[i:]:
+            blk.add(w)
+            # Skip infeasible subcase due to memory constraint
+            if par_subtree_memory(tree, b, blk, N) > M:
+                break
+            blk_id = f"{b}|{w}"
+            _cache[w].append(blk_id)
+            blk_lat = par_subchain_latency(tree, b, blk, cp_set, N)
+            # Add invocation delay for inter-block invocations
+            if b != root and blk_lat > 0:
+                blk_lat += delay
+            # Add connection between related subcases
+            for p in _cache[prev]:
+                dag.add_edge(p, blk_id, lat=blk_lat)
+    # Add connection between related subcases
+    for p in _cache[cpath[-1]]:
+        dag.add_edge(p, END, lat=0)
+    min_lat, sp = nx.single_source_dijkstra(dag, source=START, target=END, weight='lat')
+    return {int(v.split('|')[0]) for v in sp[1:-1]} if min_lat <= L else None
+
+
 def min_weight_partition_heuristic(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
                                    N: int = 1, cp_end: int = None, delay: int = 1, metrics: bool = True) -> T_RESULTS:
     """
     Greedy heuristic algorithm to calculate partitioning of the given *tree* regarding the given memory *M* and
     latency *L* limits.
+    It uses a greedy approach to calculate a low-cost critical path cut (might miss feasible solutions).
+    It may conclude the partitioning problem infeasible despite there exist one with large costs.
 
     :param tree:    service graph annotated with node runtime(ms), edge rate and edge data unit size
     :param root:    root node of the tree
@@ -159,6 +210,40 @@ def min_weight_partition_heuristic(tree: nx.DiGraph, root: int = 1, M: int = mat
     """
     # Greedy search for feasible cut of the critical path
     cpath_cuts = get_feasible_cpath_split(tree, root, cp_end, M, L, N, delay)
+    # No feasible cuts are found
+    if cpath_cuts is None:
+        return INFEASIBLE
+    partition, succ = [], collections.deque((root,))
+    # Iteratively grow partition blocks starting from root and restarting it at the neighbouring nodes
+    while succ:
+        v = succ.popleft()
+        blk, next_succ = get_bounded_greedy_block(tree, v, M, N, cp_end, cpath_cuts)
+        succ.extend(next_succ)
+        partition.append(blk)
+    sum_cost, sum_lat = recalculate_partitioning(tree, partition, root, N, cp_end, delay) if metrics else (None, None)
+    return partition, sum_cost, sum_lat
+
+
+def min_lat_partition_heuristic(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
+                                N: int = 1, cp_end: int = None, delay: int = 1, metrics: bool = True) -> T_RESULTS:
+    """
+    Greedy heuristic algorithm to calculate partitioning of the given *tree* regarding the given memory *M* and
+    latency *L* limits.
+    It uses Dijkstra's algorithm to calculate the critical path cut with the lowest latency (might be expensive).
+    It always returns a latency-feasible solution if it exists.
+
+    :param tree:    service graph annotated with node runtime(ms), edge rate and edge data unit size
+    :param root:    root node of the tree
+    :param M:       upper memory bound of the partition blocks in MB
+    :param L:       latency limit defined on the critical path in ms
+    :param N:       available CPU core count
+    :param cp_end:  tail node of the critical path in the form of subchain[root -> cp_end]
+    :param delay:   invocation delay between blocks
+    :param metrics: return calculated sum cost and critical path latency
+    :return:        tuple of derived partitioning, sum cost, and the latency on the critical path (root, cp_end)
+    """
+    # Greedy search for min-latency cut of the critical path
+    cpath_cuts = get_min_cpath_split(tree, root, cp_end, M, L, N, delay)
     # No feasible cuts are found
     if cpath_cuts is None:
         return INFEASIBLE
