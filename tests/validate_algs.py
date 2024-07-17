@@ -25,7 +25,7 @@ from slambuc.alg.chain import *
 from slambuc.alg.ext import *
 from slambuc.alg.service import RUNTIME, MEMORY, RATE, DATA, Flavor
 from slambuc.alg.tree import *
-from slambuc.alg.tree.dp.seq_state import cacheless_chain_partitioning, stateful_chain_partitioning
+from slambuc.alg.tree.dp.seq_state import cacheless_path_tree_partitioning, stateful_path_tree_partitioning
 from slambuc.alg.tree.par.pseudo import pseudo_par_btree_partitioning
 from slambuc.alg.util import ibacktrack_chain, split_chain
 from slambuc.misc.util import get_cplex_path
@@ -98,8 +98,8 @@ TREE_ALGS = dict(
     CHAIN_META_PART=meta_tree_partitioning,
     CHAIN_MIN_PART=min_tree_partitioning,
     CHAIN_SEQ_PART=seq_tree_partitioning,
-    CHAIN_PART=cacheless_chain_partitioning,
-    CHAIN_PART_SER=stateful_chain_partitioning,
+    CHAIN_PART=cacheless_path_tree_partitioning,
+    CHAIN_PART_SER=stateful_path_tree_partitioning,
     # General partitioning with flavors
     GREEDY_GEN_ILP=with_single_flavor(all_gen_tree_mtx_partitioning),
     GEN_ILP_CFG=with_single_flavor(tree_gen_hybrid_partitioning),
@@ -112,9 +112,10 @@ TREE_ALGS = dict(
     CPATH_CHAIN_MIN=on_critical_path(min_chain_partitioning, with_data=False),
     CPATH_CHAIN=on_critical_path(chain_partitioning, with_data=False),
     CPATH_CHAIN_VEC=on_critical_path(vec_chain_partitioning, with_data=False),
+    CPATH_SP_CHAIN=on_critical_path(sp_chain_partitioning, with_cpu=False),
     GREEDY_CPATH_SER_CHAIN=on_critical_path(greedy_ser_chain_partitioning, with_cpu=False, extract=False),
     CPATH_SER_CFG_ILP=on_critical_path(chain_cfg_partitioning, with_cpu=False, extract=False),
-    CPATH_SER_MTX_ILP=on_critical_path(chain_mtx_partitioning, with_cpu=False, extract=False),
+    CPATH_SER_MTX_ILP=on_critical_path(chain_mtx_partitioning, with_cpu=False, extract=False)
 )
 
 

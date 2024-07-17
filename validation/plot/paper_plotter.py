@@ -500,6 +500,7 @@ _LRED = (1.000000, 0.874509, 0.894117)
 _LGREEN = (0.780392, 0.964705, 0.780392)
 _LBLUE = (0.835294, 0.921568, 0.949019)
 
+
 def plot_cost_valid_bar(n=40, show: bool = True, ext: str = "pgf"):
     plt.style.use('fast')
     plt.rc('font', size=5)

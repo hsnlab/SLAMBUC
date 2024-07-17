@@ -21,8 +21,8 @@ from slambuc.alg.util import recalculate_partitioning
 from slambuc.gen.transform import transform_autonomous_caching
 
 
-def cacheless_chain_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N: int = 1, L: int = math.inf,
-                                 cp_end: int = None, delay: int = 1, valid: bool = True) -> T_RESULTS:
+def cacheless_path_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N: int = 1, L: int = math.inf,
+                                     cp_end: int = None, delay: int = 1, valid: bool = True) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning using *seq_tree_partitioning* without considering data externalization.
 
@@ -43,8 +43,8 @@ def cacheless_chain_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.
     return INFEASIBLE if valid and sum_lat > L else (partition, sum_cost, sum_lat)
 
 
-def stateful_chain_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N: int = 1, L: int = math.inf,
-                                cp_end: int = None, delay: int = 1) -> T_RESULTS:
+def stateful_path_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N: int = 1, L: int = math.inf,
+                                    cp_end: int = None, delay: int = 1) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning using *seq_tree_partitioning* while considering data implicit state
     externalization.

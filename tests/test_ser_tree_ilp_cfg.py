@@ -13,6 +13,7 @@
 # limitations under the License.
 import math
 import pprint
+import sys
 import time
 
 import networkx as nx
@@ -134,6 +135,7 @@ def test_model_solution(tree_file: str = "data/graph_test_tree_ser.gml"):
 
 
 @pytest.mark.skipif(get_cplex_path() is None, reason="CPLEX is not available!")
+@pytest.mark.skipif(not (sys.version_info < (3, 11)), reason="PY version is not supported!")
 def test_model_solution_cplex():
     tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-ser_ilp_cfg"

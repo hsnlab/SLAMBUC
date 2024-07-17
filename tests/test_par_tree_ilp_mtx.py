@@ -113,7 +113,6 @@ def test_par_mtx_model_solution():
     print(f"Partitioning: {ext_partition = }")
     print(f"{model.solutionTime    = } s")
     print(f"{model.solutionCpuTime = }")
-    print(f"{solver.solution_time = } s")
 
 
 def evaluate_ilp_par_mtx_model():

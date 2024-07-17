@@ -82,7 +82,6 @@ def test_gen_cfg_model_solution():
     print(f"Partitioning: {ext_partition = }")
     print(f"{model.solutionTime    = } s")
     print(f"{model.solutionCpuTime = }")
-    print(f"{solver.solution_time = } s")
 
 
 def test_gen_mtx_model_creation(tree_file: str = "data/graph_test_tree_par.gml", save_file: bool = False):
@@ -152,7 +151,6 @@ def test_gen_mtx_model_solution():
     print(f"Partitioning: {ext_partition = }")
     print(f"{model.solutionTime    = } s")
     print(f"{model.solutionCpuTime = }")
-    print(f"{solver.solution_time = } s")
 
 
 def test_gen_mtx_subchain_model_solution():
@@ -186,7 +184,6 @@ def test_gen_mtx_subchain_model_solution():
     print(f"Partitioning: {ext_partition = }")
     print(f"{model.solutionTime    = } s")
     print(f"{model.solutionCpuTime = }")
-    print(f"{solver.solution_time = } s")
     evaluate_gen_tree_partitioning(tree, ext_partition, 0, 0, 0, [[0, 0, 0]], 0, 0, 0)
 
 

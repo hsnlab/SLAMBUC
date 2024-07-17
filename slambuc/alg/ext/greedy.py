@@ -22,8 +22,8 @@ from slambuc.alg import INFEASIBLE, T_BLOCK, T_RESULTS
 from slambuc.alg.service import MEMORY, RATE, DATA
 from slambuc.alg.util import ibacktrack_chain, recalculate_partitioning, par_subchain_latency, par_subtree_memory
 
-# Naming convention for state-space DAG required by *cspy* lib
-START, END = 'Source', 'Sink'
+# Naming convention for state-space DAG
+START, END = 's', 't'
 
 
 def get_bounded_greedy_block(tree: nx.DiGraph, root: int, M: int, N: int = 1, cp_end: int = None,
@@ -182,11 +182,11 @@ def get_min_cpath_split(tree: nx.DiGraph, root: int, cp_end: int, M: int, L: int
                 blk_lat += delay
             # Add connection between related subcases
             for p in _cache[prev]:
-                dag.add_edge(p, blk_id, lat=blk_lat)
-    # Add connection between related subcases
+                dag.add_edge(p, blk_id, weight=blk_lat)
+    # Add connection for ending subcases
     for p in _cache[cpath[-1]]:
-        dag.add_edge(p, END, lat=0)
-    min_lat, sp = nx.single_source_dijkstra(dag, source=START, target=END, weight='lat')
+        dag.add_edge(p, END, weight=0)
+    min_lat, sp = nx.single_source_dijkstra(dag, source=START, target=END)
     return {int(v.split('|')[0]) for v in sp[1:-1]} if min_lat <= L else None
 
 

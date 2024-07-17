@@ -19,7 +19,7 @@ from slambuc.alg.util import ipowerset, split_chain, block_memory, block_cost, b
 
 def ichain_blocks(memory: list[int], rate: list[int], N: int, M: int) -> T_PART_GEN:
     """
-    Calculates all combination of chain cuts with respect to *memory* and *rate* values and the constraint **M**.
+    Calculates all combinations of chain cuts with respect to *memory* and *rate* values and the constraint **M**.
 
     The calculation is improved compared to brute force to only start calculating cuts from minimal cut size *c_min*.
 
@@ -32,7 +32,7 @@ def ichain_blocks(memory: list[int], rate: list[int], N: int, M: int) -> T_PART_
     n = len(memory)
     for cut in ipowerset(range(1, n), start=math.ceil(sum(memory) / M) - 1):
         barr = sorted({0}.union(cut))
-        # Consider only block with appropriate size
+        # Consider only block with the appropriate size
         valid = [blk for blk in split_chain(barr, n)
                  if block_memory(memory, blk[0], blk[-1]) <= M and block_cpu(rate, blk[0], blk[-1]) <= N]
         if len(valid) == len(barr):
@@ -40,7 +40,7 @@ def ichain_blocks(memory: list[int], rate: list[int], N: int, M: int) -> T_PART_
 
 
 def greedy_chain_partitioning(runtime: list[int], memory: list[int], rate: list[int], M: int = math.inf,
-                              N: int = math.inf, L: int = math.inf, start: int = 0, end: int = None, 
+                              N: int = math.inf, L: int = math.inf, start: int = 0, end: int = None,
                               delay: int = 1, unit: int = 100) -> list[T_RESULTS]:
     """
     Calculates all minimal-cost partitioning outcomes of a given chain by applying exhaustive search.

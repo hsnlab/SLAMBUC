@@ -76,9 +76,9 @@ def get_random_tree(nodes: int = 20, runtime: tuple[int, int] = (1, 100), memory
     :param name:    tree name suffix
     :return:        generated random tree
     """
-    raw_tree = nx.bfs_tree(nx.random_tree(nodes + 1), 0)
+    raw_tree = nx.bfs_tree(nx.random_labeled_tree(nodes + 1), 0)
     while raw_tree.out_degree[0] > 1:
-        raw_tree = nx.bfs_tree(nx.random_tree(nodes + 1), 0)
+        raw_tree = nx.bfs_tree(nx.random_labeled_tree(nodes + 1), 0)
     tree = nx.convert_node_labels_to_integers(raw_tree, first_label=0)
     nx.set_node_attributes(tree, {i: random.randint(*runtime) for i in range(1, nodes + 1)}, RUNTIME)
     nx.set_node_attributes(tree, {i: random.randint(*memory) for i in range(1, nodes + 1)}, MEMORY)

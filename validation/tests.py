@@ -24,7 +24,7 @@ from generate_test_data import PERF_TEST_DATA_PARAMS, PERF_TREE_SIZE_RANGE, DATA
 from harness import execute_tests, log
 from slambuc.alg.ext import *
 from slambuc.alg.tree import *
-from slambuc.alg.tree.dp.seq_state import cacheless_chain_partitioning, stateful_chain_partitioning
+from slambuc.alg.tree.dp.seq_state import cacheless_path_tree_partitioning, stateful_path_tree_partitioning
 from slambuc.gen import DEF_FAAS_TREE_PREFIX, DEF_RAND_TREE_PREFIX, DEF_JOB_TREE_PREFIX
 from slambuc.misc.util import get_cplex_path
 
@@ -268,9 +268,9 @@ TREE_COST_SER_ALGS = dict(
     # Baseline - subtrees, poly, all k-block, maybe infeasible
     K_SPLIT_EXH=min_weight_tree_clustering,
     # SOTA - chains, poly, no data caching
-    CHAIN_PART=cacheless_chain_partitioning,
+    CHAIN_PART=cacheless_path_tree_partitioning,
     # SOTA - chains, poly, integrated data caching
-    CHAIN_PART_SER=stateful_chain_partitioning,
+    CHAIN_PART_SER=stateful_path_tree_partitioning,
     # SOTA - chains, heuristic(poly), with data caching
     COSTLESS=functools.partial(csp_tree_partitioning, solver=cspy.BiDirectional),
     # OUR - subtrees, poly-heur, feasible/no solution
@@ -293,9 +293,9 @@ TREE_COST_PAR_ALGS = dict(
     # Baseline - subtrees, poly, all k-block, maybe infeasible
     K_SPLIT_EXH_PAR=min_weight_tree_clustering,
     # SOTA - chains, poly, no data caching
-    CHAIN_PART_PAR=cacheless_chain_partitioning,
+    CHAIN_PART_PAR=cacheless_path_tree_partitioning,
     # SOTA - chains, poly, integrated data caching
-    CHAIN_FULL_PAR=stateful_chain_partitioning,
+    CHAIN_FULL_PAR=stateful_path_tree_partitioning,
     # SOTA - chains, heuristic(poly), with data caching
     COSTLESS_PAR=functools.partial(csp_tree_partitioning, solver=cspy.BiDirectional),
     # OUR - subtrees, poly-heur, feasible/no solution
