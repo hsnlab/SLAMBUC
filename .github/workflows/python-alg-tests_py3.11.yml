@@ -1,4 +1,4 @@
-name: Algorithm validations
+name: pytest-py3.11
 
 on:
   push:
@@ -27,11 +27,12 @@ jobs:
           ${{ runner.os }}-pip-
     - name: Install system dependencies
       run: |
-        sudo apt update && sudo apt install -y graphviz graphviz-dev
+        sudo apt update && sudo apt install -y graphviz graphviz-dev glpk-utils
     - name: Install Python dependencies
       run: |
         python3.11 -m pip install -v --upgrade pip
-        python3.11 -m pip install -vv -e .[validation]
-    - name: Test with own validation script
+        python3.11 -m pip install -v -U -r requirements.txt
+        python3.11 -m pip install -vv -e .
+    - name: Test with pytest
       run: |
-        python3.11 tests/validate_algs.py
+        python3.11 -m pytest -vv tests/
