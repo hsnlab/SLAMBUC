@@ -16,6 +16,7 @@ import collections
 import itertools
 import math
 import operator
+import pathlib
 import random
 import time
 
@@ -62,7 +63,9 @@ def run_all_tree_ser_tests(params: dict) -> list:
 
 
 def compare_results(tree_path: str = None, L: int = math.inf):
-    tree = nx.read_gml(tree_path if tree_path is not None else "data/graph_test_tree_ser.gml", destringizer=int)
+    tree = nx.read_gml(
+        tree_path if tree_path is not None else pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml",
+        destringizer=int)
     tree.graph[NAME] += "-ser"
     params = dict(tree=tree, root=1, cp_end=10, M=6, L=L, delay=10)
     ##########################################################
@@ -83,7 +86,7 @@ def compare_results(tree_path: str = None, L: int = math.inf):
 
 
 def test_latencies():
-    tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-ser"
     params = dict(tree=tree, root=1, cp_end=10, M=6, L=math.inf, delay=10)
     lats = [math.inf,
@@ -162,7 +165,7 @@ if __name__ == '__main__':
     compare_results()
     # test_latencies()
     # test_random_validation()
-    # compare_results("data/graph_test_tree_ser_latency1.gml", L=520)
-    # compare_results("data/graph_test_tree_ser_latency2.gml", L=255)
+    # compare_results(pathlib.Path(__file__).parent / "data/graph_test_tree_ser_latency1.gml", L=520)
+    # compare_results(pathlib.Path(__file__).parent / "data/graph_test_tree_ser_latency2.gml", L=255)
     # compare_results("failed_random_tree_1675283922.1326418-ser_partition_L521_M6.gml", L=521)
     # stress_test(n=15, iteration=100, stop_failed=True)

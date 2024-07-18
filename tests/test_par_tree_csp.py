@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import math
+import pathlib
 import pprint
 import time
 
@@ -27,7 +28,8 @@ from slambuc.misc.plot import draw_state_dag
 from slambuc.misc.util import evaluate_gen_tree_partitioning
 
 
-def test_par_csp_dag_creation(tree_file: str = "data/graph_test_tree_par.gml", draw: bool = False, full: bool = False):
+def test_par_csp_dag_creation(tree_file: str = pathlib.Path(__file__).parent / "data/graph_test_tree_par.gml",
+                              draw: bool = False, full: bool = False):
     tree = nx.read_gml(tree_file, destringizer=int)
     tree.graph[NAME] += "-par_csp"
     params = dict(tree=tree,
@@ -55,7 +57,7 @@ def test_par_csp_dag_creation(tree_file: str = "data/graph_test_tree_par.gml", d
 
 
 def test_par_csp_solution(solver=cspy.BiDirectional, **kwargs):
-    tree = nx.read_gml("data/graph_test_tree_par.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_par.gml", destringizer=int)
     tree.graph[NAME] += "-par_csp"
     params = dict(tree=tree,
                   root=1,
@@ -94,7 +96,8 @@ def test_par_csp_solution(solver=cspy.BiDirectional, **kwargs):
     print(f"Best result: {best_res[0]} with cost/lat: {best_res[1]} / {best_res[2]}")
 
 
-def evaluate_csp_model(file_name: str = "data/graph_test_tree_par.gml", M: int = 6, N: int = 2, L: int = math.inf):
+def evaluate_csp_model(file_name: str = pathlib.Path(__file__).parent / "data/graph_test_tree_par.gml", M: int = 6,
+                       N: int = 2, L: int = math.inf):
     tree = nx.read_gml(file_name, destringizer=int)
     tree.graph[NAME] += "-par_csp"
     params = dict(tree=tree,
@@ -127,7 +130,8 @@ def evaluate_csp_model(file_name: str = "data/graph_test_tree_par.gml", M: int =
         print(f"[{solver.__name__}] Partitioning: {partition}, {opt_cost = }, {opt_lat = }")
 
 
-def test_gen_csp_dag_creation(tree_file: str = "data/graph_test_tree_par.gml", draw: bool = False, full: bool = False):
+def test_gen_csp_dag_creation(tree_file: str = pathlib.Path(__file__).parent / "data/graph_test_tree_par.gml",
+                              draw: bool = False, full: bool = False):
     tree = nx.read_gml(tree_file, destringizer=int)
     tree.graph[NAME] += "-par_csp"
     params = dict(tree=tree,
@@ -154,7 +158,7 @@ def test_gen_csp_dag_creation(tree_file: str = "data/graph_test_tree_par.gml", d
 
 
 def test_gen_csp_solution(solver=cspy.BiDirectional, **kwargs):
-    tree = nx.read_gml("data/graph_test_tree_par.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_par.gml", destringizer=int)
     tree.graph[NAME] += "-par_csp"
     params = dict(tree=tree,
                   root=1,
@@ -205,7 +209,7 @@ def run_test(tree: nx.DiGraph, root: int, flavors: list[Flavor], cp_end: int, L:
 
 
 def test_par_tree():
-    tree = nx.read_gml("data/graph_test_tree_par.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_par.gml", destringizer=int)
     tree.graph[NAME] += "-par_csp"
     params = dict(tree=tree,
                   root=1,
@@ -230,7 +234,7 @@ def test_random_par_tree(n: int = 10):
 
 
 def test_gen_tree():
-    tree = nx.read_gml("data/graph_test_tree_par.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_par.gml", destringizer=int)
     tree.graph[NAME] += "-par_csp"
     params = dict(tree=tree,
                   root=1,
@@ -261,8 +265,8 @@ if __name__ == '__main__':
     # test_par_csp_dag_creation(draw=False)
     # test_par_csp_solution(solver=cspy.BiDirectional, direction="forward")
     # test_par_csp_solution(solver=cspy.PSOLGENT)
-    # evaluate_csp_model("data/graph_test_tree_ser.gml", M=6, N=1, L=430)
-    # evaluate_csp_model("data/graph_test_tree_par.gml", M=6, N=2, L=400)
+    # evaluate_csp_model(pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml", M=6, N=1, L=430)
+    # evaluate_csp_model(pathlib.Path(__file__).parent / "data/graph_test_tree_par.gml", M=6, N=2, L=400)
     #
     # test_gen_csp_dag_creation(draw=False)
     # test_gen_csp_dag_creation(draw=True, full=True)

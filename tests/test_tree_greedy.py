@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import math
+import pathlib
 
 import networkx as nx
 import pytest
@@ -34,7 +35,7 @@ def run_test(tree: nx.DiGraph, M: int, N: int, L: int, root: int = 1, cp_end: in
 
 
 def test_greedy_partitioning():
-    tree = nx.read_gml("data/graph_test_tree.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree.gml", destringizer=int)
     tree.graph[NAME] += "-greedy"
     params = dict(tree=tree,
                   root=1,

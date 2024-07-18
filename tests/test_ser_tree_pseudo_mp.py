@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import math
+import pathlib
 
 import networkx as nx
 
@@ -25,7 +26,7 @@ from slambuc.misc.util import evaluate_ser_tree_partitioning
 
 def test_cpu_cutoff(tree: nx.DiGraph = None, cut_factor: int = None, draw: bool = True):
     if not tree:
-        tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
+        tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-ser_pseudo_mp"
     cut_factor = cut_factor if cut_factor else math.ceil(math.sqrt(len(tree) - 1))
     #
@@ -55,7 +56,7 @@ def test_cpu_cutoff(tree: nx.DiGraph = None, cut_factor: int = None, draw: bool 
 
 def test_subtree_split(tree: nx.DiGraph = None, size: int = None, draw: bool = True):
     if not tree:
-        tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
+        tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-ser_pseudo_mp"
     size = size if size else math.ceil(math.sqrt(len(tree) - 1))
     #
@@ -108,7 +109,7 @@ def run_test(tree: nx.DiGraph, M: int, L: int, root: int = 1, cp_end: int = None
 
 
 def test_ser_tree_pseudo_partitioning():
-    tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-ser_pseudo_mp"
     params = dict(tree=tree,
                   root=1,

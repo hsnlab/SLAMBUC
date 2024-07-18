@@ -35,4 +35,4 @@ jobs:
         python3.10 -m pip install -vv -e .
     - name: Test with pytest
       run: |
-        cd tests && python3.10 -m pytest -vv .
+        python3.10 -m pytest -vv tests/

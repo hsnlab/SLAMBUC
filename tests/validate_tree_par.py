@@ -16,6 +16,7 @@ import collections
 import itertools
 import math
 import operator
+import pathlib
 import random
 import time
 
@@ -55,7 +56,9 @@ def run_all_tree_par_tests(params: dict) -> list:
 
 
 def compare_results(tree_path: str = None, L: int = math.inf, N: int = 1):
-    tree = nx.read_gml(tree_path if tree_path is not None else "data/graph_test_tree_par.gml", destringizer=int)
+    tree = nx.read_gml(
+        tree_path if tree_path is not None else pathlib.Path(__file__).parent / "data/graph_test_tree_par.gml",
+        destringizer=int)
     tree.graph[NAME] += "-par"
     params = dict(tree=tree, root=1, cp_end=10, M=6, L=L, N=N, delay=10)
     ##########################################################
@@ -127,6 +130,6 @@ if __name__ == '__main__':
     compare_results(N=2)
     # test_latencies()
     # test_random_validation(N=2)
-    # compare_results("data/graph_test_tree_par_btree.gml", L=600, N=2)
-    # compare_results("data/graph_test_tree_par_ltree.gml", L=360, N=2)
+    # compare_results(pathlib.Path(__file__).parent / "data/graph_test_tree_par_btree.gml", L=600, N=2)
+    # compare_results(pathlib.Path(__file__).parent / "data/graph_test_tree_par_ltree.gml", L=360, N=2)
     # stress_test(n=10, N=2, iteration=100, stop_failed=True)

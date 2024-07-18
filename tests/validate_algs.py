@@ -121,7 +121,8 @@ TREE_ALGS = dict(
 
 def compare_results(tree_path: str = None, L: int = math.inf):
     tree = nx.read_gml(tree_path if tree_path is not None else
-                       pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml", destringizer=int)
+                       pathlib.Path(__file__).parent / pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml",
+                       destringizer=int)
     params = dict(tree=tree, root=1, cp_end=10, M=6, L=L, delay=10)
     ##########################################################
     print('#' * 80)

@@ -17,6 +17,7 @@ import functools
 import itertools
 import math
 import operator
+import pathlib
 import random
 import time
 
@@ -53,7 +54,9 @@ def run_all_tree_dp_tests(params: dict):
 
 
 def compare_results(tree_path: str = None):
-    tree = nx.read_gml(tree_path if tree_path is not None else "data/graph_test_tree.gml", destringizer=int)
+    tree = nx.read_gml(
+        tree_path if tree_path is not None else pathlib.Path(__file__).parent / "data/graph_test_tree.gml",
+        destringizer=int)
     tree.graph[NAME] += "-dp"
     params = dict(tree=tree, root=1, cp_end=10, M=15, N=2, L=math.inf, delay=10)
     ##########################################################
@@ -66,7 +69,7 @@ def compare_results(tree_path: str = None):
 
 
 def test_latencies():
-    tree = nx.read_gml("data/graph_test_tree_latency.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_latency.gml", destringizer=int)
     tree.graph[NAME] += "-dp"
     params = dict(tree=tree, root=1, cp_end=10, M=15, N=3, L=math.inf, delay=10)
     lats = [math.inf,

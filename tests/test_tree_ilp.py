@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import math
+import pathlib
 import pprint
 import time
 
@@ -29,7 +30,8 @@ from slambuc.misc.util import (print_lp_desc, convert_var_dict, print_var_matrix
                                print_pulp_matrix_values, evaluate_gen_tree_partitioning)
 
 
-def test_gen_cfg_model_creation(tree_file: str = "data/graph_test_tree_par.gml", save_file: bool = False):
+def test_gen_cfg_model_creation(tree_file: str = pathlib.Path(__file__).parent / "data/graph_test_tree_par.gml",
+                                save_file: bool = False):
     tree = nx.read_gml(tree_file, destringizer=int)
     tree.graph[NAME] += "-gen_ilp_cfg"
     params = dict(tree=tree,
@@ -58,7 +60,7 @@ def test_gen_cfg_model_creation(tree_file: str = "data/graph_test_tree_par.gml",
 
 
 def test_gen_cfg_model_solution():
-    tree = nx.read_gml("data/graph_test_tree_par.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_par.gml", destringizer=int)
     tree.graph[NAME] += "-gen_ilp_cfg"
     params = dict(tree=tree,
                   root=1,
@@ -84,7 +86,8 @@ def test_gen_cfg_model_solution():
     print(f"{model.solutionCpuTime = }")
 
 
-def test_gen_mtx_model_creation(tree_file: str = "data/graph_test_tree_par.gml", save_file: bool = False):
+def test_gen_mtx_model_creation(tree_file: str = pathlib.Path(__file__).parent / "data/graph_test_tree_par.gml",
+                                save_file: bool = False):
     tree = nx.read_gml(tree_file, destringizer=int)
     tree.graph[NAME] += "-gen_ilp_mtx"
     params = dict(tree=tree,
@@ -122,7 +125,7 @@ def test_gen_mtx_model_creation(tree_file: str = "data/graph_test_tree_par.gml",
 
 
 def test_gen_mtx_model_solution():
-    tree = nx.read_gml("data/graph_test_tree_par.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_par.gml", destringizer=int)
     tree.graph[NAME] += "-par_ilp_mtx"
     params = dict(tree=tree,
                   root=1,
@@ -154,7 +157,7 @@ def test_gen_mtx_model_solution():
 
 
 def test_gen_mtx_subchain_model_solution():
-    tree = nx.read_gml("data/graph_test_tree_par.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_par.gml", destringizer=int)
     tree.graph[NAME] += "-par_ilp_mtx"
     params = dict(tree=tree,
                   root=1,
@@ -202,7 +205,7 @@ def run_test(tree: nx.DiGraph, root: int, flavors: list[Flavor], cp_end: int, L:
 
 
 def test_gen_tree():
-    tree = nx.read_gml("data/graph_test_tree_par.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_par.gml", destringizer=int)
     tree.graph[NAME] += "-gen_ilp"
     params = dict(tree=tree,
                   root=1,
@@ -228,7 +231,7 @@ def test_random_gen_tree(n: int = 10):
 
 
 def test_all_gen_tree():
-    tree = nx.read_gml("data/graph_test_tree_par.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_par.gml", destringizer=int)
     tree.graph[NAME] += "-gen_ilp"
     params = dict(tree=tree,
                   root=1,

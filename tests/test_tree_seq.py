@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import math
+import pathlib
 
 import networkx as nx
 
@@ -29,7 +30,8 @@ def run_test(tree: nx.DiGraph, M: int, N: int, L: int, root: int = 1, cp_end: in
 
 
 def test_tree_partitioning():
-    tree = nx.read_gml("data/graph_test_tree.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / pathlib.Path(__file__).parent / "data/graph_test_tree.gml",
+                       destringizer=int)
     tree.graph[NAME] += "-seq"
     params = dict(tree=tree,
                   root=1,
@@ -56,5 +58,5 @@ def test_random_tree_partitioning(n: int = 10):
 
 
 if __name__ == '__main__':
-    # test_tree_partitioning()
-    test_random_tree_partitioning()
+    test_tree_partitioning()
+    # test_random_tree_partitioning()

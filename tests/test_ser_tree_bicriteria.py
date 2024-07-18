@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import math
+import pathlib
 import time
 
 import networkx as nx
@@ -42,7 +43,7 @@ def run_validation_test(tree: nx.DiGraph, M: int, L: int, root: int = 1, cp_end:
 
 
 def test_ser_bicriteria_tree_partitioning():
-    tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-ser_bic"
     params = dict(tree=tree,
                   root=1,

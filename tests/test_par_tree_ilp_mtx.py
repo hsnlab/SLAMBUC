@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import math
+import pathlib
 import pprint
 import time
 
@@ -29,7 +30,8 @@ from slambuc.misc.util import (print_lp_desc, print_var_matrix, evaluate_par_tre
                                print_pulp_matrix_values, convert_var_dict, print_cost_coeffs, print_lat_coeffs)
 
 
-def test_par_mtx_model_creation(tree_file: str = "data/graph_test_tree_par.gml", save_file: bool = False):
+def test_par_mtx_model_creation(tree_file: str = pathlib.Path(__file__).parent / "data/graph_test_tree_par.gml",
+                                save_file: bool = False):
     tree = nx.read_gml(tree_file, destringizer=int)
     tree.graph[NAME] += "-par_ilp_mtx"
     cpath = set(ibacktrack_chain(tree, 1, 10))
@@ -76,7 +78,7 @@ def test_par_mtx_model_creation(tree_file: str = "data/graph_test_tree_par.gml",
 
 
 def test_par_mtx_model_solution():
-    tree = nx.read_gml("data/graph_test_tree_par.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_par.gml", destringizer=int)
     tree.graph[NAME] += "-par_ilp_mtx"
     cpath = set(ibacktrack_chain(tree, 1, 10))
     params = dict(tree=tree,
@@ -116,7 +118,7 @@ def test_par_mtx_model_solution():
 
 
 def evaluate_ilp_par_mtx_model():
-    tree = nx.read_gml("data/graph_test_tree_par.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_par.gml", destringizer=int)
     tree.graph[NAME] += "-par_ilp_mtx"
     params = dict(tree=tree,
                   root=1,
@@ -137,7 +139,7 @@ def evaluate_ilp_par_mtx_model():
 
 
 def evaluate_ilp_par_subchain_mtx_model():
-    tree = nx.read_gml("data/graph_test_tree_par.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_par.gml", destringizer=int)
     tree.graph[NAME] += "-par_ilp_mtx"
     params = dict(tree=tree,
                   root=1,
@@ -169,7 +171,7 @@ def run_test(tree: nx.DiGraph, root: int, cp_end: int, M: int, L: int, N: int, d
 
 
 def test_par_tree():
-    tree = nx.read_gml("data/graph_test_tree_par.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_par.gml", destringizer=int)
     tree.graph[NAME] += "-par_ilp_mtx"
     params = dict(tree=tree,
                   root=1,

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import math
+import pathlib
 
 import networkx as nx
 
@@ -51,7 +52,7 @@ def test_cp_chain():
 
 
 def test_tree_partitioning():
-    tree = nx.read_gml("data/graph_test_tree.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree.gml", destringizer=int)
     tree.graph[NAME] += "-meta"
     params = dict(tree=tree,
                   root=1,
@@ -77,7 +78,7 @@ def test_random_tree_partitioning(n: int = 10):
 
 
 def test_tree_partitioning_latency():
-    tree = nx.read_gml("data/graph_test_tree_latency.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_latency.gml", destringizer=int)
     tree.graph[NAME] += "-meta"
     M = 6
     N = 3

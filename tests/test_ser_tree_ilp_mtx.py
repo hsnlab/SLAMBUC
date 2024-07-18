@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import math
+import pathlib
 import pprint
 import sys
 import time
@@ -60,7 +61,8 @@ def test_reachable_nodes(branch: int = 2, depth: int = 3, random_nodes: int = 0)
     draw_tree(tree)
 
 
-def test_mtx_model_creation(tree_file: str = "data/graph_test_tree_ser.gml", save_file: bool = False):
+def test_mtx_model_creation(tree_file: str = pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml",
+                            save_file: bool = False):
     tree = nx.read_gml(tree_file, destringizer=int)
     tree.graph[NAME] += "-ser_ilp_mtx"
     cpath = set(ibacktrack_chain(tree, 1, 10))
@@ -106,7 +108,7 @@ def test_mtx_model_creation(tree_file: str = "data/graph_test_tree_ser.gml", sav
         model.writeLP("tree_mtx_model.lp")
 
 
-def test_mtx_model_solution(tree_file: str = "data/graph_test_tree_ser.gml"):
+def test_mtx_model_solution(tree_file: str = pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml"):
     tree = nx.read_gml(tree_file, destringizer=int)
     tree.graph[NAME] += "-ser_ilp_mtx"
     cpath = set(ibacktrack_chain(tree, 1, 10))
@@ -152,7 +154,7 @@ def test_mtx_model_solution(tree_file: str = "data/graph_test_tree_ser.gml"):
 @pytest.mark.skipif(get_cplex_path() is None, reason="CPLEX is not available!")
 @pytest.mark.skipif(not (sys.version_info < (3, 11)), reason="PY version is not supported!")
 def test_mtx_model_solution_cplex():
-    tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-ser_ilp_mtx"
     cpath = set(ibacktrack_chain(tree, 1, 10))
     params = dict(tree=tree,
@@ -182,7 +184,7 @@ def test_mtx_model_solution_cplex():
 
 @pytest.mark.skipif(get_glpk_path() is None, reason="GLPK is not available!")
 def test_mtx_model_solution_glpk():
-    tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-ser_ilp_mtx"
     params = dict(tree=tree,
                   root=1,
@@ -196,7 +198,7 @@ def test_mtx_model_solution_glpk():
 
 
 def evaluate_ilp_mtx_model():
-    tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-ser_ilp_mtx"
     params = dict(tree=tree,
                   root=1,
@@ -215,7 +217,7 @@ def evaluate_ilp_mtx_model():
 
 
 def evaluate_ilp_mtx_subchains_model():
-    tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-ser_ilp_mtx"
     params = dict(tree=tree,
                   root=1,
@@ -246,7 +248,7 @@ def run_test(tree: nx.DiGraph, root: int, cp_end: int, M: int, L: int, delay: in
 
 
 def test_ser_tree():
-    tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-ser_ilp_mtx"
     params = dict(tree=tree,
                   root=1,

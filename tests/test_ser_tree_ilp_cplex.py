@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import math
+import pathlib
 import pprint
 import sys
 import time
@@ -32,7 +33,7 @@ from slambuc.misc.util import (evaluate_ser_tree_partitioning, print_var_matrix,
 
 @pytest.mark.skipif(get_cpo_path() is None, reason="CPO is not available!")
 def test_cpo_model_creation(save_file: bool = False):
-    tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-cplex_ser"
     cpath = set(ibacktrack_chain(tree, 1, 10))
     params = dict(tree=tree,
@@ -59,7 +60,7 @@ def test_cpo_model_creation(save_file: bool = False):
 
 @pytest.mark.skipif(get_cpo_path() is None, reason="CPO is not available!")
 def test_cpo_model_solution():
-    tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-cplex_ser"
     cpath = set(ibacktrack_chain(tree, 1, 10))
     params = dict(tree=tree,
@@ -93,7 +94,7 @@ def test_cpo_model_solution():
 
 @pytest.mark.skipif(get_cplex_path() is None, reason="CPLEX is not available!")
 def test_cplex_model_creation(save_file: bool = False):
-    tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-cplex_ser"
     cpath = set(ibacktrack_chain(tree, 1, 10))
     params = dict(tree=tree,
@@ -130,7 +131,7 @@ def test_cplex_model_creation(save_file: bool = False):
 @pytest.mark.skipif(get_cplex_path() is None, reason="CPLEX is not available!")
 @pytest.mark.skipif(not (sys.version_info < (3, 11)), reason="PY version is not supported!")
 def test_cplex_model_solution():
-    tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-cplex_ser"
     cpath = set(ibacktrack_chain(tree, 1, 10))
     params = dict(tree=tree,
@@ -177,7 +178,7 @@ def run_test(tree: nx.DiGraph, root: int, cp_end: int, M: int, L: int, delay: in
 @pytest.mark.skipif(get_cplex_path() is None, reason="CPLEX is not available!")
 @pytest.mark.skipif(not (sys.version_info < (3, 11)), reason="PY version is not supported!")
 def test_ser_tree():
-    tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-cplex_ser"
     params = dict(tree=tree,
                   root=1,

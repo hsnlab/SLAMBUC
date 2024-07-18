@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import math
+import pathlib
 
 import networkx as nx
 import tabulate
@@ -25,7 +26,7 @@ from slambuc.misc.util import evaluate_ser_tree_partitioning
 
 
 def test_btree_traversal(draw: bool = True):
-    tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-ser_pseudo"
     subcases = []
     for p, v in ipostorder_dfs(tree, 1):
@@ -40,7 +41,7 @@ def test_btree_traversal(draw: bool = True):
 
 
 def test_ltree_traversal(draw: bool = True):
-    tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-ser_pseudo"
     subcases = []
     for p, n in ipostorder_dfs(tree, 1):
@@ -67,7 +68,7 @@ def run_test(tree: nx.DiGraph, M: int, L: int, root: int = 1, cp_end: int = None
 
 
 def test_ser_tree_pseudo_partitioning():
-    tree = nx.read_gml("data/graph_test_tree_ser.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-ser_pseudo"
     params = dict(tree=tree,
                   root=1,

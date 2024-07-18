@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import pathlib
+
 import networkx as nx
 
 from slambuc.alg.ext.greedy import (min_weight_greedy_partitioning, get_feasible_cpath_split,
@@ -22,7 +24,7 @@ from slambuc.misc.util import evaluate_par_tree_partitioning
 
 def test_min_weight_bounded_partitioning(root: int = 1, M: int = 11, L: int = 450, cp_end: int = 10, N: int = 1,
                                          delay: int = 10):
-    tree = nx.read_gml("data/graph_test_tree.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree.gml", destringizer=int)
     # tree = get_random_tree(10)
     partition, sum_cost, sum_lat = min_weight_greedy_partitioning(tree, root, M, N)
     evaluate_par_tree_partitioning(tree, partition, sum_cost, sum_lat, root, cp_end, M, L, N, delay=delay)
@@ -30,7 +32,7 @@ def test_min_weight_bounded_partitioning(root: int = 1, M: int = 11, L: int = 45
 
 def test_min_weight_partition_heuristic(root: int = 1, M: int = 15, L: int = 475, cp_end: int = 10, N: int = 1,
                                         delay: int = 10):
-    tree = nx.read_gml("data/graph_test_tree.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree.gml", destringizer=int)
     # tree = get_random_tree(10)
     print("Cpath:", list(reversed(list(ibacktrack_chain(tree, root, cp_end)))))
     split = get_feasible_cpath_split(tree, root, cp_end, M, L, N, delay)
@@ -41,7 +43,7 @@ def test_min_weight_partition_heuristic(root: int = 1, M: int = 15, L: int = 475
 
 def test_min_lat_partition_heuristic(root: int = 1, M: int = 15, L: int = 475, cp_end: int = 10, N: int = 1,
                                      delay: int = 10):
-    tree = nx.read_gml("data/graph_test_tree.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree.gml", destringizer=int)
     # tree = get_random_tree(10)
     print("Cpath:", list(reversed(list(ibacktrack_chain(tree, root, cp_end)))))
     split = get_min_cpath_split(tree, root, cp_end, M, L, N, delay)

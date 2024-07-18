@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import itertools
+import pathlib
 import pprint
 import random
 
@@ -36,7 +37,7 @@ def test_chain_plotter():
 
 
 def test_chain_tree_plotter():
-    tree = nx.read_gml("data/graph_test_tree.gml", destringizer=int)
+    tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree.gml", destringizer=int)
     print_tree_summary(tree)
     barr = [1, 2, 6, 7, 9]
     partition = recreate_subchain_blocks(tree, barr)
@@ -103,10 +104,10 @@ if __name__ == '__main__':
     # test_chain_plotter()
     # test_chain_tree_plotter()
     # test_random_tree_plotter()
-    # draw_tree_from_file("data/graph_test_tree_ser_latency1.gml", draw_weights=False)
-    # draw_tree_from_file("data/graph_test_tree_ser_latency2.gml", draw_weights=True)
-    # draw_tree_from_file("data/graph_test_tree_par_btree.gml", draw_weights=False)
-    # draw_tree_from_file("data/graph_test_tree_par_ltree.gml", draw_weights=False)
+    # draw_tree_from_file(pathlib.Path(__file__).parent / "data/graph_test_tree_ser_latency1.gml", draw_weights=False)
+    # draw_tree_from_file(pathlib.Path(__file__).parent / "data/graph_test_tree_ser_latency2.gml", draw_weights=True)
+    # draw_tree_from_file(pathlib.Path(__file__).parent / "data/graph_test_tree_par_btree.gml", draw_weights=False)
+    # draw_tree_from_file(pathlib.Path(__file__).parent / "data/graph_test_tree_par_ltree.gml", draw_weights=False)
     # test_tree_enc_dec()
     # test_tree_io()
     test_cache_transform()
