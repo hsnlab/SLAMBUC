@@ -76,8 +76,8 @@ include-package-data = true
 type = "python"
 search_path = ["slambuc"]
 
-[[tool.pydoc-markdown.processors]]
-type = ["filter", "smart", "crossref"]
+#[[tool.pydoc-markdown.processors]]
+#type = ["filter", "smart", "crossref"]
 
 [tool.pydoc-markdown.renderer]
 type = "mkdocs"
@@ -87,6 +87,6 @@ title = "SLAMBUC API Documentation"
 name = "index"
 contents = ["slambuc", "slambuc.*"]
 
-[[tool.pydoc-markdown.renderer.mkdocs_config]]
-site_name = "SLAMBUC"
-repo_url = "https://github.com/hsnlab/SLAMBUC"
+#[[tool.pydoc-markdown.renderer.mkdocs_config]]
+#site_name = "SLAMBUC"
+#repo_url = "https://github.com/hsnlab/SLAMBUC"
