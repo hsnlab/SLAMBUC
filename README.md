@@ -4,7 +4,8 @@
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/SLAMBUC)](https://pypi.org/project/SLAMBUC/#history)
 [![Downloads](https://static.pepy.tech/badge/slambuc)](https://pepy.tech/project/slambuc)
 [![PyPI - License](https://img.shields.io/pypi/l/SLAMBUC)](LICENSE)
-[![pytest](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-tests.yml/badge.svg?branch=main)](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-tests.yml)
+[![pytest-py3.10](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-tests_py3.10.yml/badge.svg)](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-tests_py3.10.yml)
+[![pytest-py3.11](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-tests_py3.11.yml/badge.svg)](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-tests_py3.11.yml)
 [![Algorithm validations](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-validation.yml/badge.svg?branch=main)](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-validation.yml)
 
 Collection of graph partitioning algorithms implemented in Python for composing cloud-native
@@ -27,7 +28,7 @@ the user and the platform (flavors) itself need to be satisfied.
 
 In this package, we designed, implemented, and collected various partitioning algorithms tailored to
 tree-shape serverless applications with different runtime complexity, considering communication
-parameters and requirements. Our main objective is to find the cost-optimal grouping of functions 
+parameters and requirements. Our main goal is to find the cost-optimal grouping of functions 
 concerning node and edge-weighted trees and cost/memory/latency models based on public cloud frameworks,
 whereas each flavor imposes an upper limit on the available operative memory.
 Moreover, a user-given latency constraint has to be fulfilled on the tree's critical path, which is
@@ -98,7 +99,7 @@ implementations of our package.
 
 For comparative analyses, we also implemented a test harness under [validation](validation)
 to automatize test executions with generated test input graphs from [validation/data](validation/data)
-and monitor elapsed time and memory demands of tested algorithms initiated as separate sub-processes.
+and monitor elapsed time and memory demands of tested algorithms initiated as separate subprocesses.
 
 To install additional dependencies, run the following commands.
 
@@ -124,7 +125,7 @@ params = dict(tree=tree,
               M=6,        # Memory upper limit
               L=450,      # Latency upper limit
               cp_end=10,  # Critical path: [root -> cp_end]
-              delay=10    # Patform delay in ms
+              delay=10    # Platform delay in ms
               )
 
 # Partitioning
@@ -135,7 +136,7 @@ print(f"Part: {res[0]}, opt. cost: {params['M'] * (res[1] / 1000)} GBs, latency:
 
 ## Example
 
-Validation results of a subset of our algorithms with a fully-serialized block execution model,
+Validation results of a subset of our algorithms with a fully serialized block execution model,
 which are executed with our [validation script](tests/validate_algs.py) using different configurations 
 and a [random-generated input call graph](tests/data/graph_test_tree_ser.gml) of size 10.
 
@@ -195,12 +196,12 @@ one of our related works.
 
 J. Czentye and B. Sonkoly,
 "Serverless application composition leveraging function fusion: Theory and algorithms,"
-_Future Generation Computer Systems_ 153 pp. 403-418., 16 p. (2024),
+_Future Generation Computer Systems_ 153 pp. 403–418., 16 p. (2024),
 doi: 10.1016/j.future.2023.12.010.
 
 ```bibtex
 @ARTICLE{Czentye2024fgcs,
-    author = {J{\'{a}}nos Czentye and Bal{\'{a}}zs Sonkoly}
+    author = {J{\'{a}}nos Czentye and Bal{\'{a}}zs Sonkoly},
     title = {{Serverless application composition leveraging function fusion: Theory and algorithms}},
     journal = {{Future Generation Computer Systems}},
     volume = {153},
@@ -235,7 +236,7 @@ doi: 10.1109/NOMS56928.2023.10154412.
 
 I. Pelle, J. Czentye, J. Dóka, A. Kern, B. P. Gerő and B. Sonkoly,
 "Operating Latency Sensitive Applications on Public Serverless Edge Cloud Platforms,"
-in _IEEE Internet of Things Journal_, vol. 8, no. 10, pp. 7954-7972, 15 May, 2021,
+in _IEEE Internet of Things Journal_, vol. 8, no. 10, pp. 7954–7972, 15 May, 2021,
 doi: 10.1109/JIOT.2020.3042428.
 
 ```bibtex
