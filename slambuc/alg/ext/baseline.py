@@ -14,7 +14,7 @@
 import networkx as nx
 
 from slambuc.alg import T_RESULTS
-from slambuc.alg.service import PLATFORM
+from slambuc.alg.app import PLATFORM
 from slambuc.alg.util import recalculate_partitioning
 
 
@@ -23,7 +23,7 @@ def baseline_singleton_partitioning(tree: nx.DiGraph, root: int = 1, N: int = 1,
     """
     Derive the trivial partitioning of grouping all nodes into one single block.
 
-    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rate and data
+    :param tree:    app graph annotated with node runtime(ms), memory(MB) and edge rate and data
     :param root:    root node of the graph
     :param N:       available CPU core count
     :param cp_end:  tail node of the critical path in the form of subchain[root -> cp_end]
@@ -39,7 +39,7 @@ def baseline_no_partitioning(tree: nx.DiGraph, root: int = 1, N: int = 1, cp_end
     """
     Derive the trivial solution of not merging any of the given tree nodes.
 
-    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rate and data
+    :param tree:    app graph annotated with node runtime(ms), memory(MB) and edge rate and data
     :param root:    root node of the graph
     :param N:       available CPU core count
     :param cp_end:  tail node of the critical path in the form of subchain[root -> cp_end]

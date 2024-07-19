@@ -18,7 +18,7 @@ import networkx as nx
 from matplotlib import pyplot as plt
 
 from slambuc.alg.ext.csp import decode_state, START, END, COST, LAT
-from slambuc.alg.service.common import *
+from slambuc.alg.app.common import *
 from slambuc.alg.util import path_blocks
 
 PART_COLORS = ('red', 'orange', "brown", 'green', "purple", "blue", "black", "magenta")
@@ -29,7 +29,7 @@ def draw_tree(tree: nx.DiGraph, partition: list = None, cuts: list = None, draw_
     """
     Draw tree with given partitioning in a top-down topological structure.
 
-    :param tree:            service tree
+    :param tree:            app tree
     :param partition:       calculated partitioning (optional)
     :param cuts:            calculated cuts (optional)
     :param draw_weights:    draw node/edge weights instead of IDs

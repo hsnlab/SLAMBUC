@@ -25,10 +25,10 @@ import networkx as nx
 import pandas as pd
 import tabulate
 
-from slambuc.alg.service import *
-from slambuc.alg.tree.dp import *
+from slambuc.alg.app import *
+from slambuc.alg.tree.path import *
 from slambuc.alg.util import ibacktrack_chain
-from slambuc.misc.generator import get_random_tree
+from slambuc.misc.random import get_random_tree
 
 TREE_ALGS = dict(
     GREEDY=greedy_tree_partitioning,
@@ -57,7 +57,7 @@ def compare_results(tree_path: str = None):
     tree = nx.read_gml(
         tree_path if tree_path is not None else pathlib.Path(__file__).parent / "data/graph_test_tree.gml",
         destringizer=int)
-    tree.graph[NAME] += "-dp"
+    tree.graph[NAME] += "-path"
     params = dict(tree=tree, root=1, cp_end=10, M=15, N=2, L=math.inf, delay=10)
     ##########################################################
     print('#' * 80)
@@ -70,7 +70,7 @@ def compare_results(tree_path: str = None):
 
 def test_latencies():
     tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_latency.gml", destringizer=int)
-    tree.graph[NAME] += "-dp"
+    tree.graph[NAME] += "-path"
     params = dict(tree=tree, root=1, cp_end=10, M=15, N=3, L=math.inf, delay=10)
     lats = [math.inf,
             # Optimal solution
@@ -98,7 +98,7 @@ def test_latencies():
 
 def test_random_validation(n: int = 10, cache_failed: bool = False, stop_failed=False):
     tree = get_random_tree(n)
-    tree.graph[NAME] += "-dp"
+    tree.graph[NAME] += "-path"
     cp_end = n
     cpath = list(reversed(list(ibacktrack_chain(tree, 1, cp_end))))
     l_min = sum(tree.nodes[v][RUNTIME] for v in cpath)

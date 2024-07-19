@@ -20,12 +20,12 @@ import networkx as nx
 import pulp
 
 from slambuc.alg import LP_LAT
-from slambuc.alg.service import NAME
-from slambuc.alg.tree.par.ilp import (build_greedy_par_tree_mtx_model, build_par_tree_mtx_model,
-                                      tree_par_mtx_partitioning)
-from slambuc.alg.tree.ser.ilp import extract_subtrees_from_xmatrix
+from slambuc.alg.app import NAME
+from slambuc.alg.tree.parallel.ilp import (build_greedy_par_tree_mtx_model, build_par_tree_mtx_model,
+                                           tree_par_mtx_partitioning)
+from slambuc.alg.tree.serial.ilp import extract_subtrees_from_xmatrix
 from slambuc.alg.util import ibacktrack_chain
-from slambuc.misc.generator import get_random_tree
+from slambuc.misc.random import get_random_tree
 from slambuc.misc.util import (print_lp_desc, print_var_matrix, evaluate_par_tree_partitioning,
                                print_pulp_matrix_values, convert_var_dict, print_cost_coeffs, print_lat_coeffs)
 

@@ -24,8 +24,8 @@ from generate_test_data import PERF_TEST_DATA_PARAMS, PERF_TREE_SIZE_RANGE, DATA
 from harness import execute_tests, log
 from slambuc.alg.ext import *
 from slambuc.alg.tree import *
-from slambuc.alg.tree.dp.seq_state import cacheless_path_tree_partitioning, stateful_path_tree_partitioning
-from slambuc.gen import DEF_FAAS_TREE_PREFIX, DEF_RAND_TREE_PREFIX, DEF_JOB_TREE_PREFIX
+from slambuc.alg.tree.path.seq_state import cacheless_path_tree_partitioning, stateful_path_tree_partitioning
+from slambuc.generator import DEF_FAAS_TREE_PREFIX, DEF_RAND_TREE_PREFIX, DEF_JOB_TREE_PREFIX
 from slambuc.misc.util import get_cplex_path
 
 # Common parameters for tests
@@ -78,7 +78,7 @@ TREE_PAR_ALGS = dict(
 
 def perform_tree_size_ser_tests(n: int = None, data_dir: str = DATA_DIR, output_prefix: str = "test_tree_size_ser",
                                 tree_num: int = None, timeout: int = DEF_TIMEOUT):
-    print(" Tree size ser. tests ".center(80, '#'))
+    print(" Tree size serial. tests ".center(80, '#'))
     size_range = range(*PERF_TREE_SIZE_RANGE) if n is None else range(n, n + 1)
     for n in size_range:
         log.info(f"Test tree size: {n}")
@@ -91,7 +91,7 @@ def perform_tree_size_ser_tests(n: int = None, data_dir: str = DATA_DIR, output_
 
 def perform_tree_size_par_tests(n: int = None, data_dir: str = DATA_DIR, output_prefix: str = "test_tree_size_par",
                                 n_cpu: int = DEF_PAR_CPU_NUM, tree_num: int = None, timeout: int = DEF_TIMEOUT):
-    log.info(" Tree size par. tests ".center(80, '#'))
+    log.info(" Tree size parallel. tests ".center(80, '#'))
     size_range = range(*PERF_TREE_SIZE_RANGE) if n is None else range(n, n + 1)
     for n in size_range:
         log.info(f"Test tree size: {n}")
@@ -309,7 +309,7 @@ TREE_COST_PAR_ALGS = dict(
 
 def perform_cost_ser_tests(tree_type: str = None, size_pattern: str | int = DEF_TREE_SIZE, data_dir: str = DATA_DIR,
                            output_prefix: str = "test_alg_cost", tree_num: int = None, timeout: int = DEF_TIMEOUT):
-    log.info(" Cost calculation ser tests ".center(80, '#'))
+    log.info(" Cost calculation serial tests ".center(80, '#'))
     for trees in (TREE_TYPES if tree_type is None else (f"{tree_type}_tree",)):
         log.info(f"Test algs with tree type: {trees}")
         for test_file in sorted(pathlib.Path(data_dir).resolve().glob(trees + f"_n{size_pattern}-*.npy")):
@@ -325,7 +325,7 @@ def perform_cost_ser_tests(tree_type: str = None, size_pattern: str | int = DEF_
 def perform_cost_par_tests(tree_type: str = None, size_pattern: str | int = DEF_TREE_SIZE, n_cpu: int = DEF_PAR_CPU_NUM,
                            data_dir: str = DATA_DIR, output_prefix: str = "test_alg_cost", tree_num: int = None,
                            timeout: int = DEF_TIMEOUT):
-    log.info(" Cost calculation par tests ".center(80, '#'))
+    log.info(" Cost calculation parallel tests ".center(80, '#'))
     for trees in (TREE_TYPES if tree_type is None else (f"{tree_type}_tree",)):
         log.info(f"Test algs with tree type: {trees}")
         for test_file in sorted(pathlib.Path(data_dir).resolve().glob(trees + f"_n{size_pattern}-*.npy")):

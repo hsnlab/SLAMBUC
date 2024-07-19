@@ -15,9 +15,9 @@ import networkx as nx
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from slambuc.gen.cluster.job_tree import (DEF_TASK_CSV, DEF_TASK_CSV_COLS, DEF_TASK_CSV_HEADER, convert_tasks_to_dag,
-                                          igenerate_job_tree, DEF_BATCH_CSV)
-from slambuc.gen.transform import faasify_dag_by_duplication
+from slambuc.generator.cluster.job_tree import (DEF_TASK_CSV, DEF_TASK_CSV_COLS, DEF_TASK_CSV_HEADER, convert_tasks_to_dag,
+                                                igenerate_job_tree, DEF_BATCH_CSV)
+from slambuc.generator.transform import faasify_dag_by_duplication
 from slambuc.misc.plot import draw_tree
 
 
@@ -33,7 +33,7 @@ def plot_job_dist(task_file: str = DEF_TASK_CSV, min_size: int = 0):
 
 
 def verify_job_tree(job_name: str, task_file: str = DEF_TASK_CSV, draw_weights: bool = False):
-    """Generate one job with given *job_name* into service tree and draw tree"""
+    """Generate one job with given *job_name* into app tree and draw tree"""
     print(f"Read data from {task_file}...")
     job_df = pd.read_csv(task_file, usecols=DEF_TASK_CSV_COLS, names=DEF_TASK_CSV_HEADER)
     print(f"Filter task data for job {job_name}...")
@@ -54,7 +54,7 @@ def check_job_trees(task_file: str = DEF_TASK_CSV, min_size: int = 0, max_size: 
     viable_jobs = jobs[(min_size <= jobs) & (jobs <= max_size)]
     print(f"Found {len(viable_jobs)} jobs with size in ({min_size} - {max_size})")
     trees = [t for t in igenerate_job_tree(job_df, min_size=min_size)]
-    print("Generated service trees:")
+    print("Generated app trees:")
     for tree in trees:
         print(tree, "is tree:", nx.is_tree(tree))
 

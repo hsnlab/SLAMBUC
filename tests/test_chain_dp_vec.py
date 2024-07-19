@@ -14,7 +14,7 @@
 import math
 import random
 
-from slambuc.alg.chain.dp.mtx import vec_chain_partitioning
+from slambuc.alg.chain.path.dp import vec_chain_partitioning
 from slambuc.alg.util import split_chain
 from slambuc.misc.util import evaluate_chain_partitioning, print_chain_summary
 
@@ -85,4 +85,4 @@ def test_partial_chain():
 if __name__ == '__main__':
     test_single_chain()
     # test_random_chain()
-    # test_partial_chain()
+    test_partial_chain()

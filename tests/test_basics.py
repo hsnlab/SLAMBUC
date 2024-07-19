@@ -18,11 +18,11 @@ import random
 
 import networkx as nx
 
-from slambuc.alg.service import PLATFORM, RUNTIME, DATA
+from slambuc.alg.app import PLATFORM, RUNTIME, DATA
 from slambuc.alg.util import recreate_subtree_blocks, split_chain, recreate_subchain_blocks
-from slambuc.gen.io import encode_service_tree, decode_service_tree, save_trees_to_file, iload_trees_from_file
-from slambuc.gen.transform import transform_autonomous_caching
-from slambuc.misc.generator import get_random_chain, get_random_tree
+from slambuc.generator.io import encode_service_tree, decode_service_tree, save_trees_to_file, iload_trees_from_file
+from slambuc.generator.transform import transform_autonomous_caching
+from slambuc.misc.random import get_random_chain, get_random_tree
 from slambuc.misc.plot import draw_tree
 from slambuc.misc.util import print_tree_summary, is_compatible
 

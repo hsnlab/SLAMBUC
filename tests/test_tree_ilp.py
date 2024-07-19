@@ -20,12 +20,12 @@ import networkx as nx
 import pulp
 
 from slambuc.alg import LP_LAT
-from slambuc.alg.service import NAME
-from slambuc.alg.service.common import Flavor
+from slambuc.alg.app import NAME
+from slambuc.alg.app.common import Flavor
 from slambuc.alg.tree.layout.ilp import (build_gen_tree_cfg_model, recreate_st_from_gen_xdict, build_gen_tree_mtx_model,
                                          extract_st_from_gen_xmatrix, tree_gen_hybrid_partitioning,
                                          tree_gen_mtx_partitioning, all_gen_tree_mtx_partitioning)
-from slambuc.misc.generator import get_random_tree
+from slambuc.misc.random import get_random_tree
 from slambuc.misc.util import (print_lp_desc, convert_var_dict, print_var_matrix, print_cost_coeffs, print_lat_coeffs,
                                print_pulp_matrix_values, evaluate_gen_tree_partitioning)
 

@@ -29,7 +29,7 @@ def create_service(partition: list[list[tuple[int, int, int]]]) -> list:
 
 
 def create_random_service(n: int, c: int, runtime=(10, 100), rate=(1, 3)) -> list:
-    """Generate randomized service parameters based on a randomized partition of *n* function with *c* cuts"""
+    """Generate randomized app parameters based on a randomized partition of *n* function with *c* cuts"""
     barriers = [0] + sorted(random.sample(population=range(1, n), k=c - 1))
     partition = [[(f, random.randint(*runtime), random.randint(*rate)) for f in range(b, w)]
                  for b, w in itertools.pairwise(barriers + [n])]
@@ -52,7 +52,7 @@ def execute_group(name: str, funcs: list, param: int, cpu: int = os.cpu_count())
 
 
 def execute_service_path(partition: list[list[int]], delay: int, init_data: int) -> int:
-    """Execute given service as one path without the cloud-platform parallelization"""
+    """Execute given app as one path without the cloud-platform parallelization"""
     print(f"SERVICE execution initiated at {time.time()} with input: {init_data}")
     data = init_data
     for i, group in enumerate(partition):
@@ -78,7 +78,7 @@ def simulate(service: list[list], inv_delay: int = 10, input_data: int = 42) -> 
 
 
 def simulate_random(n: int = 10, c: int = 3, t=(10, 100), r=(1, 3), d: int = 10, data: int = 42) -> int:
-    """Simulate the execution of one random service of *n* functions"""
+    """Simulate the execution of one random app of *n* functions"""
     rand_service = create_random_service(n=n, c=c, runtime=t, rate=r)
     simulate(service=rand_service, inv_delay=d, input_data=data)
 

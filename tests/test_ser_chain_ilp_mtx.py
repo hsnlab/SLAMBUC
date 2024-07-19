@@ -20,9 +20,9 @@ import pulp
 import pytest
 
 from slambuc.alg import LP_LAT
-from slambuc.alg.chain.ser.ilp import (build_chain_mtx_model, chain_mtx_partitioning, recreate_blocks_from_xmatrix,
-                                       extract_blocks_from_xmatrix, build_greedy_chain_mtx_model)
-from slambuc.misc.generator import get_random_chain_data
+from slambuc.alg.chain.serial.ilp import (build_chain_mtx_model, chain_mtx_partitioning, recreate_blocks_from_xmatrix,
+                                          extract_blocks_from_xmatrix, build_greedy_chain_mtx_model)
+from slambuc.misc.random import get_random_chain_data
 from slambuc.misc.util import (print_lp_desc, evaluate_ser_chain_partitioning, print_ser_chain_summary,
                                print_var_matrix, print_pulp_matrix_values, print_cost_coeffs, print_lat_coeffs,
                                get_cplex_path, get_glpk_path)

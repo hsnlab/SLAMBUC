@@ -20,8 +20,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from slambuc.gen.io import load_hist_params
-from slambuc.gen.microservice.faas_tree import DATA_HIST_NAME, RATE_HIST_NAME
+from slambuc.generator.io import load_hist_params
+from slambuc.generator.microservice.faas_tree import DATA_HIST_NAME, RATE_HIST_NAME
 
 MS_CALL_GRAPH_COLS = ("traceid", "rpcid", "um", "rpctype", "dm", "interface", "rt")
 NA_VALS = ("NAN", "(?)")
@@ -96,7 +96,7 @@ def extract_rw_overhead_from_file(file_name: str | pathlib.Path, cache: bool = F
     print(">> Read data from:", file_name)
     df = pd.read_csv(file_name, header=0, usecols=MS_CALL_GRAPH_COLS, engine='c')
     print(">> Filter out Memcached overheads...")
-    # Keep calls related to stateful in-memory service (Memcached)
+    # Keep calls related to stateful in-memory app (Memcached)
     df = df[df.rpctype.isin(['mc'])]
     # Sanitize data
     data_rw = df[df.rt > 0]['rt']
@@ -254,7 +254,7 @@ def extract_all_call_params_from_cache(cache_dir: str):
 
 def plot_hists(hist_name: str):
     plt.figure(figsize=(10, 5))
-    hist_params = load_hist_params("../slambuc/gen/microservice/hist", hist_name)
+    hist_params = load_hist_params("../slambuc/generator/microservice/hist", hist_name)
     plt.stairs(*hist_params, fill=True)
     plt.yscale('log')
     plt.grid(linestyle='dotted', zorder=0)

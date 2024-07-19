@@ -17,10 +17,10 @@ import pathlib
 import networkx as nx
 import pytest
 
-from slambuc.alg.service import NAME
-from slambuc.alg.tree.dp.greedy import greedy_tree_partitioning
+from slambuc.alg.app import NAME
+from slambuc.alg.tree.path.greedy import greedy_tree_partitioning
 from slambuc.alg.util import leaf_label_nodes
-from slambuc.misc.generator import get_random_tree
+from slambuc.misc.random import get_random_tree
 from slambuc.misc.util import evaluate_tree_partitioning
 
 

@@ -13,7 +13,7 @@
 # limitations under the License.
 from collections.abc import Generator
 
-from slambuc.alg.service import Flavor
+from slambuc.alg.app import Flavor
 
 # Function signature types
 T_BLOCK = list[int]  # list of block nodes

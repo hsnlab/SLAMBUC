@@ -27,13 +27,13 @@ import pulp
 import tabulate
 
 from slambuc.alg.ext import *
-from slambuc.alg.service import *
-from slambuc.alg.tree.par import *
-from slambuc.alg.tree.par.pseudo import pseudo_par_btree_partitioning
-from slambuc.alg.tree.ser import *
-from slambuc.alg.tree.ser.ilp_cplex import tree_cplex_partitioning, tree_cpo_partitioning
+from slambuc.alg.app import *
+from slambuc.alg.tree.parallel import *
+from slambuc.alg.tree.parallel.pseudo import pseudo_par_btree_partitioning
+from slambuc.alg.tree.serial import *
+from slambuc.alg.tree.serial.ilp_cplex import tree_cplex_partitioning, tree_cpo_partitioning
 from slambuc.alg.util import ibacktrack_chain, ser_subchain_latency
-from slambuc.misc.generator import get_random_tree
+from slambuc.misc.random import get_random_tree
 from slambuc.misc.util import get_cplex_path
 
 CPLEX_PATH = get_cplex_path()

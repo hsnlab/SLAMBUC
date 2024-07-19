@@ -115,12 +115,12 @@ def plot_time_bar(csv_file: str = "../results/perf/test_tree_size_ser_n10.csv", 
     plt.show()
 
 
-def plot_all_bar(_type: str = "ser", showfliers: bool = False):
+def plot_all_bar(_type: str = "serial", showfliers: bool = False):
     for n in range(10, 101, 10):
         plot_time_bar(f"../results/perf/test_tree_size_{_type}_n{n}.csv", showfliers=showfliers)
 
 
-def plot_alg_runtimes(alg_type: str = "ser", avg: bool = False):
+def plot_alg_runtimes(alg_type: str = "serial", avg: bool = False):
     results = []
     for n in range(10, 101, 10):
         df = pd.read_csv(f"../results/perf/test_tree_size_{alg_type}_n{n}.csv")
@@ -317,8 +317,8 @@ if __name__ == '__main__':
     # plot_time_bar("../results/perf/test_tree_size_ser_n10.csv", showfliers=False)
     # plot_time_bar("../results/perf/test_tree_size_par_n30.csv")
     #
-    # plot_all_bar(_type="ser")
-    # plot_all_bar(_type="par")
+    # plot_all_bar(_type="serial")
+    # plot_all_bar(_type="parallel")
     #
     # plot_sens_tests(n=40, param="m")
     # plot_sens_tests(n=40, param="l")
@@ -360,10 +360,10 @@ if __name__ == '__main__':
     # save_time_bar_pgf_directly()
     # test_pgf_latex_binding()
     #############
-    # plot_alg_runtimes(alg_type="ser")
-    # plot_alg_runtimes(alg_type="ser", avg=True)
-    # plot_alg_runtimes(alg_type="par")
-    # plot_alg_runtimes(alg_type="par", avg=True)
+    # plot_alg_runtimes(alg_type="serial")
+    # plot_alg_runtimes(alg_type="serial", avg=True)
+    # plot_alg_runtimes(alg_type="parallel")
+    # plot_alg_runtimes(alg_type="parallel", avg=True)
     #############
     # plot_sens_by_tree_size(param="m")
     # plot_sens_by_tree_size(param="m", avg=True)

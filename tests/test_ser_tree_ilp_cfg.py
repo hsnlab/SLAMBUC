@@ -22,12 +22,12 @@ import pulp
 import pytest
 import tabulate
 
-from slambuc.alg.service import *
-from slambuc.alg.tree.ser.ilp import (ifeasible_subtrees, ifeasible_greedy_subtrees, build_tree_cfg_model,
-                                      tree_hybrid_partitioning, extract_subtrees_from_xdict,
-                                      recreate_subtrees_from_xdict)
+from slambuc.alg.app import *
+from slambuc.alg.tree.serial.ilp import (ifeasible_subtrees, ifeasible_greedy_subtrees, build_tree_cfg_model,
+                                         tree_hybrid_partitioning, extract_subtrees_from_xdict,
+                                         recreate_subtrees_from_xdict)
 from slambuc.alg.util import ibacktrack_chain
-from slambuc.misc.generator import get_random_tree
+from slambuc.misc.random import get_random_tree
 from slambuc.misc.util import print_lp_desc, evaluate_ser_tree_partitioning, get_cplex_path, get_glpk_path
 
 

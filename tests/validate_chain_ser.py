@@ -23,8 +23,8 @@ import time
 import pandas as pd
 import tabulate
 
-from slambuc.alg.chain.ser import *
-from slambuc.misc.generator import get_random_chain_data
+from slambuc.alg.chain.serial import *
+from slambuc.misc.random import get_random_chain_data
 from slambuc.misc.util import print_ser_chain_summary
 
 CHAIN_ALGS = dict(

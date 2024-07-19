@@ -22,8 +22,8 @@ from tests import *
 
 class ATYPE(enum.StrEnum):
     """Options for algorithm test types"""
-    SER = "ser"
-    PAR = "par"
+    SER = "serial"
+    PAR = "parallel"
 
 
 class STYPE(enum.StrEnum):

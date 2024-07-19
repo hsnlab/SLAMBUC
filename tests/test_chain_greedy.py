@@ -14,7 +14,7 @@
 import math
 import random
 
-from slambuc.alg.chain.dp.greedy import greedy_chain_partitioning
+from slambuc.alg.chain.path.greedy import greedy_chain_partitioning
 from slambuc.misc.util import evaluate_chain_partitioning
 
 

@@ -23,7 +23,7 @@ from matplotlib import ticker as mticker
 from matplotlib.backends.backend_pgf import FigureCanvasPgf
 
 from slambuc.alg.util import isubtrees, ser_subtree_memory
-from slambuc.gen.io import get_tree_from_file
+from slambuc.generator.io import get_tree_from_file
 
 matplotlib.backend_bases.register_backend('pdf', FigureCanvasPgf)
 matplotlib.rcParams.update({"pgf.texsystem": "pdflatex",
@@ -60,7 +60,7 @@ M_SIZE = 4
 LINE_W = 1
 
 
-def plot_alg_runtimes(alg_type: str = "ser", show: bool = True, ext: str = "pgf"):
+def plot_alg_runtimes(alg_type: str = "serial", show: bool = True, ext: str = "pgf"):
     plt.style.use('fast')
     plt.rc('font', size=5)
     plt.rc('axes', labelsize=6)
@@ -564,8 +564,8 @@ def plot_cost_valid_bar(n=40, show: bool = True, ext: str = "pgf"):
 
 
 if __name__ == '__main__':
-    # plot_alg_runtimes(alg_type="ser", show=True)
-    # plot_alg_runtimes(alg_type="par", show=True)
+    # plot_alg_runtimes(alg_type="serial", show=True)
+    # plot_alg_runtimes(alg_type="parallel", show=True)
     # plot_sens_runtimes(param="m", show=True)
     # plot_sens_runtimes(param="l", show=True)
     # plot_sens_runtimes(param="cpu", show=True)
@@ -581,10 +581,10 @@ if __name__ == '__main__':
     # plot_cost_par_valid(tree_type="job", n=40, show=True)
     # plot_cost_par_valid(tree_type="faas", n=40, show=True)
     #
-    # plot_alg_runtimes(alg_type="ser", show=False, ext="pgf")
-    # plot_alg_runtimes(alg_type="ser", show=False, ext="pdf")
-    # plot_alg_runtimes(alg_type="par", show=False, ext="pgf")
-    # plot_alg_runtimes(alg_type="par", show=False, ext="pdf")
+    # plot_alg_runtimes(alg_type="serial", show=False, ext="pgf")
+    # plot_alg_runtimes(alg_type="serial", show=False, ext="pdf")
+    # plot_alg_runtimes(alg_type="parallel", show=False, ext="pgf")
+    # plot_alg_runtimes(alg_type="parallel", show=False, ext="pdf")
     #
     # plot_sens_runtimes(param="m", show=False, ext="pgf")
     # plot_sens_runtimes(param="m", show=False, ext="pdf")

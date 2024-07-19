@@ -19,7 +19,7 @@ import math
 import networkx as nx
 
 from slambuc.alg import INFEASIBLE, T_BLOCK, T_RESULTS
-from slambuc.alg.service import MEMORY, RATE, DATA
+from slambuc.alg.app import MEMORY, RATE, DATA
 from slambuc.alg.util import ibacktrack_chain, recalculate_partitioning, par_subchain_latency, par_subtree_memory
 
 # Naming convention for state-space DAG
@@ -34,7 +34,7 @@ def get_bounded_greedy_block(tree: nx.DiGraph, root: int, M: int, N: int = 1, cp
 
     Filter out mandatory cuts of *cp_cuts* on the cpath form merging, while merges other cpath edges.
 
-    :param tree:    service graph annotated with node runtime(ms), edge rate and edge data unit size
+    :param tree:    app graph annotated with node runtime(ms), edge rate and edge data unit size
     :param root:    root node of the tree
     :param M:       upper memory bound of the partition blocks in MB
     :param N:       available CPU core count
@@ -74,7 +74,7 @@ def min_weight_greedy_partitioning(tree: nx.DiGraph, root: int = 1, M: int = mat
     """
     Calculates memory-bounded tree partitioning in a greedy manner without any latency limit.
 
-    :param tree:    service graph annotated with node runtime(ms), edge rate and edge data unit size
+    :param tree:    app graph annotated with node runtime(ms), edge rate and edge data unit size
     :param root:    root node of the tree
     :param M:       upper memory bound of the partition blocks in MB
     :param N:       available CPU core count
@@ -100,7 +100,7 @@ def get_feasible_cpath_split(tree: nx.DiGraph, root: int, cp_end: int, M: int, L
     """
     Calculate feasible splitting of the critical path that meets given memory *M* and latency *L* limits.
 
-    :param tree:    service graph annotated with node runtime(ms), edge rate and edge data unit size
+    :param tree:    app graph annotated with node runtime(ms), edge rate and edge data unit size
     :param root:    root node of the tree
     :param cp_end:  tail node of the critical path in the form of subchain[root -> cp_end]
     :param M:       upper memory bound of the partition blocks in MB
@@ -149,7 +149,7 @@ def get_min_cpath_split(tree: nx.DiGraph, root: int, cp_end: int, M: int, L: int
     """
     Calculate min-latency splitting of the critical path that meets given memory *M* and latency *L* limits.
 
-    :param tree:    service graph annotated with node runtime(ms), edge rate and edge data unit size
+    :param tree:    app graph annotated with node runtime(ms), edge rate and edge data unit size
     :param root:    root node of the tree
     :param cp_end:  tail node of the critical path in the form of subchain[root -> cp_end]
     :param M:       upper memory bound of the partition blocks in MB
@@ -198,7 +198,7 @@ def min_weight_partition_heuristic(tree: nx.DiGraph, root: int = 1, M: int = mat
     It uses a greedy approach to calculate a low-cost critical path cut (might miss feasible solutions).
     It may conclude the partitioning problem infeasible despite there exist one with large costs.
 
-    :param tree:    service graph annotated with node runtime(ms), edge rate and edge data unit size
+    :param tree:    app graph annotated with node runtime(ms), edge rate and edge data unit size
     :param root:    root node of the tree
     :param M:       upper memory bound of the partition blocks in MB
     :param L:       latency limit defined on the critical path in ms
@@ -232,7 +232,7 @@ def min_lat_partition_heuristic(tree: nx.DiGraph, root: int = 1, M: int = math.i
     It uses Dijkstra's algorithm to calculate the critical path cut with the lowest latency (might be expensive).
     It always returns a latency-feasible solution if it exists.
 
-    :param tree:    service graph annotated with node runtime(ms), edge rate and edge data unit size
+    :param tree:    app graph annotated with node runtime(ms), edge rate and edge data unit size
     :param root:    root node of the tree
     :param M:       upper memory bound of the partition blocks in MB
     :param L:       latency limit defined on the critical path in ms

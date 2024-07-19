@@ -22,7 +22,7 @@ import networkx as nx
 import numpy as np
 
 from slambuc.alg import INFEASIBLE, T_BLOCK, T_RESULTS, T_PART
-from slambuc.alg.service.common import SEP, ASSIGN, Flavor
+from slambuc.alg.app.common import SEP, ASSIGN, Flavor
 from slambuc.alg.util import (leaf_label_nodes, ibacktrack_chain, iflattened_tree, gen_subtree_memory, gen_subtree_cost,
                               gen_subchain_latency, verify_limits)
 
@@ -62,7 +62,7 @@ def ibuild_gen_csp_dag(tree: nx.DiGraph, root: int = 1, flavors: list[Flavor] = 
     The given flavors as list of (memory, CPU, cost_factor) tuples define the available memory (and group upper limit),
     available relative vCPU cores and relative cost multiplier.
 
-    :param tree:        service graph annotated with node runtime(ms), memory(MB) and edge rate
+    :param tree:        app graph annotated with node runtime(ms), memory(MB) and edge rate
     :param root:        root node of the graph
     :param flavors:     list of flavors resources given by the tuple of available *(memory, relative CPU cores)*
     :param exec_calc:   function that calculates the effective runtimes from reference runtime and available CPU cores
@@ -121,14 +121,14 @@ def csp_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L:
     Details in: T. Elgamal at al.: “Costless: Optimizing Cost of Serverless Computing through Function Fusion
     and Placement,” in 2018 IEEE/ACM Symposium on Edge Computing (SEC), 2018, pp. 300–312. doi: 10.1109/SEC.2018.00029.
 
-    :param tree:        service tree annotated with node runtime(ms), memory(MB) and edge rate
+    :param tree:        app tree annotated with node runtime(ms), memory(MB) and edge rate
     :param root:        root node of the graph
     :param M:           upper memory bound of the partition blocks in MB
     :param L:           latency limit defined on the critical path in ms
     :param N:           available CPU core count
     :param cp_end:      tail node of the critical path in the form of subchain[root -> c_pend]
     :param delay:       invocation delay between blocks
-    :param exhaustive:  iterate over all topological ordering of the service tree or stop at first feasible solution
+    :param exhaustive:  iterate over all topological ordering of the app tree or stop at first feasible solution
     :param solver:      specific solver class (default: cspy.BiDirectional)
     :param timeout:     time limit in sec
     :param cspargs:     additional CSP solver parameters
@@ -172,7 +172,7 @@ def csp_gen_tree_partitioning(tree: nx.DiGraph, root: int = 1, flavors: list[tup
     and Placement,” in 2018 IEEE/ACM Symposium on Edge Computing (SEC), 2018, pp. 300–312. doi: 10.1109/SEC.2018.00029.
 
 
-    :param tree:        service graph annotated with node runtime(ms), memory(MB) and edge rate
+    :param tree:        app graph annotated with node runtime(ms), memory(MB) and edge rate
     :param root:        root node of the graph
     :param flavors:     list of flavors resources given by the tuple of available *(memory, rel CPU cores, cost factor)*
     :param exec_calc:   function that calculates the effective runtimes from reference runtime and available CPU cores

@@ -17,9 +17,9 @@ import pathlib
 import networkx as nx
 import pytest
 
-from slambuc.alg.service import NAME
-from slambuc.alg.tree.dp.min import min_tree_partitioning
-from slambuc.misc.generator import get_random_tree
+from slambuc.alg.app import NAME
+from slambuc.alg.tree.path.min import min_tree_partitioning
+from slambuc.misc.random import get_random_tree
 from slambuc.misc.util import evaluate_tree_partitioning
 
 
@@ -72,6 +72,6 @@ def test_random_tree_partitioning(n: int = 10):
 
 
 if __name__ == '__main__':
-    # test_tree_partitioning()
+    test_tree_partitioning()
     # test_failed_tree_partitioning("failed_tree_random_tree_1659449915.340366.gml", L=396)
     test_random_tree_partitioning()

@@ -24,11 +24,11 @@ import networkx as nx
 import pandas as pd
 import tabulate
 
-from slambuc.alg.service import *
-from slambuc.alg.tree.ser import *
-from slambuc.alg.tree.ser.ilp_cplex import tree_cplex_partitioning, tree_cpo_partitioning
+from slambuc.alg.app import *
+from slambuc.alg.tree.serial import *
+from slambuc.alg.tree.serial.ilp_cplex import tree_cplex_partitioning, tree_cpo_partitioning
 from slambuc.alg.util import ibacktrack_chain, ser_subchain_latency
-from slambuc.misc.generator import get_random_tree
+from slambuc.misc.random import get_random_tree
 
 TREE_ALGS = dict(
     GREEDY=greedy_ser_tree_partitioning,
@@ -66,7 +66,7 @@ def compare_results(tree_path: str = None, L: int = math.inf):
     tree = nx.read_gml(
         tree_path if tree_path is not None else pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml",
         destringizer=int)
-    tree.graph[NAME] += "-ser"
+    tree.graph[NAME] += "-serial"
     params = dict(tree=tree, root=1, cp_end=10, M=6, L=L, delay=10)
     ##########################################################
     cpath = list(reversed(list(ibacktrack_chain(tree, 1, params['cp_end']))))
@@ -87,7 +87,7 @@ def compare_results(tree_path: str = None, L: int = math.inf):
 
 def test_latencies():
     tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml", destringizer=int)
-    tree.graph[NAME] += "-ser"
+    tree.graph[NAME] += "-serial"
     params = dict(tree=tree, root=1, cp_end=10, M=6, L=math.inf, delay=10)
     lats = [math.inf,
             # Optimal multi-solutions
@@ -115,7 +115,7 @@ def test_latencies():
 
 def test_random_validation(n: int = 10, cache_failed: bool = False, stop_failed: bool = False) -> tuple[str, list]:
     tree = get_random_tree(n)
-    tree.graph[NAME] += "-ser"
+    tree.graph[NAME] += "-serial"
     cp_end = n
     cpath = list(reversed(list(ibacktrack_chain(tree, 1, cp_end))))
     singleton_lat = ser_subchain_latency(tree, 1, set(range(1, n + 1)), set(cpath))

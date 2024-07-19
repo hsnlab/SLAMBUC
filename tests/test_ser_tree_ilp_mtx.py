@@ -24,11 +24,11 @@ import pytest
 import tabulate
 
 from slambuc.alg import LP_LAT
-from slambuc.alg.service import NAME, PLATFORM
-from slambuc.alg.tree.ser.ilp import (build_tree_mtx_model, tree_mtx_partitioning, recreate_subtrees_from_xmatrix,
-                                      extract_subtrees_from_xmatrix, build_greedy_tree_mtx_model)
+from slambuc.alg.app import NAME, PLATFORM
+from slambuc.alg.tree.serial.ilp import (build_tree_mtx_model, tree_mtx_partitioning, recreate_subtrees_from_xmatrix,
+                                         extract_subtrees_from_xmatrix, build_greedy_tree_mtx_model)
 from slambuc.alg.util import induced_subtrees, ibacktrack_chain
-from slambuc.misc.generator import get_random_tree
+from slambuc.misc.random import get_random_tree
 from slambuc.misc.plot import draw_tree
 from slambuc.misc.util import (print_lp_desc, evaluate_ser_tree_partitioning, print_var_matrix, get_cplex_path,
                                print_pulp_matrix_values, convert_var_dict, print_cost_coeffs, print_lat_coeffs,

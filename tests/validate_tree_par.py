@@ -24,10 +24,10 @@ import networkx as nx
 import pandas as pd
 import tabulate
 
-from slambuc.alg.service import *
-from slambuc.alg.tree.par import *
+from slambuc.alg.app import *
+from slambuc.alg.tree.parallel import *
 from slambuc.alg.util import ibacktrack_chain, ser_subchain_latency
-from slambuc.misc.generator import get_random_tree
+from slambuc.misc.random import get_random_tree
 
 TREE_ALGS = dict(
     GREEDY_PAR=greedy_par_tree_partitioning,
@@ -59,7 +59,7 @@ def compare_results(tree_path: str = None, L: int = math.inf, N: int = 1):
     tree = nx.read_gml(
         tree_path if tree_path is not None else pathlib.Path(__file__).parent / "data/graph_test_tree_par.gml",
         destringizer=int)
-    tree.graph[NAME] += "-par"
+    tree.graph[NAME] += "-parallel"
     params = dict(tree=tree, root=1, cp_end=10, M=6, L=L, N=N, delay=10)
     ##########################################################
     cpath = list(reversed(list(ibacktrack_chain(tree, 1, params['cp_end']))))
@@ -79,7 +79,7 @@ def compare_results(tree_path: str = None, L: int = math.inf, N: int = 1):
 
 def test_random_validation(n: int = 10, N: int = 2, cache_failed: bool = False, stop_failed=False) -> tuple[str, list]:
     tree = get_random_tree(n)
-    tree.graph[NAME] += "-par"
+    tree.graph[NAME] += "-parallel"
     cp_end = n
     cpath = list(reversed(list(ibacktrack_chain(tree, 1, cp_end))))
     singleton_lat = ser_subchain_latency(tree, 1, set(range(1, n + 1)), set(cpath))

@@ -115,17 +115,17 @@ Refer to the wiki for [formats, execution parameters, examples, and API document
 ## Example
 
 ```python
-from slambuc.alg.tree.ser.pseudo import pseudo_ltree_partitioning
-from slambuc.misc.generator import get_random_tree
+from slambuc.alg.tree.serial.pseudo import pseudo_ltree_partitioning
+from slambuc.misc.random import get_random_tree
 
 # Get input parameters
 tree = get_random_tree(nodes=10)  # Assuming random memory demands are in GB
 params = dict(tree=tree,
-              root=1,     # Root node ID
-              M=6,        # Memory upper limit
-              L=450,      # Latency upper limit
+              root=1,  # Root node ID
+              M=6,  # Memory upper limit
+              L=450,  # Latency upper limit
               cp_end=10,  # Critical path: [root -> cp_end]
-              delay=10    # Platform delay in ms
+              delay=10  # Platform delay in ms
               )
 
 # Partitioning

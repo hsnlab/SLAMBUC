@@ -15,9 +15,9 @@
 import os
 import pathlib
 
-from slambuc.gen.cluster.job_tree import generate_mixed_job_trees
-from slambuc.gen.microservice.faas_tree import generate_all_faas_trees
-from slambuc.gen.random.random_tree import generate_all_random_trees, generate_random_trees
+from slambuc.generator.cluster.job_tree import generate_mixed_job_trees
+from slambuc.generator.microservice.faas_tree import generate_all_faas_trees
+from slambuc.generator.random.random_tree import generate_all_random_trees, generate_random_trees
 
 DATA_DIR = "data"
 MAX_INST = 100

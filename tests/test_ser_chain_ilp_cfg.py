@@ -20,9 +20,9 @@ import pulp
 import pytest
 import tabulate
 
-from slambuc.alg.chain.ser.ilp import (ifeasible_blocks, ifeasible_greedy_blocks, build_chain_cfg_model,
-                                       chain_cfg_partitioning, recreate_blocks_from_xvars, extract_blocks_from_xvars)
-from slambuc.misc.generator import get_random_chain_data
+from slambuc.alg.chain.serial.ilp import (ifeasible_blocks, ifeasible_greedy_blocks, build_chain_cfg_model,
+                                          chain_cfg_partitioning, recreate_blocks_from_xvars, extract_blocks_from_xvars)
+from slambuc.misc.random import get_random_chain_data
 from slambuc.misc.util import print_lp_desc, evaluate_ser_chain_partitioning, print_ser_chain_summary, get_cplex_path, \
     get_glpk_path
 

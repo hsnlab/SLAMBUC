@@ -19,7 +19,7 @@ import operator
 import networkx as nx
 
 from slambuc.alg import INFEASIBLE, T_RESULTS
-from slambuc.alg.service import RATE, DATA, PLATFORM
+from slambuc.alg.app import RATE, DATA, PLATFORM
 from slambuc.alg.util import recreate_subtree_blocks, recalculate_partitioning
 
 
@@ -29,7 +29,7 @@ def min_weight_subchain_split(tree: nx.DiGraph, root: int) -> set[int]:
 
     The splitting marks the edge with the largest weight at each branching nodes to be a must-merge edge.
 
-    :param tree:    service graph annotated with node runtime(ms), edge rate and edge data unit size
+    :param tree:    app graph annotated with node runtime(ms), edge rate and edge data unit size
     :param root:    root node of the tree
     :return:        set of barrier nodes
     """
@@ -45,7 +45,7 @@ def min_weight_chain_decomposition(tree: nx.DiGraph, root: int, N: int = 1, cp_e
 
     Although latency is not considered on the critical path the algorithm reports it with the sum cost.
 
-    :param tree:    service graph annotated with node runtime(ms) and edge rate
+    :param tree:    app graph annotated with node runtime(ms) and edge rate
     :param root:    root node of the tree
     :param N:       available CPU core count
     :param cp_end:  tail node of the critical path in the form of subchain[root -> cp_end]
@@ -71,7 +71,7 @@ def min_weight_ksplit(tree: nx.DiGraph, root: int, k: int) -> set[int]:
     Details in: M. Maravalle et al.: “Clustering on trees,” Computational Statistics & Data Analysis, vol. 24, no. 2,
     pp. 217–234, Apr. 1997, doi: 10.1016/S0167-9473(96)00062-X.
 
-    :param tree:    service graph annotated with node runtime(ms), edge rate and edge data unit size
+    :param tree:    app graph annotated with node runtime(ms), edge rate and edge data unit size
     :param root:    root node of the tree
     :param k:       number of clusters
     :return:        set of barrier nodes
@@ -104,7 +104,7 @@ def min_weight_ksplit_clustering(tree: nx.DiGraph, root: int, k: int = None, N: 
 
     Although latency is not considered on the critical path the algorithm reports it along with the sum cost.
 
-    :param tree:    service graph annotated with node runtime(ms), edge rate and edge data unit size
+    :param tree:    app graph annotated with node runtime(ms), edge rate and edge data unit size
     :param root:    root node of the tree
     :param k:       number of clusters
     :param N:       available CPU core count
@@ -128,7 +128,7 @@ def min_weight_tree_clustering(tree: nx.DiGraph, root: int, L: int = math.inf, N
 
     Although latency is not considered on the critical path the algorithm reports it with the sum cost.
 
-    :param tree:    service graph annotated with node runtime(ms), edge rate and edge data unit size
+    :param tree:    app graph annotated with node runtime(ms), edge rate and edge data unit size
     :param root:    root node of the tree
     :param L:       latency limit defined on the critical path in ms
     :param N:       available CPU core count

@@ -19,7 +19,7 @@ import networkx as nx
 import pulp as lp
 
 from slambuc.alg import LP_LAT, INFEASIBLE, T_FRESULTS, T_FPART
-from slambuc.alg.service.common import *
+from slambuc.alg.app.common import *
 from slambuc.alg.util import (ipowerset, ipostorder_dfs, ibacktrack_chain, gen_subtree_memory, gen_subtree_cost,
                               gen_subchain_latency, recreate_subtree_blocks, x_eval)
 
@@ -28,7 +28,7 @@ def ifeasible_gen_subtrees(tree: nx.DiGraph, root: int, M: int, N: int = 1) -> G
     """
     Generate M-feasible(connected) subtrees and roots in bottom-up way, which meet the memory constraint *M*.
 
-    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
+    :param tree:    app graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:    root node of the graph
     :param M:       upper memory bound of the partition blocks (in MB)
     :param N:       upper CPU core bound of the partition blocks
@@ -93,7 +93,7 @@ def tree_gen_hybrid_partitioning(tree: nx.DiGraph, root: int = 1, flavors: list[
     """
     Calculate minimal-cost partitioning of a tree based on configuration LP formulation and given *flavors*.
 
-    :param tree:        service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
+    :param tree:        app graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:        root node of the graph
     :param flavors:     list of flavors resources given by the tuple of available *(memory, relative CPU cores)*
     :param exec_calc:   function that calculates the effective runtimes from reference runtime and available CPU cores
@@ -118,7 +118,7 @@ def recreate_st_from_gen_xdict(tree: nx.DiGraph, X: dict[Flavor, dict[int, list[
     """
     Extract barrier nodes from variable names (x_{b}_{w}) and recreate partitioning blocks.
 
-    :param tree:    service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
+    :param tree:    app graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param X:       internal structure of decision variables
     :return:        partition blocks
     """
@@ -217,7 +217,7 @@ def tree_gen_mtx_partitioning(tree: nx.DiGraph, root: int = 1, flavors: list[Fla
     """
     Calculate minimal-cost partitioning of a tree based on matrix LP formulation and given *flavors*.
 
-    :param tree:        service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
+    :param tree:        app graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:        root node of the graph
     :param flavors:     list of flavors resources given by the tuple of available *(memory, relative CPU cores)*
     :param exec_calc:   function that calculates the effective runtimes from reference runtime and available CPU cores
@@ -260,7 +260,7 @@ def all_gen_tree_mtx_partitioning(tree: nx.DiGraph, root: int = 1, flavors: list
     """
     Calculate all minimal-cost partitioning variations of a tree based on matrix ILP formulation and *flavors*.
 
-    :param tree:        service graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
+    :param tree:        app graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:        root node of the graph
     :param flavors:     list of flavors resources given by the tuple of available *(memory, relative CPU cores)*
     :param exec_calc:   function that calculates the effective runtimes from reference runtime and available CPU cores

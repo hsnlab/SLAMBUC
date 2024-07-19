@@ -23,7 +23,9 @@ release: build check
 ######## Testing
 
 test:
-	cd tests && python3.11 -m pytest -v .
+	python3.11 tests/validate_algs.py
+	python3.11 -m pytest -vv tests/
+	python3.10 -m pytest -vv tests/
 
 test-publish: build check
 	twine upload --repository testpypi dist/*

@@ -22,10 +22,11 @@ import pulp
 import tabulate
 
 from slambuc.alg import LP_LAT, T_PART, T_BARRS
-from slambuc.alg.service.common import *
-from slambuc.alg.util import (ichain, path_blocks, block_memory, block_cost, block_latency, leaf_label_nodes,
-                              block_cpu, ser_block_subcost, ser_block_sublatency, ser_block_submemory,
-                              ser_subtree_cost, ser_subchain_latency, par_subtree_cost, par_subchain_latency)
+from slambuc.alg.app.common import *
+from slambuc.alg.util import (ichain, path_blocks, chain_memory, chain_cost, chain_latency, leaf_label_nodes,
+                              chain_cpu, ser_chain_subcost, ser_chain_sublatency, ser_subtree_cost,
+                              ser_subchain_latency, par_subtree_cost, par_subchain_latency,
+                              chain_memory_opt, ser_chain_submemory)
 from slambuc.misc.plot import draw_tree
 
 
@@ -93,7 +94,7 @@ def get_chain_k_min(memory: list[int], M: int, rate: list[int], N: int, start: i
     :return:        minimal number of blocks
     """
     end = end if end is not None else len(memory) - 1
-    return max(math.ceil(block_memory(memory, start, end) / M),
+    return max(math.ceil(chain_memory(memory, start, end) / M),
                sum(1 for i, j in itertools.pairwise(rate[start: end + 1]) if math.ceil(j / i) > N))
 
 
@@ -126,7 +127,7 @@ def get_chain_c_max(runtime: list[int], L: int, b: int, w: int, delay: int, star
     :return:        maximum number of cuts
     """
     end = end if end is not None else len(runtime) - 1
-    return math.floor(min((L - block_latency(runtime, b, w, delay, start, end)) / delay, len(runtime) - 1))
+    return math.floor(min((L - chain_latency(runtime, b, w, delay, start, end)) / delay, len(runtime) - 1))
 
 
 def get_chain_k_max(runtime: list[int], L: int, b: int, w: int, delay: int, start: int = 0, end: int = None) -> int:
@@ -184,7 +185,7 @@ def prune_chain(tree: nx.DiGraph, node: int, leaf: int) -> tuple[list[int], list
     """
     Return the nodes of chain [*node*, *leaf*] and the branching nodes.
 
-    :param tree:    service tree
+    :param tree:    app tree
     :param node:    chain's barrier node
     :param leaf:    end node of chain
     :return:        nodes of the chain and its branches
@@ -262,10 +263,10 @@ def print_block_stat(partition: T_PART, runtime: list[int], memory: list[int], r
     """
     end = end if end is not None else len(runtime) - 1
     stat = [[str([blk[0], blk[-1]]),
-             block_cost(runtime, rate, blk[0], blk[-1], unit),
-             block_memory(memory, blk[0], blk[-1]),
-             block_cpu(rate, blk[0], blk[-1]),
-             block_latency(runtime, blk[0], blk[-1], delay, start, end)] for blk in partition]
+             chain_cost(runtime, rate, blk[0], blk[-1], unit),
+             chain_memory_opt(memory, rate, blk[0], blk[-1]),
+             chain_cpu(rate, blk[0], blk[-1]),
+             chain_latency(runtime, blk[0], blk[-1], delay, start, end)] for blk in partition]
     print(tabulate.tabulate(stat, ['Block', 'Cost', 'Memory', 'CPU', 'Latency'],
                             numalign='decimal', stralign='center', tablefmt='pretty'))
 
@@ -290,7 +291,7 @@ def print_chain_partition_result(barr: T_BARRS, cost: int, lat: int):
 
 def print_tree_summary(tree: nx.DiGraph):
     """
-    Print summary of service graphs.
+    Print summary of app graphs.
 
     :param tree:    input tree
     """
@@ -316,10 +317,10 @@ def print_tree_block_stat(tree: nx.DiGraph, partition: T_PART, unit: int = 100):
                                       for u, v in itertools.pairwise([pred] + blk)])
         b, w = 0, len(blk) - 1
         stat.append([str([blk[b], blk[w]]),
-                     block_cost(runtime, rate, b, w, unit),
-                     block_memory(memory, b, w),
-                     block_cpu(rate, b, w),
-                     block_latency(runtime, b, w, 0, b, w)])
+                     chain_cost(runtime, rate, b, w, unit),
+                     chain_memory_opt(memory, rate, b, w),
+                     chain_cpu(rate, b, w),
+                     chain_latency(runtime, b, w, 0, b, w)])
     print(tabulate.tabulate(stat, ['Block', 'Cost', 'Memory', 'CPU', 'Latency'], numalign='decimal', stralign='center'))
 
 
@@ -335,7 +336,7 @@ def print_cpath_stat(tree: nx.DiGraph, partition: T_PART, cpath: list[int] = Non
     if len(partition) > 0:
         c_blocks = path_blocks(partition, cpath)
         opt_cut = len(c_blocks) - 1
-        sum_lat = sum(block_latency([tree.nodes[v][RUNTIME] for v in blk], 0, len(blk) - 1, delay, 0, len(blk) - 1)
+        sum_lat = sum(chain_latency([tree.nodes[v][RUNTIME] for v in blk], 0, len(blk) - 1, delay, 0, len(blk) - 1)
                       for blk in c_blocks) + opt_cut * delay
         print("Critical blocks of cpath", [cpath[0], cpath[-1]], "=>", c_blocks, "-", "opt_cut:", opt_cut, "-",
               "opt_lat:", sum_lat)
@@ -568,9 +569,9 @@ def print_ser_block_stat(partition: T_PART, runtime: list[int], memory: list[int
     """
     end = end if end is not None else len(runtime) - 1
     stat = [[str([blk[0], blk[-1]]),
-             ser_block_subcost(runtime, rate, data, blk[0], blk[-1]),
-             ser_block_submemory(memory, blk[0], blk[-1]),
-             ser_block_sublatency(runtime, rate, data, blk[0], blk[-1], delay, start, end)] for blk in partition]
+             ser_chain_subcost(runtime, rate, data, blk[0], blk[-1]),
+             ser_chain_submemory(memory, blk[0], blk[-1]),
+             ser_chain_sublatency(runtime, rate, data, blk[0], blk[-1], delay, start, end)] for blk in partition]
     print(tabulate.tabulate(stat, ['Block', 'Cost', 'Memory', 'Latency'],
                             numalign='decimal', stralign='center', tablefmt='pretty'))
 

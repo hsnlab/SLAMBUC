@@ -14,7 +14,7 @@
 import math
 import random
 
-from slambuc.alg.chain.dp.min import min_chain_partitioning
+from slambuc.alg.chain.path.min import min_chain_partitioning
 from slambuc.alg.util import split_chain
 from slambuc.misc.util import evaluate_chain_partitioning, print_chain_summary
 

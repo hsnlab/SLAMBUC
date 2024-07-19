@@ -18,7 +18,7 @@ import networkx as nx
 from slambuc.alg.ext.greedy import (min_weight_greedy_partitioning, get_feasible_cpath_split,
                                     min_weight_partition_heuristic, min_lat_partition_heuristic, get_min_cpath_split)
 from slambuc.alg.util import ibacktrack_chain
-from slambuc.misc.generator import get_random_tree
+from slambuc.misc.random import get_random_tree
 from slambuc.misc.util import evaluate_par_tree_partitioning
 
 

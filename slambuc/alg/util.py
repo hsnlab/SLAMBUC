@@ -21,7 +21,7 @@ import networkx as nx
 import pulp as lp
 
 from slambuc.alg import T_PART, T_BARRS
-from slambuc.alg.service.common import *
+from slambuc.alg.app.common import *
 
 
 def verify_limits(tree: nx.DiGraph, cpath: set[int], M: int | float, L: int | float) -> tuple[bool, bool]:
@@ -555,7 +555,7 @@ def recalculate_partitioning(tree: nx.DiGraph, partition: T_PART, root: int = 1,
 ########################################################################################################################
 
 
-def block_memory(memory: list[int], b: int, w: int) -> int:
+def chain_memory(memory: list[int], b: int, w: int) -> int:
     """
     Calculate cumulative memory of block [b, w].
 
@@ -567,7 +567,22 @@ def block_memory(memory: list[int], b: int, w: int) -> int:
     return sum(itertools.islice(memory, b, w + 1))
 
 
-def block_cpu(rate: list[int], b: int, w: int) -> int:
+def chain_memory_opt(memory: list[int], rate: list[int], b: int, w: int) -> int:
+    """
+    Calculate cumulative memory of block [b, w] based on the **optimistic** number of parallel function instances.
+
+    :param memory:  list of memory values
+    :param rate:    list of rate values
+    :param b:       barrier node
+    :param w:       end node of block
+    :return:        memory value
+    """
+    return max(sum(itertools.islice(memory, b, w + 1)),
+               functools.reduce(lambda pre, i: max(pre, max(math.ceil(rate[j] / rate[i]) * memory[j]
+                                                            for j in range(i, w + 1))), reversed(range(b, w + 1)), 0))
+
+
+def chain_cpu(rate: list[int], b: int, w: int) -> int:
     """
     Calculate CPU core need of block [b, w] with multiprocessing.
 
@@ -580,7 +595,7 @@ def block_cpu(rate: list[int], b: int, w: int) -> int:
     return functools.reduce(lambda pre, max_i: max(pre, math.ceil(max_i[1] / rate[w - max_i[0]])), r_max)
 
 
-def block_cost(runtime: list[int], rate: list[int], b: int, w: int, unit: int = 100) -> int:
+def chain_cost(runtime: list[int], rate: list[int], b: int, w: int, unit: int = 100) -> int:
     """
     Calculate running time of block [b, w] with multiprocessing.
 
@@ -594,7 +609,7 @@ def block_cost(runtime: list[int], rate: list[int], b: int, w: int, unit: int = 
     return rate[b] * (math.ceil(sum(runtime[b: w + 1]) / unit) * unit)
 
 
-def block_latency(runtime: list[int], b: int, w: int, delay: int, start: int, end: int) -> int:
+def chain_latency(runtime: list[int], b: int, w: int, delay: int, start: int, end: int) -> int:
     """
     Calculate relevant latency for block [b, w] with multiprocessing.
 
@@ -617,7 +632,7 @@ def block_latency(runtime: list[int], b: int, w: int, delay: int, start: int, en
 ########################################################################################################################
 
 
-def ser_block_memory(memory: list[int]) -> int:
+def pblock_memory(memory: list[int]) -> int:
     """
     Calculate cumulative memory of block [b, w] with serialization.
 
@@ -627,7 +642,7 @@ def ser_block_memory(memory: list[int]) -> int:
     return sum(memory)
 
 
-def ser_block_memory_opt(memory: list[int], rate: list[int], b: int, w: int) -> int:
+def pblock_memory_opt(memory: list[int], rate: list[int], b: int, w: int) -> int:
     """
     Calculate memory of block [b, w] recursively based on the **optimistic** number of parallel function instances.
 
@@ -641,7 +656,7 @@ def ser_block_memory_opt(memory: list[int], rate: list[int], b: int, w: int) -> 
                                                         for j in range(i, w + 1))), reversed(range(b, w + 1)), 0)
 
 
-def ser_block_memory_pes(memory: list[int], rate: list[int], b: int, w: int) -> int:
+def pblock_memory_pes(memory: list[int], rate: list[int], b: int, w: int) -> int:
     """
     Calculate memory of block [b, w] recursively based on the **pessimistic** number of parallel function instances.
 
@@ -655,7 +670,7 @@ def ser_block_memory_pes(memory: list[int], rate: list[int], b: int, w: int) -> 
                             reversed(range(b, w)), memory[w])
 
 
-def ser_block_memory_pes2(memory: list[int], rate: list[int], b: int, w: int) -> int:
+def pblock_memory_pes2(memory: list[int], rate: list[int], b: int, w: int) -> int:
     """
     Calculate memory of block [b, w] directly based on the **pessimistic** number of parallel function instances.
 
@@ -669,7 +684,7 @@ def ser_block_memory_pes2(memory: list[int], rate: list[int], b: int, w: int) ->
     return max(n * memory[b + k] for k, n in enumerate(n_k))
 
 
-def ser_block_cost(runtime: list[int], rate: list[int], data: list[int]) -> int:
+def pblock_cost(runtime: list[int], rate: list[int], data: list[int]) -> int:
     """
     Calculate running time of a subtree block with serialization.
 
@@ -682,7 +697,7 @@ def ser_block_cost(runtime: list[int], rate: list[int], data: list[int]) -> int:
     return sum((r * t for r, t in zip(rate, runtime)), start=rate[0] * data[0])
 
 
-def ser_block_latency(runtime: list[int], rate: list[int], data: list[int]) -> int:
+def pblock_latency(runtime: list[int], rate: list[int], data: list[int]) -> int:
     """
     Calculate relevant latency of a subtree block with serialization.
 
@@ -697,7 +712,7 @@ def ser_block_latency(runtime: list[int], rate: list[int], data: list[int]) -> i
 ########################################################################################################################
 
 
-def ser_block_submemory(memory: list[int], b: int, w: int) -> int:
+def ser_chain_submemory(memory: list[int], b: int, w: int) -> int:
     """
     Calculate cumulative memory of **chain block** [b, w] with serialization and data fetching/caching.
 
@@ -709,7 +724,7 @@ def ser_block_submemory(memory: list[int], b: int, w: int) -> int:
     return sum(itertools.islice(memory, b, w + 1))
 
 
-def ser_block_subcost(runtime: list[int], rate: list[int], data: list[int], b: int, w: int) -> int:
+def ser_chain_subcost(runtime: list[int], rate: list[int], data: list[int], b: int, w: int) -> int:
     """
     Calculate running time of a **chain block** [b, w] with serialization and data fetching/caching.
 
@@ -725,7 +740,7 @@ def ser_block_subcost(runtime: list[int], rate: list[int], data: list[int], b: i
     return cost + rate[w + 1] * data[w + 1] if w < len(data) - 1 else cost
 
 
-def ser_block_sublatency(runtime: list[int], rate: list[int], data: list[int], b: int, w: int, delay: int,
+def ser_chain_sublatency(runtime: list[int], rate: list[int], data: list[int], b: int, w: int, delay: int,
                          start: int, end: int) -> int:
     """
     Calculate relevant latency for **chain block** [b,w] with serialization and data fetching/caching.
@@ -736,7 +751,7 @@ def ser_block_sublatency(runtime: list[int], rate: list[int], data: list[int], b
     :param b:       barrier node
     :param w:       end node of block
     :param delay:   platform delay
-    :param start:   fist node to consider
+    :param start:   first node to consider
     :param end:     last node to consider
     :return:        calculated latency
     """

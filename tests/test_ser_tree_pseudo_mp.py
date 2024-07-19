@@ -16,10 +16,10 @@ import pathlib
 
 import networkx as nx
 
-from slambuc.alg.service import NAME
-from slambuc.alg.tree.ser.pseudo_mp import (isubtree_cutoffs, isubtree_sync_cutoffs, isubtree_splits, get_cpu_splits,
-                                            pseudo_mp_btree_partitioning, pseudo_mp_ltree_partitioning)
-from slambuc.misc.generator import get_random_tree
+from slambuc.alg.app import NAME
+from slambuc.alg.tree.serial.pseudo_mp import (isubtree_cutoffs, isubtree_sync_cutoffs, isubtree_splits, get_cpu_splits,
+                                               pseudo_mp_btree_partitioning, pseudo_mp_ltree_partitioning)
+from slambuc.misc.random import get_random_tree
 from slambuc.misc.plot import draw_tree
 from slambuc.misc.util import evaluate_ser_tree_partitioning
 

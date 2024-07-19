@@ -13,8 +13,8 @@
 # limitations under the License.
 import math
 
-from slambuc.alg.chain.ser.greedy import greedy_ser_chain_partitioning
-from slambuc.misc.generator import get_random_chain_data
+from slambuc.alg.chain.serial.greedy import greedy_ser_chain_partitioning
+from slambuc.misc.random import get_random_chain_data
 from slambuc.misc.util import evaluate_ser_chain_partitioning, print_ser_chain_summary
 
 
