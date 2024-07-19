@@ -89,3 +89,34 @@ def get_random_tree(nodes: int = 20, runtime: tuple[int, int] = (1, 100), memory
     tree[PLATFORM][1][RATE] = 1
     tree.graph[NAME] = f"random_tree_{time.time()}" if name is None else name
     return tree
+
+
+def get_random_dag(nodes: int = 20, crossing: int = 5, runtime: tuple[int, int] = (1, 100),
+                   memory: tuple[int, int] = (1, 3), rate: tuple[int, int] = (1, 3),
+                   data: tuple[int, int] = (1, 20), name: str = None) -> nx.DiGraph:
+    """
+    Generate random DAG from a directed tree with 'crossing' edges and properties from given intervals.
+
+    :param nodes:       number of nodes
+    :param crossing:    number of cross-edges
+    :param runtime:     interval of runtime values
+    :param memory:      interval of memory values
+    :param rate:        interval of rate values
+    :param data:        interval of data values
+    :param name:        tree name suffix
+    :return:            generated random tree
+    """
+    raw_tree = nx.bfs_tree(nx.random_labeled_tree(nodes + 1), 0)
+    while raw_tree.out_degree[0] > 1:
+        raw_tree = nx.bfs_tree(nx.random_labeled_tree(nodes + 1), 0)
+    dag = nx.convert_node_labels_to_integers(raw_tree, first_label=0)
+    dag.add_edges_from([sorted(random.sample(range(1, nodes + 1), 2)) for _ in range(crossing)])
+    nx.set_node_attributes(dag, {i: random.randint(*runtime) for i in range(1, nodes + 1)}, RUNTIME)
+    nx.set_node_attributes(dag, {i: random.randint(*memory) for i in range(1, nodes + 1)}, MEMORY)
+    for _, _, d in dag.edges(data=True):
+        d[RATE] = random.randint(*rate)
+        d[DATA] = random.randint(*data)
+    dag = nx.relabel_nodes(dag, {0: PLATFORM})
+    dag[PLATFORM][1][RATE] = 1
+    dag.graph[NAME] = f"random_dag_{time.time()}" if name is None else name
+    return dag
