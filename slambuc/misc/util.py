@@ -26,8 +26,9 @@ from slambuc.alg.app.common import *
 from slambuc.alg.util import (ichain, path_blocks, chain_memory, chain_cost, chain_latency, leaf_label_nodes,
                               chain_cpu, ser_chain_subcost, ser_chain_sublatency, ser_subtree_cost,
                               ser_subchain_latency, par_subtree_cost, par_subchain_latency,
-                              chain_memory_opt, ser_chain_submemory)
-from slambuc.misc.plot import draw_tree
+                              chain_memory_opt, ser_chain_submemory, par_subgraph_cost, par_subgraph_latency,
+                              par_subgraph_memory, ibacktrack_chain)
+from slambuc.misc.plot import draw_tree, draw_dag
 
 
 def get_cplex_path() -> str:
@@ -478,14 +479,14 @@ def print_par_cpath_stat(tree: nx.DiGraph, partition: T_PART, cpath: list[int] =
 def evaluate_par_tree_partitioning(tree: nx.DiGraph, partition: T_PART, opt_cost: int, opt_lat: int, root: int,
                                    cp_end: int, M: int, L: int, N: int, delay: int, draw: bool = True):
     """
-    Evaluate tree partitioning and print its characteristics assuming parallelized platform execution model.
+    Evaluate tree partitioning and print its characteristics assuming a parallelized platform execution model.
 
     :param tree:        input tree
     :param partition:   given partitioning
     :param opt_cost:    optimal partitioning cost
     :param opt_lat:     latency value of the partitioning
     :param root:        root node
-    :param cp_end:      end node of critical path
+    :param cp_end:      end node of the critical path
     :param M:           upper memory limit
     :param L:           latency limit
     :param N:           CPU count
@@ -599,6 +600,72 @@ def evaluate_ser_chain_partitioning(partition: T_PART, opt_cost: int, opt_lat: i
     print(f"Chain partitioning [M={M}, L={L}:{(start, end)}] => "
           f"{partition} - opt_cost: {opt_cost}, opt_lat: {opt_lat}")
     print_ser_block_stat(partition, runtime, memory, rate, data, delay, start, end)
+    print('#' * 80)
+
+
+def print_par_dag_block_stat(dag: nx.DiGraph, partition: T_PART, cpath: list[int], N: int = 1):
+    """
+    Print cost memory and latency values of partition blocks in tabulated format  assuming a
+    parallelized execution model.
+
+    :param dag:         input DAG graph
+    :param partition:   given partitioning
+    :param cpath:       critical path
+    :param N:           CPU count
+    """
+    stat = []
+    for blk in partition:
+        blk_cost = par_subgraph_cost(dag, blk[0], blk, N)
+        blk_lat = par_subgraph_latency(dag, blk[0], set(blk), set(cpath), N)
+        blk_mem = par_subgraph_memory(dag, blk[0], set(blk), N)
+        stat.append([str([blk[0], blk[-1]]), blk_cost, blk_mem, blk_lat])
+    print(tabulate.tabulate(stat, ['Block', 'Cost', 'Memory', 'Latency'], numalign='decimal', stralign='center'))
+
+
+def print_dag_cpath_stat(dag: nx.DiGraph, partition: T_PART, cpath: list[int] = None, delay: int = 10, N: int = 1):
+    """
+    Print the related block of the critical path assuming a parallelized execution model.
+
+    :param dag:         input DAG graph
+    :param partition:   given partitioning
+    :param cpath:       critical path
+    :param delay:       platform invocation delay
+    :param N:           CPU count
+    """
+    cpath = set(cpath)
+    if len(partition) > 0:
+        restricted_blk = [blk for blk in partition if blk[0] in cpath]
+        blk_lats = [par_subgraph_latency(dag, blk[0], set(blk), cpath, N) for blk in restricted_blk]
+        sum_lat = sum(blk_lats) + (len(restricted_blk) - 1) * delay
+        print("Critical blocks wrt. cpath:", sorted(cpath), "=>", restricted_blk, "-", "opt_lat:", sum_lat)
+
+
+def evaluate_par_dag_partitioning(dag: nx.DiGraph, partition: T_PART, opt_cost: int, opt_lat: int, root: int,
+                                  cp_end: int, M: int, L: int, N: int, delay: int, draw: bool = True):
+    """
+    Evaluate tree partitioning and print its characteristics assuming a parallelized platform execution model.
+
+    :param dag:         input tree
+    :param partition:   given partitioning
+    :param opt_cost:    optimal partitioning cost
+    :param opt_lat:     latency value of the partitioning
+    :param root:        root node
+    :param cp_end:      end node of the critical path
+    :param M:           upper memory limit
+    :param L:           latency limit
+    :param N:           CPU count
+    :param delay:       platform invocation delay
+    :param draw:        draw tree
+    """
+    print(dag.graph.get(NAME, "tree").center(80, '#'))
+    print(f"Tree partitioning [{M=}, {L=}:{(root, cp_end)}, {N=}] => {partition} - opt_cost: {opt_cost},"
+          f" opt_lat: {opt_lat}")
+    if partition:
+        cpath = set(ibacktrack_chain(dag, root, cp_end))
+        print_dag_cpath_stat(dag, partition, cpath, delay, N)
+        print_par_dag_block_stat(dag, partition, cpath, N)
+        if draw:
+            draw_dag(dag, partition, draw_weights=False)
     print('#' * 80)
 
 

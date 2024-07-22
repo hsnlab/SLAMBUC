@@ -17,9 +17,9 @@ import warnings
 import networkx as nx
 from matplotlib import pyplot as plt
 
-from slambuc.alg.ext.csp import decode_state, START, END, COST, LAT
 from slambuc.alg.app.common import *
-from slambuc.alg.util import path_blocks
+from slambuc.alg.ext.csp import decode_state, START, END, COST, LAT
+from slambuc.alg.util import path_blocks, ihierarchical_nodes
 
 PART_COLORS = ('red', 'orange', "brown", 'green', "purple", "blue", "black", "magenta")
 
@@ -111,6 +111,82 @@ def draw_tree(tree: nx.DiGraph, partition: list = None, cuts: list = None, draw_
                                lw=3, ls=':', fill=True, alpha=0.3, capstyle='round', zorder=0)
             ax.add_patch(poly)
     plt.title(tree.graph[NAME])
+    plt.tight_layout()
+    plt.show()
+    plt.close()
+
+
+def draw_dag(dag: nx.DiGraph, partition: list = None, cuts: list = None, draw_weights=False, figsize=None,
+             ax=None, **kwargs):
+    """
+    Draw tree with given partitioning in a top-down topological structure.
+
+    :param dag:             app tree
+    :param partition:       calculated partitioning (optional)
+    :param cuts:            calculated cuts (optional)
+    :param draw_weights:    draw node/edge weights instead of IDs
+    :param figsize:         figure dimensions (optional)
+    :param ax:              matplotlib axis (optional)
+    """
+    if figsize is None:
+        d = nx.dag_longest_path_length(dag)
+        figsize = (d, d)
+    if ax is None:
+        plt.figure(figsize=figsize, dpi=300)
+        ax = plt.gca()
+    colors = itertools.cycle(PART_COLORS)
+    for v in dag.nodes:
+        if COLOR in dag.nodes[v]:
+            del dag.nodes[v][COLOR]
+    dag.nodes[PLATFORM][COLOR] = "gray"
+    if partition:
+        if isinstance(partition[0], tuple):
+            if len(PART_COLORS) < len(set(p[-1] for p in partition)):
+                warnings.warn(f"Not enough colors({len(PART_COLORS)}) for all different flavor!")
+            f_colors = dict()
+            for (blk, f) in partition:
+                if f not in f_colors:
+                    f_colors[f] = next(colors)
+                for n in blk:
+                    dag.nodes[n][COLOR] = f_colors[f]
+            partition = [blk[0] for blk in partition]
+        else:
+            for node, pred in nx.bfs_predecessors(dag, PLATFORM):
+                if COLOR in dag.nodes[node]:
+                    continue
+                blk = 0
+                while node not in partition[blk]:
+                    blk += 1
+                color = next(colors)
+                if COLOR in dag.nodes[pred]:
+                    while dag.nodes[pred][COLOR] == color:
+                        color = next(colors)
+                for n in partition[blk]:
+                    dag.nodes[n][COLOR] = color
+        node_colors = [dag.nodes[n][COLOR] for n in dag.nodes]
+    else:
+        node_colors = ["tab:gray" if n is PLATFORM else "tab:green" for n in dag.nodes]
+    if cuts:
+        edge_colors = ["tab:red" if e in cuts else "black" for e in dag.edges]
+    else:
+        edge_colors = "black"
+    if draw_weights:
+        labels = {n: f"T{dag.nodes[n][RUNTIME]}\nM{dag.nodes[n][MEMORY]}" for n in dag.nodes if n is not PLATFORM}
+    else:
+        labels = {n: n for n in dag.nodes}
+    labels[PLATFORM] = PLATFORM
+    layers = {v: i for i, l in enumerate(ihierarchical_nodes(dag, PLATFORM)) for v in l}
+    for v in dag.nodes:
+        dag.nodes[v]['layer'] = layers[v]
+    # pos = nx.multipartite_layout(dag, align="horizontal", subset_key='layer', scale=1)
+    pos = nx.bfs_layout(dag, start=PLATFORM, align="horizontal", scale=1)
+    pos = {k: [x, -y] for k, (x, y) in pos.items()}
+    nx.draw(dag, ax=ax, pos=pos, arrows=True, arrowsize=20, width=2, with_labels=True, node_size=1000, font_size=10,
+            font_color="white", labels=labels, node_color=node_colors, edge_color=edge_colors, **kwargs)
+    if draw_weights:
+        e_labels = {(u, v): f"R{dag[u][v][RATE]}\nD{dag[u][v][DATA]}" for u, v in dag.edges}
+        nx.draw_networkx_edge_labels(dag, pos, edge_labels=e_labels, label_pos=0.5, font_size=10)
+    plt.title(dag.graph[NAME])
     plt.tight_layout()
     plt.show()
     plt.close()

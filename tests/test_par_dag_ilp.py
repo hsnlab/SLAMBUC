@@ -1,0 +1,124 @@
+# Copyright 2023 Janos Czentye
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at:
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+import math
+import pathlib
+import pprint
+import time
+
+import networkx as nx
+import pulp
+
+from slambuc.alg.app import NAME
+from slambuc.alg.dag.ilp import dag_partitioning, build_greedy_dag_mtx_model, greedy_dag_partitioning
+from slambuc.alg.util import ibacktrack_chain
+from slambuc.misc.plot import draw_dag
+from slambuc.misc.random import get_random_dag
+from slambuc.misc.util import (print_lp_desc, print_var_matrix, convert_var_dict, print_cost_coeffs, print_lat_coeffs,
+                               evaluate_par_dag_partitioning)
+
+
+def test_par_dag_model_creation(dag_file: str = pathlib.Path(__file__).parent / "data/graph_test_dag.gml",
+                                save_file: bool = False):
+    dag = nx.read_gml(dag_file, destringizer=int)
+    dag.graph[NAME] += "-par_ilp_mtx"
+    cpath = set(ibacktrack_chain(dag, 1, 10))
+    params = dict(dag=dag,
+                  root=1,
+                  cpath=cpath,
+                  M=6,
+                  L=430,
+                  N=2,
+                  delay=10)
+    print("  Test input  ".center(80, '='))
+    pprint.pprint(params)
+    print('=' * 80)
+    _s = time.perf_counter()
+    model_greedy, X_greedy = build_greedy_dag_mtx_model(**params)
+    _d = time.perf_counter() - _s
+    print(f"Greedy Model building time: {_d * 1000} ms")
+    X_greedy = convert_var_dict(X_greedy)
+    print("  Decision variables  ".center(80, '='))
+    print("Greedy:")
+    print_var_matrix(X_greedy)
+    print("  Cost Coefficients  ".center(80, '='))
+    print("Greedy:")
+    print_cost_coeffs(model_greedy, X_greedy)
+    print("  Latency Coefficients  ".center(80, '='))
+    print("Greedy:")
+    print_lat_coeffs(model_greedy, X_greedy)
+    print("  Generated LP model  ".center(80, '='))
+    print_lp_desc(model_greedy)
+    if save_file:
+        model_greedy.writeLP("tree_par_mtx_model.lp")
+
+
+def evaluate_ilp_par_greedy_dag_model(file_name:str = "data/graph_test_dag.gml"):
+    dag = nx.read_gml(pathlib.Path(__file__).parent / file_name, destringizer=int)
+    draw_dag(dag)
+    dag.graph[NAME] += "-par_ilp_mtx"
+    params = dict(dag=dag,
+                  root=1,
+                  cp_end=10,
+                  M=6,
+                  L=430,
+                  N=2,
+                  delay=10)
+    print("  CBC solver  ".center(80, '='))
+    partition, opt_cost, opt_lat = greedy_dag_partitioning(**params,
+                                                           solver=pulp.PULP_CBC_CMD(mip=True, warmStart=False))
+    print(f"Partitioning: {partition}, {opt_cost = }, {opt_lat = }")
+    evaluate_par_dag_partitioning(partition=partition, opt_cost=opt_cost, opt_lat=opt_lat, **params)
+
+
+########################################################################################################################
+
+def run_test(dag: nx.DiGraph, root: int, cp_end: int, M: int, L: int, N: int, delay: int):
+    partition, opt_cost, opt_lat = greedy_dag_partitioning(dag, root, M, L, N, cp_end, delay,
+                                                    solver=pulp.PULP_CBC_CMD(mip=True, warmStart=False, msg=False))
+    evaluate_par_dag_partitioning(dag, partition, opt_cost, opt_lat, root, cp_end, M, L, N, delay)
+    return partition, opt_cost, opt_lat
+
+
+def test_par_dag():
+    dag = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_dag.gml", destringizer=int)
+    dag.graph[NAME] += "-par_ilp_mtx"
+    params = dict(dag=dag,
+                  root=1,
+                  cp_end=10,
+                  M=6,
+                  # L = math.inf
+                  L=430,
+                  N=2,
+                  delay=10)
+    run_test(**params)
+
+
+def test_random_par_dag(n: int = 10, x: int = 3):
+    dag = get_random_dag(n, x)
+    dag.graph[NAME] += "-par_ilp_mtx"
+    params = dict(dag=dag,
+                  root=1,
+                  cp_end=n,
+                  M=6,
+                  L=math.inf,
+                  N=2,
+                  delay=10)
+    run_test(**params)
+
+
+if __name__ == '__main__':
+    # test_par_dag_model_creation()
+    # evaluate_ilp_par_greedy_dag_model()
+    # test_par_dag()
+    test_random_par_dag()
