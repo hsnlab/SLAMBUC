@@ -23,7 +23,7 @@ from slambuc.alg.util import recreate_subtree_blocks, split_chain, recreate_subc
     ihierarchical_edges, iclosed_subgraph
 from slambuc.generator.io import encode_service_tree, decode_service_tree, save_trees_to_file, iload_trees_from_file
 from slambuc.generator.transform import transform_autonomous_caching
-from slambuc.misc.plot import draw_tree
+from slambuc.misc.plot import draw_tree, draw_dag
 from slambuc.misc.random import get_random_chain, get_random_tree
 from slambuc.misc.util import print_tree_summary, is_compatible
 
@@ -101,9 +101,10 @@ def test_cache_transform():
     print(RUNTIME, pprint.pformat(nx.get_node_attributes(tree2, name=RUNTIME)))
 
 
-def test_dag_traversal():
-    print("data/graph_test_dag.gml")
-    dag = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_dag.gml", destringizer=int)
+def test_dag_traversal(dag_file: str = pathlib.Path(__file__).parent / "data/graph_test_dag.gml"):
+    print(dag_file)
+    dag = nx.read_gml(dag_file, destringizer=int)
+    draw_dag(dag)
     print("ihierarchical_nodes")
     for v in ihierarchical_nodes(dag, 1):
         print(v)
@@ -111,21 +112,10 @@ def test_dag_traversal():
     for v in ihierarchical_edges(dag, 1):
         print(v)
     print("iclosed_subgraph")
-    for v in iclosed_subgraph(dag, 3):
-        print(v)
-    print("data/graph_test_dag_subgraph.gml")
-    dag = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_dag_subgraph.gml", destringizer=int)
-    for v in iclosed_subgraph(dag, 1):
-        print(v)
-    print('-' * 10)
-    for v in iclosed_subgraph(dag, 2):
-        print(v)
-    print('-' * 10)
-    for v in iclosed_subgraph(dag, 3):
-        print(v)
-    print('-' * 10)
-    for v in iclosed_subgraph(dag, 4):
-        print(v)
+    for j in dag.nodes:
+        print(f"---- {j}")
+        for v in iclosed_subgraph(dag, j):
+            print(v)
 
 
 if __name__ == '__main__':
@@ -139,4 +129,5 @@ if __name__ == '__main__':
     # test_tree_enc_dec()
     # test_tree_io()
     # test_cache_transform()
-    test_dag_traversal()
+    # test_dag_traversal()
+    test_dag_traversal("failed.gml")

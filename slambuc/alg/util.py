@@ -235,18 +235,18 @@ def iflattened_tree(tree: nx.DiGraph, root: int) -> Generator[list[int]]:
             yield list(itertools.chain(chain, *subchains))
 
 
-def isubtree_bfs(tree: nx.DiGraph, root: int, inclusive: bool = True) -> Generator[int]:
+def isubtree_bfs(tree: nx.DiGraph, source: int, inclusive: bool = True) -> Generator[int]:
     """
     Return nodes in BFS traversal of the given *tree* started from *root*.
 
     :param tree:        input tree
-    :param root:        root node
+    :param source:        root node
     :param inclusive:   also returns the source node
     :return:            generator of tree nodes
     """
-    children = collections.deque((root,))
+    children = collections.deque((source,))
     if inclusive:
-        yield root
+        yield source
     while children:
         u = children.popleft()
         for v in tree.successors(u):
@@ -322,11 +322,15 @@ def ihierarchical_edges(dag: nx.DiGraph, source: int) -> Generator[int]:
     :return:        generator of subgraph edges
     """
     level = collections.deque((source,))
+    visited = set()
     while level:
         children = []
         while level:
             u = level.popleft()
-            for v in dag.succ[u]:
+            if u in visited:
+                continue
+            visited.add(u)
+            for v in dag.successors(u):
                 children.append((u, v))
         if children:
             yield children
@@ -1047,8 +1051,8 @@ def gen_subchain_latency(tree: nx.DiGraph, barr: int, nodes: set[int], cpath: se
     if barr not in cpath:
         return 0
     chain = sorted(nodes & cpath)
-    # Get next cpath node following the given group
-    cb = next(filter(lambda v: v in cpath, tree.successors(chain[-1])), None)
+    # Get the next cpath node following the given group
+    cb = next(filter(lambda _v: _v in cpath, tree.successors(chain[-1])), None)
     p = next(tree.predecessors(barr))
     return sum(((n_v * exec_calc(v, tree.nodes[v][RUNTIME], int(N / tree.nodes[v].get(CPU, 1))) +
                  (n_v * math.ceil(tree[v][cb][RATE] / (tree[u][v][RATE] * N)) * tree[v][cb][DATA]
@@ -1070,11 +1074,12 @@ def par_subgraph_cost(dag: nx.DiGraph, barr: int, nodes: set[int], N: int = 1) -
     :param N:       CPU count
     :return:        calculated cost
     """
-    R_b = sum(dag[p][barr][RATE] for p in dag.pred[barr])
-    return sum((par_inst_count(R_b, sum(dag[p][v][RATE] for p in dag.pred[v]), N) * dag.nodes[v][RUNTIME] +
-                sum(par_inst_count(R_b, vs[RATE], N) * vs[DATA] for s, vs in dag.succ[v].items() if s not in nodes)
+    R_b = sum(dag[p][barr][RATE] for p in dag.predecessors(barr))
+    return sum((par_inst_count(R_b, sum(dag[p][v][RATE] for p in dag.predecessors(v)), N) * dag.nodes[v][RUNTIME] +
+                sum(par_inst_count(R_b, dag[v][vs][RATE], N) * dag[v][vs][DATA]
+                    for vs in dag.successors(v) if vs not in nodes)
                 for v in nodes),
-               start=sum(dag[p][barr][RATE] * dag[p][barr][DATA] for p in dag.pred[barr]))
+               start=sum(dag[p][barr][RATE] * dag[p][barr][DATA] for p in dag.predecessors(barr)))
 
 
 def par_subgraph_latency(dag: nx.DiGraph, barr: int, nodes: set[int], cpath: set[int], N: int = 1) -> int:
@@ -1092,14 +1097,15 @@ def par_subgraph_latency(dag: nx.DiGraph, barr: int, nodes: set[int], cpath: set
         return 0
     chain = sorted(nodes & cpath)
     # Get the next cpath node following the given group
-    cb = next(filter(lambda v: v in cpath, dag.successors(chain[-1])), None)
-    p = next((p for p in dag.predecessors(barr) if p in cpath or p is PLATFORM))
+    cb = next(filter(lambda _v: _v in cpath, dag.successors(chain[-1])), None)
+    pb = next(filter(lambda _p: _p in cpath or _p is PLATFORM, dag.predecessors(barr)), None)
     return sum(((n_v * dag.nodes[v][RUNTIME] +
-                 (n_v * math.ceil(dag[v][cb][RATE] / (sum(dag[u][v][RATE] for u in dag.predecessors(v)) * N))
-                  * dag[v][cb][DATA] if v == chain[-1] and cb is not None else 0))
-                for n_v, v in
-                zip(ipar_mul_factor((sum(dag[i][j][RATE] for i in dag.predecessors(j)) for j in chain), N), chain)),
-               start=dag[p][barr][DATA])
+                 (n_v * math.ceil(dag[v][cb][RATE] / (dag[u][v][RATE] * N)) * dag[v][cb][DATA]
+                  if v == chain[-1] and cb is not None else 0))
+                for n_v, (u, v) in zip(ipar_mul_factor((dag[i][j][RATE]
+                                                        for i, j in itertools.pairwise([pb, *chain])), N),
+                                       itertools.pairwise([pb, *chain]))),
+               start=dag[pb][barr][DATA])
 
 
 def par_subgraph_memory(dag: nx.DiGraph, barr: int, nodes: list[int] | set[int], N: int = 1) -> int:
