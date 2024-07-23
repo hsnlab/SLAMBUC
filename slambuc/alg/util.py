@@ -359,6 +359,28 @@ def ihierarchical_nodes(dag: nx.DiGraph, source: int) -> Generator[int]:
         visited.update(children)
 
 
+def isubgraph_bfs(dag: nx.DiGraph, source: int, inclusive: bool = True) -> Generator[int]:
+    """
+    Return nodes in BFS traversal of the given *DAG* graph started from *root* without node revisiting.
+
+    :param dag:         input tree
+    :param source:      root node
+    :param inclusive:   also returns the source node
+    :return:            generator of tree nodes
+    """
+    children = collections.deque((source,))
+    visited = set()
+    if inclusive:
+        yield source
+    while children:
+        u = children.popleft()
+        for v in dag.successors(u):
+            if v not in visited:
+                children.append(v)
+                yield v
+        visited.update(children)
+
+
 def iclosed_subgraph(dag: nx.DiGraph, source: int, inclusive: bool = True) -> Generator[int]:
     """
     Generate subgraph nodes that have ingress edges from inside the subgraph.

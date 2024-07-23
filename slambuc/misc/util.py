@@ -220,7 +220,7 @@ def print_chain_summary(runtime: list[int], memory: list[int], rate: list[int]):
 
 def evaluate_chain_partitioning(partition: T_PART, opt_cost: int, opt_lat: int, runtime: list, memory: list, rate: list,
                                 M: int = math.inf, N: int = math.inf, L: int = math.inf, start: int = 0,
-                                end: int = None, delay: int = 1, unit: int = 100):
+                                end: int = None, delay: int = 1, unit: int = 100, **params):
     """
     Evaluate chain partitioning and print its characteristics.
 
@@ -344,7 +344,7 @@ def print_cpath_stat(tree: nx.DiGraph, partition: T_PART, cpath: list[int] = Non
 
 
 def evaluate_tree_partitioning(tree: nx.DiGraph, partition: T_PART, opt_cost: int, root: int, cp_end: int, M: int,
-                               N: int, L: int, delay: int, unit: int):
+                               N: int, L: int, delay: int, unit: int, **params):
     """
     Evaluate tree partitioning and print its characteristics.
 
@@ -409,7 +409,7 @@ def print_ser_cpath_stat(tree: nx.DiGraph, partition: T_PART, cpath: list[int] =
 
 
 def evaluate_ser_tree_partitioning(tree: nx.DiGraph, partition: T_PART, opt_cost: int, opt_lat: int, root: int,
-                                   cp_end: int, M: int, L: int, delay: int, draw: bool = True):
+                                   cp_end: int, M: int, L: int, delay: int, draw: bool = True, **params):
     """
     Evaluate tree partitioning and print its characteristics assuming serialized platform execution model.
 
@@ -477,7 +477,7 @@ def print_par_cpath_stat(tree: nx.DiGraph, partition: T_PART, cpath: list[int] =
 
 
 def evaluate_par_tree_partitioning(tree: nx.DiGraph, partition: T_PART, opt_cost: int, opt_lat: int, root: int,
-                                   cp_end: int, M: int, L: int, N: int, delay: int, draw: bool = True):
+                                   cp_end: int, M: int, L: int, N: int, delay: int, draw: bool = True, **params):
     """
     Evaluate tree partitioning and print its characteristics assuming a parallelized platform execution model.
 
@@ -510,7 +510,7 @@ def evaluate_par_tree_partitioning(tree: nx.DiGraph, partition: T_PART, opt_cost
 
 
 def evaluate_gen_tree_partitioning(tree: nx.DiGraph, partition: T_PART, opt_cost: int, opt_lat: int, root: int,
-                                   flavors: list, cp_end: int, L: int, delay: int, draw: bool = True):
+                                   flavors: list, cp_end: int, L: int, delay: int, draw: bool = True, **params):
     """
     Evaluate tree partitioning and print its characteristics assuming parallelized platform execution model.
 
@@ -579,7 +579,7 @@ def print_ser_block_stat(partition: T_PART, runtime: list[int], memory: list[int
 
 def evaluate_ser_chain_partitioning(partition: T_PART, opt_cost: int, opt_lat: int, runtime: list[int],
                                     memory: list[int], rate: list[int], data: list[int], M: int = math.inf,
-                                    L: int = math.inf, start: int = 0, end: int = None, delay: int = 1):
+                                    L: int = math.inf, start: int = 0, end: int = None, delay: int = 1, **params):
     """
     Evaluate chain partitioning and print its characteristics assuming serialized execution model.
 
@@ -641,7 +641,7 @@ def print_dag_cpath_stat(dag: nx.DiGraph, partition: T_PART, cpath: list[int] = 
 
 
 def evaluate_par_dag_partitioning(dag: nx.DiGraph, partition: T_PART, opt_cost: int, opt_lat: int, root: int,
-                                  cp_end: int, M: int, L: int, N: int, delay: int, draw: bool = True):
+                                  cp_end: int, M: int, L: int, N: int, delay: int, draw: bool = True, **params):
     """
     Evaluate tree partitioning and print its characteristics assuming a parallelized platform execution model.
 

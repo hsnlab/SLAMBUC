@@ -20,7 +20,7 @@ import networkx as nx
 
 from slambuc.alg.app import PLATFORM, RUNTIME, DATA
 from slambuc.alg.util import recreate_subtree_blocks, split_chain, recreate_subchain_blocks, ihierarchical_nodes, \
-    ihierarchical_edges, iclosed_subgraph
+    ihierarchical_edges, iclosed_subgraph, isubgraph_bfs
 from slambuc.generator.io import encode_service_tree, decode_service_tree, save_trees_to_file, iload_trees_from_file
 from slambuc.generator.transform import transform_autonomous_caching
 from slambuc.misc.plot import draw_tree, draw_dag
@@ -110,6 +110,9 @@ def test_dag_traversal(dag_file: str = pathlib.Path(__file__).parent / "data/gra
         print(v)
     print("ihierarchical_edges")
     for v in ihierarchical_edges(dag, 1):
+        print(v)
+    print("isubgraph_bfs")
+    for v in isubgraph_bfs(dag, 1):
         print(v)
     print("iclosed_subgraph")
     for j in dag.nodes:

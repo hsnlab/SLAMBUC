@@ -312,7 +312,7 @@ def build_par_tree_mtx_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
     model += sum_cost
     # Feasibility constraints, X[root][root] = 1 can be omitted else it ensures that X[root][root] must be 1
     for i in filter(lambda x: x != root, X):
-        model += lp.lpSum(X[i].values()) == 1, f"C_f{i:02d}"
+        model += lp.lpSum(X[i].values()) == 1, f"Cf_{i:02d}"
     # Path-tree constraints
     if subchains:
         for pt in ((lp.lpSum(X[i][j] for i in tree.successors(v)) <= 1, f"Cp_{j:02d}_{v:02d}")

@@ -21,12 +21,14 @@ from collections.abc import Callable
 import networkx as nx
 import tabulate
 
-from slambuc.alg.chain import *
-from slambuc.alg.ext import *
 from slambuc.alg.app import RUNTIME, MEMORY, RATE, DATA, Flavor
+from slambuc.alg.chain import *
+from slambuc.alg.dag import *
+from slambuc.alg.dag.ilp import greedy_dag_partitioning
+from slambuc.alg.ext import *
 from slambuc.alg.tree import *
-from slambuc.alg.tree.path.seq_state import cacheless_path_tree_partitioning, stateful_path_tree_partitioning
 from slambuc.alg.tree.parallel.pseudo import pseudo_par_btree_partitioning
+from slambuc.alg.tree.path.seq_state import cacheless_path_tree_partitioning, stateful_path_tree_partitioning
 from slambuc.alg.util import ibacktrack_chain, split_chain
 from slambuc.misc.util import get_cplex_path
 
@@ -56,6 +58,14 @@ def with_single_flavor(alg: Callable):
     @functools.wraps(alg)
     def input_wrapper(M: int = math.inf, N: int = 1, **kwargs):
         return alg(flavors=[Flavor(mem=M, ncore=N)], **kwargs)
+
+    return input_wrapper
+
+
+def with_tree(alg: Callable):
+    @functools.wraps(alg)
+    def input_wrapper(tree: nx.DiGraph, **kwargs):
+        return alg(dag=tree, **kwargs)
 
     return input_wrapper
 
@@ -115,7 +125,10 @@ TREE_ALGS = dict(
     CPATH_SP_CHAIN=on_critical_path(sp_chain_partitioning, with_cpu=False),
     GREEDY_CPATH_SER_CHAIN=on_critical_path(greedy_ser_chain_partitioning, with_cpu=False, extract=False),
     CPATH_SER_CFG_ILP=on_critical_path(chain_cfg_partitioning, with_cpu=False, extract=False),
-    CPATH_SER_MTX_ILP=on_critical_path(chain_mtx_partitioning, with_cpu=False, extract=False)
+    CPATH_SER_MTX_ILP=on_critical_path(chain_mtx_partitioning, with_cpu=False, extract=False),
+    # DAG partitioning
+    DAG_ILP_MTX=with_tree(dag_partitioning),
+    DAG_GREEDY_ILP_MTX=with_tree(greedy_dag_partitioning)
 )
 
 
