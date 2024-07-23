@@ -116,8 +116,7 @@ def draw_tree(tree: nx.DiGraph, partition: list = None, cuts: list = None, draw_
     plt.close()
 
 
-def draw_dag(dag: nx.DiGraph, partition: list = None, cuts: list = None, draw_weights=False, figsize=None,
-             ax=None, **kwargs):
+def draw_dag(dag: nx.DiGraph, partition: list = None, draw_weights=False, figsize=None, ax=None, **kwargs):
     """
     Draw tree with given partitioning in a top-down topological structure.
 
@@ -163,12 +162,13 @@ def draw_dag(dag: nx.DiGraph, partition: list = None, cuts: list = None, draw_we
                         color = next(colors)
                 for n in partition[blk]:
                     dag.nodes[n][COLOR] = color
+            for u, v in dag.edges:
+                if dag.nodes[u][COLOR] == dag.nodes[v][COLOR]:
+                    dag[u][v][COLOR] = dag.nodes[v][COLOR]
         node_colors = [dag.nodes[n][COLOR] for n in dag.nodes]
+        edge_colors = [dag[u][v][COLOR] if COLOR in dag[u][v] else "lightgray" for u, v in dag.edges]
     else:
         node_colors = ["tab:gray" if n is PLATFORM else "tab:green" for n in dag.nodes]
-    if cuts:
-        edge_colors = ["tab:red" if e in cuts else "black" for e in dag.edges]
-    else:
         edge_colors = "black"
     if draw_weights:
         labels = {n: f"T{dag.nodes[n][RUNTIME]}\nM{dag.nodes[n][MEMORY]}" for n in dag.nodes if n is not PLATFORM}
