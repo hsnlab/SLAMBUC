@@ -43,7 +43,7 @@ latest Python environment on Ubuntu.
 
 ```bash
 sudo add-apt-repository -y 'ppa:deadsnakes/ppa' && sudo apt update
-sudo apt install python3.11-dev python3.11-dev
+sudo apt install python3.11 python3.11-dev
 sudo curl -sS https://bootstrap.pypa.io/get-pip.py | sudo python3.11
 ```
 
