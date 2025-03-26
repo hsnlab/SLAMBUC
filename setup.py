@@ -31,14 +31,13 @@ setuptools.setup(
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
-        "License :: OSI Approved :: Apache Software License",
         "Operating System :: POSIX :: Linux",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Topic :: Software Development :: Libraries :: Python Modules"
     ],
     python_requires='>=3.10',
-    license="Apache 2.0",
+    # license="Apache 2.0",
     keywords="cloud serverless ilp dp tree",
     install_requires=[
         'networkx~=3.3',
