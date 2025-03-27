@@ -170,3 +170,5 @@ environment.env
 out/
 *.pdf
 *.pgf
+
+token.txt

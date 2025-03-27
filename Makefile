@@ -18,7 +18,7 @@ release: build check
 	git pull origin main
 	git push origin main
 	git push --tags
-	twine upload --repository pypi dist/*
+	cat token.txt | xargs -I {} twine upload --repository pypi -u __token__ -p {} dist/*
 
 ######## Testing
 

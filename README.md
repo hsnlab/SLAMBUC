@@ -3,7 +3,7 @@
 [![PyPI](https://img.shields.io/pypi/v/SLAMBUC)](https://pypi.org/project/SLAMBUC/)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/SLAMBUC)](https://pypi.org/project/SLAMBUC/#history)
 [![Downloads](https://static.pepy.tech/badge/slambuc)](https://pepy.tech/project/slambuc)
-[![PyPI - License](https://img.shields.io/pypi/l/SLAMBUC)](LICENSE)
+[![GitHub License](https://img.shields.io/github/license/hsnlab/SLAMBUC)]((https://img.shields.io/github/license/hsnlab/SLAMBUC))
 [![pytest-py3.10](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-tests_py3.10.yml/badge.svg)](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-tests_py3.10.yml)
 [![pytest-py3.11](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-tests_py3.11.yml/badge.svg)](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-tests_py3.11.yml)
 [![Algorithm validations](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-validation.yml/badge.svg?branch=main)](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-validation.yml)
