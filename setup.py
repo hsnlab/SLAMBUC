@@ -40,7 +40,7 @@ setuptools.setup(
         "Topic :: Software Development :: Libraries :: Python Modules"
     ],
     python_requires='>=3.10',
-    # license="Apache 2.0",
+    license="Apache 2.0",
     keywords="cloud serverless ilp dp tree",
     install_requires=[
         'numpy~=2.3.3',

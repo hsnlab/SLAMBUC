@@ -10,15 +10,15 @@ build: clean
 check:
 	twine check dist/*
 
-publish: build check
-	twine upload --repository pypi dist/*
-
 release: build check
 	git tag -a `python3.13 -c "import slambuc;print(slambuc.__version__)"` -m  "New version release"
 	git pull origin main
 	git push origin main
 	git push --tags
-	cat token.txt | xargs -I {} twine upload --repository pypi -u __token__ -p {} dist/*
+
+publish: build check
+	#cat token.txt | xargs -I {} twine upload --repository pypi -u __token__ -p {} dist/*
+	twine upload --verbose --repository SLAMBUC dist/*
 
 ######## Testing
 
@@ -28,12 +28,13 @@ test:
 	#python3.10 -m pytest -vv tests/
 
 test-publish: build check
-	twine upload --repository testpypi dist/*
+	twine upload --verbose --repository test-SLAMBUC dist/*
 
 ######## Installation
 
 install-req:
 	sudo apt install python3.13-dev graphviz libgraphviz-dev pkg-config glpk-utils
+	python3.13 -m pip install -U pip
 	python3.13 -m pip install -U -r requirements.txt
 
 dev-install: install-req
