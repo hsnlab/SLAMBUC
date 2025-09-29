@@ -48,7 +48,7 @@ setuptools.setup(
         'matplotlib~=3.10.6',
         'pandas~=2.3.2',
         'scipy~=1.16.2',
-        'cspy>=1.0.0.a0',
+        'cspy>=0.1.2',
     ],
     extras_require={'tests': ['pytest~=8.4.2',
                               'pygraphviz~=1.13',
