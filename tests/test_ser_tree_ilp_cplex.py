@@ -22,9 +22,14 @@ import pytest
 
 from slambuc.alg import LP_LAT
 from slambuc.alg.app import NAME
-from slambuc.alg.tree.serial.ilp_cplex import (build_greedy_tree_cplex_model, build_tree_cplex_model,
-                                               tree_cplex_partitioning, extract_subtrees_from_cplex_xmatrix,
-                                               build_tree_cfg_cpo_model, CPO_PATH, recreate_subtrees_from_cpo_xdict)
+
+try:
+    from slambuc.alg.tree.serial.ilp_cplex import (build_greedy_tree_cplex_model, build_tree_cplex_model,
+                                                   tree_cplex_partitioning, extract_subtrees_from_cplex_xmatrix,
+                                                   build_tree_cfg_cpo_model, CPO_PATH, recreate_subtrees_from_cpo_xdict)
+except ImportError:
+    pytest.skip(allow_module_level=True)
+
 from slambuc.alg.util import ibacktrack_chain
 from slambuc.misc.random import get_random_tree
 from slambuc.misc.util import (evaluate_ser_tree_partitioning, print_var_matrix, convert_var_dict,
