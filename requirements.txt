@@ -1,20 +1,20 @@
-numpy~=1.26.4
+numpy~=2.3.3
 networkx~=3.3
-matplotlib~=3.9.1
-# sudo apt install python3.11-dev graphviz libgraphviz-dev pkg-config
+matplotlib~=3.10.6
+# sudo apt install python3.13-dev graphviz libgraphviz-dev pkg-config
 pygraphviz~=1.13
-pandas~=2.2.2
+pandas~=2.3.2
 tabulate~=0.9.0
 # sudo apt install glpk-utils
-PuLP~=2.9.0
-# docplex~=2.25.236
-cspy~=1.0.3
-# spar~=0.0.7
-scipy~=1.14.0
-Click~=8.1.7
-psutil~=6.0.0
+PuLP~=3.3.0
+cspy>=0.1.2
+scipy~=1.16.2
+Click~=8.3.0
+Pillow~=11.3.0
+psutil~=7.1.0
 pydoc-markdown~=4.8.2
-pytest~=8.2.2
+pytest~=8.4.2
 #SLAMBUC~=0.3.0
-fitter~=1.7.1
-docplex~=2.27.239
+#spar~=0.0.7
+#fitter~=1.7.1
+docplex~=2.30.251

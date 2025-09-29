@@ -43,8 +43,8 @@ latest Python environment on Ubuntu.
 
 ```bash
 sudo add-apt-repository -y 'ppa:deadsnakes/ppa' && sudo apt update
-sudo apt install python3.11 python3.11-dev
-sudo curl -sS https://bootstrap.pypa.io/get-pip.py | sudo python3.11
+sudo apt install python3.13 python3.13-dev
+sudo curl -sS https://bootstrap.pypa.io/get-pip.py | sudo python3.13
 ```
 
 ### SLAMBUC package
@@ -53,13 +53,13 @@ The easiest way to get our algorithms collected in [SLAMBUC](slambuc) is to inst
 [PyPI repository](https://pypi.org/project/SLAMBUC/).
 
 ```bash
-python3.11 -m pip install slambuc
+python3.13 -m pip install slambuc
 ```
 
 However, for the latest changes, it can be installed directly from GitHub as follows.
 
 ```bash
-python3.11 -m pip install --no-cache-dir git+https://github.com/hsnlab/SLAMBUC.git
+python3.13 -m pip install --no-cache-dir git+https://github.com/hsnlab/SLAMBUC.git
 ```
 
 Tree plotting relies on networkx's internal plotting feature that generates a layout based on the
@@ -68,7 +68,7 @@ Thus, in that case, the related dependencies must be installed first.
 
 ```bash
 sudo apt-get install graphviz graphviz-dev
-python3.11 -m pip install pygraphviz
+python3.13 -m pip install pygraphviz
 ```
 
 External solvers can also be used in LP-based algorithms that require the given solver packages to be
@@ -104,8 +104,8 @@ and monitor elapsed time and memory demands of tested algorithms initiated as se
 To install additional dependencies, run the following commands.
 
 ```bash
-python3.11 -m pip install slambuc[tests]      # For executing tests
-python3.11 -m pip install slambuc[validation] # For using our test harness framework
+python3.13 -m pip install slambuc[tests]      # For executing tests
+python3.13 -m pip install slambuc[validation] # For using our test harness framework
 ```
 
 ## Usage
@@ -176,13 +176,13 @@ environment can be set up with the following commands.
 
 ```bash
 git clone https://github.com/hsnlab/SLAMBUC.git
-python3.11 -m pip install -U -r SLAMBUC/requirements.txt
-python3.11 -m pip install --no-deps -e SLAMBUC/
+python3.13 -m pip install -U -r SLAMBUC/requirements.txt
+python3.13 -m pip install --no-deps -e SLAMBUC/
 # OR
 cd SLAMBUC && make install-req && make dev-install
 
 ## Remove editing-mode package outside of repo root
-python3.11 -m pip uninstall slambuc
+python3.13 -m pip uninstall slambuc
 # OR
 make uninstall
 ```
