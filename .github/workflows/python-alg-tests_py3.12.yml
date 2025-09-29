@@ -1,4 +1,4 @@
-name: pytest-py3.11
+name: pytest-py3.12
 
 on:
   push:
@@ -14,25 +14,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python 3.11
+    - name: Set up Python 3.12
       uses: actions/setup-python@v4
       with:
-        python-version: "3.11"
+        python-version: "3.12"
     - uses: actions/cache@v4
       id: cache
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements_py3.10.txt') }}
         restore-keys: | 
           ${{ runner.os }}-pip-
     - name: Install system dependencies
       run: |
-        sudo apt update && sudo apt install -y graphviz graphviz-dev glpk-utils
+        sudo apt update && sudo apt install -y graphviz libgraphviz-dev pkg-config glpk-utils
     - name: Install Python dependencies
       run: |
-        python3.11 -m pip install -v --upgrade pip
-        python3.11 -m pip install -v -U -r requirements.txt
-        python3.11 -m pip install -vv -e .
+        python3.12 -m pip install -v --upgrade pip
+        python3.12 -m pip install -v -U -r requirements_py3.12.txt
+        python3.12 -m pip install -vv -e .
     - name: Test with pytest
       run: |
-        python3.11 -m pytest -vv tests/
+        python3.12 -m pytest -vv tests/

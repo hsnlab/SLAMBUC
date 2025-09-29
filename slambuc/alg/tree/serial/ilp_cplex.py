@@ -21,8 +21,8 @@ import docplex.cp.model as cpo
 import docplex.mp.model as cpx
 import networkx as nx
 
-if sys.version_info.minor > 10 and docplex.docplex_version_minor <= 25:
-    warnings.warn(f"docplex[{docplex.version.docplex_version_string}] package does not support Python version >3.10!")
+if sys.version_info.minor > 10 and docplex.docplex_version_minor <= 30:
+    warnings.warn(f"docplex[{docplex.version.docplex_version_string}] package does not support Python version >3.12!")
 
 from slambuc.alg import LP_LAT, INFEASIBLE, T_RESULTS, T_PART
 from slambuc.alg.app import *

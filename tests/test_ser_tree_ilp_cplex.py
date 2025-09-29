@@ -129,7 +129,7 @@ def test_cplex_model_creation(save_file: bool = False):
 
 
 @pytest.mark.skipif(get_cplex_path() is None, reason="CPLEX is not available!")
-@pytest.mark.skipif(not (sys.version_info < (3, 11)), reason="PY version is not supported!")
+@pytest.mark.skipif(not (sys.version_info < (3, 13)), reason="PY version is not supported!")
 def test_cplex_model_solution():
     tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-cplex_ser"
@@ -176,7 +176,7 @@ def run_test(tree: nx.DiGraph, root: int, cp_end: int, M: int, L: int, delay: in
 
 
 @pytest.mark.skipif(get_cplex_path() is None, reason="CPLEX is not available!")
-@pytest.mark.skipif(not (sys.version_info < (3, 11)), reason="PY version is not supported!")
+@pytest.mark.skipif(not (sys.version_info < (3, 13)), reason="PY version is not supported!")
 def test_ser_tree():
     tree = nx.read_gml(pathlib.Path(__file__).parent / "data/graph_test_tree_ser.gml", destringizer=int)
     tree.graph[NAME] += "-cplex_ser"
@@ -191,7 +191,7 @@ def test_ser_tree():
 
 
 @pytest.mark.skipif(get_cplex_path() is None, reason="CPLEX is not available!")
-@pytest.mark.skipif(not (sys.version_info < (3, 11)), reason="PY version is not supported!")
+@pytest.mark.skipif(not (sys.version_info < (3, 13)), reason="PY version is not supported!")
 def test_random_ser_tree(n: int = 10):
     tree = get_random_tree(n)
     tree.graph[NAME] += "-cplex_ser"

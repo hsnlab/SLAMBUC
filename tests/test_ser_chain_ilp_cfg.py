@@ -112,7 +112,7 @@ def test_cfg_model_solution():
 
 
 @pytest.mark.skipif(get_cplex_path() is None, reason="CPLEX is not available!")
-@pytest.mark.skipif(not (sys.version_info < (3, 11)), reason="PY version is not supported!")
+@pytest.mark.skipif(not (sys.version_info < (3, 13)), reason="PY version is not supported!")
 def test_cfg_model_solution_cplex():
     params = dict(runtime=[20, 10, 30, 20],
                   memory=[3, 3, 2, 1],
