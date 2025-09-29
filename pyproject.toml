@@ -24,7 +24,6 @@ classifiers = [
 ]
 dependencies = [
     'matplotlib~=3.10.6',
-    'Pillow~=11.3.0',
     'networkx~=3.5',
     'numpy~=2.3.3',
     'pandas~=2.3.2',

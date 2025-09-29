@@ -82,10 +82,10 @@ the following solvers are tested.
 
 It is worth noting that CPLEX's python wrapper [docplex](https://pypi.org/project/docplex/)
 (as a replacement for PuLP) is left behind the latest Python version. For using this API, requirements
-are prepared separately for **Python3.10**.
+are prepared separately for **Python3.12**.
 
 ```bash
-python3.10 -m pip install -U -r requirements_py3.10.txt
+python3.10 -m pip install -U -r requirements_py3.12.txt
 ```
 
 For solving constrained shortest path problems (CSP), we apply solution methods from
