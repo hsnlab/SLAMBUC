@@ -1,8 +1,8 @@
 numpy~=2.3.3
-networkx~=3.3
+networkx~=3.5
 matplotlib~=3.10.6
 # sudo apt install python3.13-dev graphviz libgraphviz-dev pkg-config
-pygraphviz~=1.13
+pygraphviz~=1.14
 pandas~=2.3.2
 tabulate~=0.9.0
 # sudo apt install glpk-utils
@@ -13,7 +13,6 @@ Click
 psutil
 pydoc-markdown
 pytest
-#SLAMBUC~=0.3.0
-#spar~=0.0.7
+#docplex~=2.30.251
 #fitter~=1.7.1
-docplex
+#spar~=0.0.7
