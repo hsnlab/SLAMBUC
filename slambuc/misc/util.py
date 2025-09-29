@@ -743,5 +743,5 @@ def print_lat_coeffs(model: pulp.LpProblem, X: list[list[pulp.LpVariable]]):
     :param model:   model object
     :param X:       specific structure of decision variables
     """
-    print(tabulate.tabulate([[model.constraints[LP_LAT].get(x) for x in x_i] for x_i in X],
+    print(tabulate.tabulate([[model.constraints[LP_LAT].get(x, default=None) for x in x_i] for x_i in X],
                             missingval="-", numalign='center', stralign='center', tablefmt='outline'))
