@@ -151,6 +151,9 @@ Used algorithmic parameters (if applicable):
   * Cost approximation ratio (Epsilon): 0.0
   * Latency violation ratio (Lambda): 0.0
 
+One of the example tree with node/edge weights (execution time: **T**, memory: **M**, data R/W: **D**, 
+invocation rate: **R**) is depicted below:
+![example_Tree](tests/data/valitdate_example_tree.png)
 Exact algorithms are configured to yield all optimal solutions (if exists) with the numerating 
 format `{alg}_{num}`.
 

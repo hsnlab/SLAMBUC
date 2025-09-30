@@ -21,6 +21,8 @@ import pathlib
 import random
 import time
 
+import matplotlib
+import matplotlib.pyplot as plt
 import networkx as nx
 import pandas as pd
 import pulp
@@ -36,9 +38,11 @@ from slambuc.alg.tree.parallel.pseudo import pseudo_par_btree_partitioning
 from slambuc.alg.tree.serial import *
 from slambuc.alg.tree.serial.ilp_cplex import tree_cplex_partitioning, tree_cpo_partitioning
 from slambuc.alg.util import ibacktrack_chain, ser_subchain_latency
+from slambuc.misc.plot import draw_tree
 from slambuc.misc.random import get_random_tree
 from slambuc.misc.util import get_cplex_path
 
+# matplotlib.use('Agg')
 CPLEX_PATH = get_cplex_path()
 
 TREE_ALGS = dict(
@@ -127,6 +131,7 @@ def compare_results(tree_path: str = None, L: int = math.inf):
     print(tabulate.tabulate(stats, ['Alg.', 'Partition', 'Cost', 'Latency', 'Time (s)'],
                             colalign=('left', 'left', 'decimal', 'decimal', 'decimal'), tablefmt='pretty',
                             missingval='-'))
+    # draw_tree(tree, figsize=(4, 6), draw_weights=True)
 
 
 def test_latencies():

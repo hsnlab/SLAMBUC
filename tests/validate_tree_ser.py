@@ -23,6 +23,9 @@ import time
 import networkx as nx
 import pandas as pd
 import tabulate
+from docplex.cp.utils import CpoException
+from docplex.mp.utils import DOcplexException
+from pulp import PulpSolverError
 
 from slambuc.alg.app import *
 from slambuc.alg.tree.serial import *
@@ -53,7 +56,12 @@ def run_all_tree_ser_tests(params: dict) -> list:
     for name, tree_alg in TREE_ALGS.items():
         print(f"Executing {name}")
         t_start = time.perf_counter()
-        result = tree_alg(**params)
+        try:
+            result = tree_alg(**params)
+        except (PulpSolverError, DOcplexException, CpoException) as e :
+            print(f"Pulp solver failed for {name} with message: {e}")
+            stats.append([name, [], None, None, None])
+            continue
         alg_time = time.perf_counter() - t_start
         if name.startswith('GREEDY'):
             stats.extend([[name + f'_{i}', *res, round(alg_time, ndigits=8)] for i, res in enumerate(result)])
