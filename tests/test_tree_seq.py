@@ -45,6 +45,7 @@ def test_tree_partitioning():
 
 def test_random_tree_partitioning(n: int = 10):
     tree = get_random_tree(n)
+    # noinspection PyUnresolvedReferences
     tree.graph[NAME] += "-seq"
     params = dict(tree=tree,
                   root=1,

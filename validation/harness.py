@@ -101,7 +101,7 @@ def calc_min_max_latency(tree: nx.DiGraph, cpath: list[int], delay: int, N: int 
     return min_lats, max_lats
 
 
-def est_min_max_latency(tree: nx.DiGraph, cpath: list[int], delay: int, N: int = 1) -> list[int, int]:
+def est_min_max_latency(tree: nx.DiGraph, cpath: list[int], delay: int, N: int = 1) -> list[int]:
     """Estimate the min/max latency values for the given *cpath* by considering all cuts and singleton group cases."""
     cp_set = set(cpath)
     singleton_lat = sum(par_subchain_latency(tree, v, {v}, cp_set, N) for v in cpath) + (len(cpath) - 1) * delay
@@ -124,8 +124,8 @@ def test_cleanup(tmp: str = "/tmp"):
 ########################################################################################################################
 
 
-def run_all_algs(algs: dict[str, collections.abc.Callable], params: dict[str, int | float | nx.DiGraph],
-                 timeout: int = 0, sdelay: int = 0) -> list[int | str]:
+def run_all_algs(algs: dict[str, collections.abc.Callable], params: dict, timeout: int = 0,
+                 sdelay: int = 0) -> list[int | str]:
     """Perform test case of all given algorithms with given parameters and return execution statistics."""
     stats = []
     for alg_name, tree_alg in algs.items():
@@ -153,6 +153,7 @@ def run_all_algs(algs: dict[str, collections.abc.Callable], params: dict[str, in
         finally:
             if t_delta is None:
                 t_delta = time.perf_counter() - t_start
+            # noinspection PyUnresolvedReferences
             stats.append([params['tree'].graph[NAME], alg_name, params['M'], params['L'], params.get('N'),
                           decode_partitioning(result[0]), *result[1:], t_delta])
     return stats
@@ -160,7 +161,7 @@ def run_all_algs(algs: dict[str, collections.abc.Callable], params: dict[str, in
 
 def validate(algs: dict[str, collections.abc.Callable], tree: nx.DiGraph, mem_coeff: int | float = 0.5,
              lat_coeff: int | float = 0.5, N: int = 1, timeout: int = 0, sdelay: int = 0,
-             **alg_params: dict) -> list[list[str, int]]:
+             **alg_params: dict[str, ...]) -> list[str | int]:
     """Validate execution of given algorithms based on the given test parameters."""
     if isinstance(mem_coeff, float):
         m_min = max(tree.nodes[v].get(MEMORY, 0) for v in tree)
@@ -178,8 +179,9 @@ def validate(algs: dict[str, collections.abc.Callable], tree: nx.DiGraph, mem_co
         log.debug(f"Estimated latency limit: {L=} ({l_min} - {l_max}) with {lat_coeff=}")
     else:
         L = lat_coeff
-    alg_params.update(tree=tree, cp_end=cp_end, M=M, L=L, **DEF_PARAMS)
+    alg_params.update(dict(tree=tree, cp_end=cp_end, M=M, L=L, **DEF_PARAMS))
     if N > 1:
+        # noinspection PyTypeChecker
         alg_params.update(N=N)
     log.debug(f"Tree partitioning params: [{alg_params}]")
     log.debug(f"Start test execution at {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -192,8 +194,8 @@ def validate(algs: dict[str, collections.abc.Callable], tree: nx.DiGraph, mem_co
     return stats
 
 
-def execute_tests(algs: dict[str, collections.abc.Callable], test_file: str, mem_coeff: int | float,
-                  lat_coeff: int | float, N: int, output_dir: str = "results", output_file: str = None,
+def execute_tests(algs: dict[str, collections.abc.Callable], test_file: str | pathlib.Path, mem_coeff: int | float,
+                  lat_coeff: int | float, N: int, output_dir: str = "results", output_file: str | pathlib.Path = None,
                   tree_num: int = None, timeout: int = 0, **alg_params: dict):
     """
     Execute tests based on the given parameters.
@@ -232,6 +234,7 @@ def execute_tests(algs: dict[str, collections.abc.Callable], test_file: str, mem
         log.info(f"Execute test for single input tree: {tree_num}")
         tree = get_tree_from_file(test_file, tree_num)
         tree_name = test_file.stem.rsplit('_', 1)[0] + f"_{tree_num}"
+        # noinspection PyUnresolvedReferences
         tree.graph[NAME] = tree_name
         log.info(f" {test_file.name} -> {tree_name} ".center(80, '#'))
         res = validate(algs, tree, mem_coeff, lat_coeff, N, timeout=timeout, **alg_params)
@@ -240,6 +243,7 @@ def execute_tests(algs: dict[str, collections.abc.Callable], test_file: str, mem
         pd.DataFrame([], columns=RES_COLS).to_csv(output_file, mode='w', header=True, index=False)
         for i, tree in enumerate(iload_trees_from_file(test_file), start=1):
             tree_name = test_file.stem.rsplit('_', 1)[0] + f"_{i}"
+            # noinspection PyUnresolvedReferences
             tree.graph[NAME] = tree_name
             log.info(f" {test_file.name} -> {tree_name} ".center(80, '#'))
             res = validate(algs, tree, mem_coeff, lat_coeff, N, timeout=timeout, sdelay=gov.interval, **alg_params)

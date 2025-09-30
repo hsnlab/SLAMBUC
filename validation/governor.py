@@ -44,7 +44,7 @@ def check_total_used_memory(unit_exp: int = 2) -> int:
     return (mem.total - mem.free) / 1024 ** unit_exp
 
 
-def check_process_memory(pid: int | str = 'self', unit_exp: int = 2) -> float:
+def check_process_memory(pid: int | str = 'self', unit_exp: int = 2) -> float | None:
     """
     Return the memory usage of a process given by the *PID* with units based on the given *unit_exp*
     (0 -> bytes, 1 -> KB, 2 -> MB, 3 -> GB, ...).
@@ -91,7 +91,7 @@ class TestGovernor(multiprocessing.Process):
         self.__last_signal = time.time()
         self.interval = interval
         self.set_logger(log_level)
-        super().__init__(target=self.watch, name=self.__class__, daemon=True)
+        super().__init__(target=self.watch, name=self.__class__.__name__, daemon=True)
         self.log.info(self)
 
     @property

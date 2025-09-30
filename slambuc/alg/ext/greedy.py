@@ -51,6 +51,7 @@ def get_bounded_greedy_block(tree: nx.DiGraph, root: int, M: int, N: int = 1, cp
             if sn in cp_cuts:
                 continue
             # Set edge weight to -inf for cpath nodes not included in precalculated cuts for designated must-merge
+            # noinspection PyUnresolvedReferences
             heapq.heappush(neighs, (-1 * (d[RATE] * d[DATA] if sn not in cp_set else math.inf), sn))
 
     # Collect possible cut/merge edges based on the neighbouring nodes
@@ -96,7 +97,7 @@ def min_weight_greedy_partitioning(tree: nx.DiGraph, root: int = 1, M: int = mat
 
 
 def get_feasible_cpath_split(tree: nx.DiGraph, root: int, cp_end: int, M: int, L: int, N: int = 1,
-                             delay: int = 1) -> set[int]:
+                             delay: int = 1) -> set[int] | None:
     """
     Calculate feasible splitting of the critical path that meets given memory *M* and latency *L* limits.
 
@@ -166,8 +167,11 @@ def get_min_cpath_split(tree: nx.DiGraph, root: int, cp_end: int, M: int, L: int
     # Initiate data structure for DAG
     _cache = collections.defaultdict(list)
     _cache.update({START: [START], END: [END]})
+    # noinspection PyUnresolvedReferences
     dag = nx.DiGraph(directed=True, **tree.graph)
+    # noinspection PyTypeChecker
     for i, (prev, b) in enumerate(itertools.pairwise(itertools.chain([START], cpath))):
+        b: int
         blk = set()
         for w in cpath[i:]:
             blk.add(w)

@@ -19,7 +19,7 @@ from slambuc.alg.app import PLATFORM, RUNTIME, DATA
 from slambuc.alg.util import ipostorder_dfs
 
 
-def faasify_dag_by_duplication(dag: nx.DiGraph, root: int) -> nx.DiGraph:
+def faasify_dag_by_duplication(dag: nx.DiGraph, root: int) -> nx.DiGraph | None:
     """
     One-way transformation of a DAG of modules/components into a tree by iteratively duplicating sub-graphs
     related to nodes with multiple predecessors.
@@ -31,7 +31,7 @@ def faasify_dag_by_duplication(dag: nx.DiGraph, root: int) -> nx.DiGraph:
     :return:        generated tree
     """
     if dag is None:
-        return
+        return None
     while not nx.is_tree(dag):
         new_id = itertools.count(max(filter(lambda _v: _v is not PLATFORM, dag.nodes)) + 1)
         for v in list(dag.nodes):
@@ -61,7 +61,8 @@ def faasify_dag_by_cutting(dag: nx.DiGraph, root: int) -> nx.DiGraph:
     # TODO
 
 
-def transform_autonomous_caching(tree: nx.DiGraph, root: int, copy: bool = False) -> nx.DiGraph:
+def transform_autonomous_caching(tree: dict[str | int, dict[str | int, dict[str, int]]] | nx.DiGraph,
+                                 root: int, copy: bool = False) -> nx.DiGraph:
     """
     Transform given *tree* by adding fetching and out-caching overheads to function execution times.
 

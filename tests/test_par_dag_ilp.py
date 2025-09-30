@@ -214,6 +214,7 @@ def test_par_dag(path_tree: bool = False):
 
 def test_random_par_dag(n: int = 10, x: int = 3, path_tree: bool = False):
     dag = get_random_dag(n, x)
+    # noinspection PyUnresolvedReferences
     dag.graph[NAME] += f"-dag_mtx{'_path_tree' if path_tree else ''}"
     params = dict(dag=dag,
                   root=1,

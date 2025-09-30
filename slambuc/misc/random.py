@@ -14,13 +14,15 @@
 import random
 import time
 
+import networkx
 import networkx as nx
 
 from slambuc.alg.app.common import *
 
 
 def get_random_chain_data(nodes: int = 10, runtime: tuple[int, int] = (1, 100), memory: tuple[int, int] = (1, 3),
-                          rate: tuple[int, int] = (1, 3), data: tuple[int, int] = (1, 20)) -> list[list[int]]:
+                          rate: tuple[int, int] = (1, 3),
+                          data: tuple[int, int] = (1, 20)) -> tuple[list[int], list[int], list[int], list[int]]:
     """
     Generate random chain(path graph) data with properties from given intervals.
 
@@ -38,6 +40,7 @@ def get_random_chain_data(nodes: int = 10, runtime: tuple[int, int] = (1, 100), 
     return t, m, r, d
 
 
+# noinspection PyTypeChecker
 def get_random_chain(nodes: int = 10, runtime: tuple[int, int] = (1, 100), memory: tuple[int, int] = (1, 3),
                      rate: tuple[int, int] = (1, 3), data: tuple[int, int] = (1, 20)) -> nx.DiGraph:
     """
@@ -58,10 +61,12 @@ def get_random_chain(nodes: int = 10, runtime: tuple[int, int] = (1, 100), memor
         d[DATA] = random.randint(*data)
     chain = nx.relabel_nodes(chain, {0: PLATFORM})
     chain[PLATFORM][1][RATE] = 1
+    # noinspection PyUnresolvedReferences
     chain.graph[NAME] = "random_chain"
     return chain
 
 
+# noinspection PyTypeChecker
 def get_random_tree(nodes: int = 20, runtime: tuple[int, int] = (1, 100), memory: tuple[int, int] = (1, 3),
                     rate: tuple[int, int] = (1, 3), data: tuple[int, int] = (1, 20),
                     name: str = None) -> nx.DiGraph:
@@ -76,21 +81,25 @@ def get_random_tree(nodes: int = 20, runtime: tuple[int, int] = (1, 100), memory
     :param name:    tree name suffix
     :return:        generated random tree
     """
+    # noinspection PyUnresolvedReferences
     raw_tree = nx.bfs_tree(nx.random_labeled_tree(nodes + 1), 0)
     while raw_tree.out_degree[0] > 1:
-        raw_tree = nx.bfs_tree(nx.random_labeled_tree(nodes + 1), 0)
+        # noinspection PyUnresolvedReferences
+        raw_tree = nx.bfs_tree(networkx.generators.trees.random_labeled_tree(nodes + 1), 0)
     tree = nx.convert_node_labels_to_integers(raw_tree, first_label=0)
     nx.set_node_attributes(tree, {i: random.randint(*runtime) for i in range(1, nodes + 1)}, RUNTIME)
     nx.set_node_attributes(tree, {i: random.randint(*memory) for i in range(1, nodes + 1)}, MEMORY)
     for _, _, d in tree.edges(data=True):
         d[RATE] = random.randint(*rate)
         d[DATA] = random.randint(*data)
-    tree = nx.relabel_nodes(tree, {0: PLATFORM})
+    tree = nx.DiGraph(nx.relabel_nodes(tree, {0: PLATFORM}))
     tree[PLATFORM][1][RATE] = 1
+    # noinspection PyUnresolvedReferences
     tree.graph[NAME] = f"random_tree_{time.time()}" if name is None else name
     return tree
 
 
+# noinspection PyTypeChecker
 def get_random_dag(nodes: int = 20, crossing: int = 5, runtime: tuple[int, int] = (1, 100),
                    memory: tuple[int, int] = (1, 3), rate: tuple[int, int] = (1, 3),
                    data: tuple[int, int] = (1, 20), name: str = None) -> nx.DiGraph:
@@ -106,17 +115,21 @@ def get_random_dag(nodes: int = 20, crossing: int = 5, runtime: tuple[int, int] 
     :param name:        tree name suffix
     :return:            generated random tree
     """
+    # noinspection PyUnresolvedReferences
     raw_tree = nx.bfs_tree(nx.random_labeled_tree(nodes + 1), 0)
     while raw_tree.out_degree[0] > 1:
+        # noinspection PyUnresolvedReferences
         raw_tree = nx.bfs_tree(nx.random_labeled_tree(nodes + 1), 0)
     dag = nx.convert_node_labels_to_integers(raw_tree, first_label=0)
+    # noinspection PyTypeChecker
     dag.add_edges_from([sorted(random.sample(range(1, nodes + 1), 2)) for _ in range(crossing)])
     nx.set_node_attributes(dag, {i: random.randint(*runtime) for i in range(1, nodes + 1)}, RUNTIME)
     nx.set_node_attributes(dag, {i: random.randint(*memory) for i in range(1, nodes + 1)}, MEMORY)
     for _, _, d in dag.edges(data=True):
         d[RATE] = random.randint(*rate)
         d[DATA] = random.randint(*data)
-    dag = nx.relabel_nodes(dag, {0: PLATFORM})
+    dag = nx.DiGraph(nx.relabel_nodes(dag, {0: PLATFORM}))
     dag[PLATFORM][1][RATE] = 1
+    # noinspection PyUnresolvedReferences
     dag.graph[NAME] = f"random_dag_{time.time()}" if name is None else name
     return dag

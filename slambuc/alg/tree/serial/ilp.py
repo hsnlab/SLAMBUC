@@ -14,6 +14,7 @@
 import collections
 import itertools
 import math
+import typing
 from collections.abc import Generator
 
 import networkx as nx
@@ -25,7 +26,7 @@ from slambuc.alg.util import (ipowerset, ipostorder_dfs, ibacktrack_chain, recre
                               ser_subtree_cost, ser_subchain_latency, ser_subtree_memory, verify_limits, x_eval)
 
 
-def ifeasible_greedy_subtrees(tree: nx.DiGraph, root: int, M: int) -> Generator[tuple[int, set[int]]]:
+def ifeasible_greedy_subtrees(tree: nx.DiGraph, root: int | None, M: int | float) -> Generator[tuple[int, set[int]]]:
     """
     Generate feasible subtrees in a combinatorial way, which meet the connectivity and memory constraint *M*.
     
@@ -46,7 +47,8 @@ def ifeasible_greedy_subtrees(tree: nx.DiGraph, root: int, M: int) -> Generator[
                 yield min(st), st
 
 
-def ifeasible_subtrees(tree: nx.DiGraph, root: int, M: int, filtered: bool = True) -> Generator[tuple[int, set[int]]]:
+def ifeasible_subtrees(tree: nx.DiGraph, root: int, M: int | float,
+                       filtered: bool = True) -> Generator[tuple[int, set[int]]]:
     """
     Generate M-feasible(connected) subtrees and roots in a bottom-up way, which meet the memory constraint *M*.
 
@@ -72,7 +74,8 @@ def ifeasible_subtrees(tree: nx.DiGraph, root: int, M: int, filtered: bool = Tru
 
 def build_tree_cfg_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
                          cpath: set[int] = frozenset(), delay: int = 1,
-                         isubtrees: iter = ifeasible_subtrees) -> tuple[lp.LpProblem, dict[int, list[lp.LpVariable]]]:
+                         isubtrees: typing.Callable = ifeasible_subtrees) -> tuple[
+    lp.LpProblem, dict[int, list[lp.LpVariable]]]:
     """
     Generate the configuration ILP model using serialized metric calculation.
 
@@ -219,10 +222,10 @@ def build_greedy_tree_mtx_model(tree: nx.DiGraph, root: int = 1, M: int = math.i
     sum_cost = lp.LpAffineExpression()
     for j in X:
         cost_pre = 0
-        nodes = set()
+        _nodes = set()
         for v in nx.dfs_preorder_nodes(tree, source=j):
-            nodes |= {v}
-            cost_vj = ser_subtree_cost(tree, j, nodes)
+            _nodes |= {v}
+            cost_vj = ser_subtree_cost(tree, j, _nodes)
             X[v][j] = lp.LpVariable(f'x_{v:02d}_{j:02d}', cat=lp.LpBinary) if v != root else 1
             sum_cost += (cost_vj - cost_pre) * X[v][j]
             cost_pre = cost_vj
@@ -267,8 +270,8 @@ def build_greedy_tree_mtx_model(tree: nx.DiGraph, root: int = 1, M: int = math.i
     return model, X
 
 
-def build_tree_mtx_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
-                         L: int = math.inf, cpath: set[int] = frozenset(), subchains: bool = False,
+def build_tree_mtx_model(tree: dict[str | int, dict[str | int, dict[str, int]]] | nx.DiGraph, root: int = 1,
+                         M: int = math.inf, L: int = math.inf, cpath: set[int] = frozenset(), subchains: bool = False,
                          delay: int = 1) -> tuple[lp.LpProblem, dict[int, dict[int, lp.LpVariable]]]:
     """
     Generate the matrix ILP model directly from formulas.
@@ -397,7 +400,7 @@ def extract_subtrees_from_xmatrix(X: dict[int, dict[int, lp.LpVariable]]) -> T_P
 
 def all_tree_mtx_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
                               cp_end: int = None, delay: int = 1, subchains: bool = False, solver: lp.LpSolver = None,
-                              timeout: int = None, **lpargs) -> tuple[list[list[int]], int, int]:
+                              timeout: int = None, **lpargs) -> list[T_RESULTS]:
     """
     Calculates all minimal-cost partitioning variations of a tree based on matrix ILP formulation.
     
@@ -418,7 +421,7 @@ def all_tree_mtx_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf
     # Critical path
     cpath = set(ibacktrack_chain(tree, root, cp_end))
     # Verify the min values of limits for a feasible solution
-    if not all(verify_limits(tree, set(ibacktrack_chain(tree, root, cpath)), M, L)):
+    if not all(verify_limits(tree, set(ibacktrack_chain(tree, root, cp_end)), M, L)):
         # No feasible solution due to too strict limits
         return INFEASIBLE
     # Get model

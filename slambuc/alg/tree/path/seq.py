@@ -37,9 +37,9 @@ class TBlock(typing.NamedTuple):
         return repr(tuple(self))
 
 
-def seq_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N: int = math.inf,
-                          L: int = math.inf, cp_end: int = None, delay: int = 1, unit: int = 100,
-                          full: bool = True) -> T_RESULTS:
+def seq_tree_partitioning(tree: dict[str | int, dict[str | int, dict[str, int]]] | nx.DiGraph, root: int = 1,
+                          M: int = math.inf, N: int = math.inf, L: int = math.inf, cp_end: int = None, delay: int = 1,
+                          unit: int = 100, full: bool = True) -> T_RESULTS | tuple[list, float | None, int]:
     """
     Calculates minimal-cost partitioning of a app graph(tree) with respect to an upper bound **M** on the total
     memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes leveraging
@@ -188,7 +188,8 @@ def seq_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N:
         return [], math.inf, c_opt
 
 
-def extract_blocks(tree: nx.DiGraph, DP: list[collections.defaultdict[collections.deque[TBlock]]],
+def extract_blocks(tree: dict[str | int, dict[str | int, dict[str, int]]] | nx.DiGraph,
+                   DP: list[collections.defaultdict[int, collections.deque[TBlock]]],
                    root: int, cp_end: int, c_opt: int, full: bool = True) -> T_PART:
     """
     Extract subtree roots of partitioning from the tailing nodes stored in the *DP* matrix.
@@ -210,7 +211,7 @@ def extract_blocks(tree: nx.DiGraph, DP: list[collections.defaultdict[collection
         w = DP[b][c][0].w
         blk, prior = [], None
         while prior != b:
-            for m in tree.succ[w]:
+            for m in tree.successors(w):
                 if m != prior:
                     barr.add((m, c - 1) if m in cpath else (m, 0))
             if full:

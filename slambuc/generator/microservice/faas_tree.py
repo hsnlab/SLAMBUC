@@ -15,6 +15,7 @@ import importlib.resources
 import itertools
 import pathlib
 import random
+import typing
 from collections.abc import Generator
 
 import networkx as nx
@@ -58,7 +59,7 @@ LEAF_ATTR_LOW, LEAF_ATTR_HIGH = 0.1, 3.25
 DEF_FAAS_TREE_PREFIX = f"faas_tree"
 
 
-def ifunc_attributes(n: int, dist: scipy.stats.rv_continuous, transform=np.round) -> Generator[int]:
+def ifunc_attributes(n: int, dist: scipy.stats.rv_continuous, transform: typing.Callable = np.round) -> Generator[int]:
     """
     Generate attribute values of the given size *n* base on the given distribution *dist*.
 

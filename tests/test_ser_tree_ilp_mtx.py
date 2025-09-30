@@ -262,6 +262,7 @@ def test_ser_tree():
 
 def test_random_ser_tree(n: int = 10):
     tree = get_random_tree(n)
+    # noinspection PyUnresolvedReferences
     tree.graph[NAME] += "-ser_ilp_mtx"
     params = dict(tree=tree,
                   root=1,

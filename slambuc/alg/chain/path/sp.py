@@ -17,7 +17,7 @@ import math
 
 import networkx as nx
 
-from slambuc.alg import T_RESULTS, INFEASIBLE
+from slambuc.alg import INFEASIBLE
 from slambuc.alg.util import chain_cost, chain_cpu, chain_memory_opt
 
 # Naming convention for state-space DAG
@@ -35,7 +35,7 @@ def encode_blk(b: int | str, w: int | str) -> str:
     return f"{b}|{w}"
 
 
-def decode_blk(s: str) -> tuple[str, str]:
+def decode_blk(s: str) -> list[str]:
     """
     Decode encoded block str.
 
@@ -80,8 +80,9 @@ def _build_sp_dag(runtime: list, memory: list, rate: list, M: int = math.inf, N:
     return dag
 
 
-def hop_limited_shortest_path(dag: nx.DiGraph, source: str | int, target: str | int,
-                              max_hops: int = math.inf) -> tuple[int, int, list[int | str]]:
+def hop_limited_shortest_path(dag: dict[str | int, dict[str | int, dict[str, int]]] | nx.DiGraph,
+                              source: str | int, target: str | int,
+                              max_hops: int = math.inf) -> tuple[int, int, list[int | str]] | tuple[None, None, None]:
     """
     Calculate the shortest path in graph 'dag' between 'source' and 'target' with the hop limit 'max_hops'.
 
@@ -92,7 +93,7 @@ def hop_limited_shortest_path(dag: nx.DiGraph, source: str | int, target: str | 
     :return:            calculated sum weights, hop count, nodes of the shortest path
     """
     #
-    dist = collections.defaultdict(lambda: collections.defaultdict(lambda: math.inf))
+    dist: dict[int, dict[int, int | float]] = collections.defaultdict(lambda: collections.defaultdict(lambda: math.inf))
     prev = collections.defaultdict(lambda: collections.defaultdict(lambda: None))
     pq = []
     dist[source][0] = 0
@@ -103,7 +104,7 @@ def hop_limited_shortest_path(dag: nx.DiGraph, source: str | int, target: str | 
         if h == max_hops:
             continue
         for v in dag.succ[u]:
-            alt = dist[u][h] + dag[u][v]['weight']
+            alt = dist[u][h] + dag[u][v].get('weight', 0)
             if alt < dist[v][h + 1]:
                 dist[v][h + 1] = alt
                 prev[v][h + 1] = u
@@ -122,7 +123,7 @@ def hop_limited_shortest_path(dag: nx.DiGraph, source: str | int, target: str | 
 
 
 def sp_chain_partitioning(runtime: list, memory: list, rate: list, M: int = math.inf, N: int = math.inf,
-                          L: int = math.inf, delay: int = 1, unit: int = 100, **kwargs) -> T_RESULTS:
+                          L: int = math.inf, delay: int = 1, unit: int = 100, **kwargs) -> tuple[list[int], int, int]:
     """
     Calculates minimal-cost partitioning of a chain based on the node properties of *running time*, *memory usage* and
     *invocation rate* with respect to an upper bound **M** on the total memory of blocks and a latency constraint **L**

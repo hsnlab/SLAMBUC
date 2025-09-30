@@ -84,7 +84,7 @@ def draw_tree(tree: nx.DiGraph, partition: list = None, cuts: list = None, draw_
     else:
         labels = {n: n for n in tree.nodes}
     labels[PLATFORM] = PLATFORM
-    pos = nx.drawing.nx_agraph.graphviz_layout(tree, prog='dot', root=0)
+    pos = nx.drawing.nx_agraph.graphviz_layout(tree, prog='dot', root=str(0))
     nx.draw(tree, ax=ax, pos=pos, arrows=True, arrowsize=20, width=2, with_labels=True, node_size=1000, font_size=10,
             font_color="white", labels=labels, node_color=node_colors, edge_color=edge_colors, **kwargs)
     if draw_weights:
@@ -110,6 +110,7 @@ def draw_tree(tree: nx.DiGraph, partition: list = None, cuts: list = None, draw_
             poly = plt.Polygon(lefts + rights, closed=True, fc=tree.nodes[blk[0]][COLOR], ec=tree.nodes[blk[0]][COLOR],
                                lw=3, ls=':', fill=True, alpha=0.3, capstyle='round', zorder=0)
             ax.add_patch(poly)
+    # noinspection PyUnresolvedReferences
     plt.title(tree.graph[NAME])
     plt.tight_layout()
     plt.show()
@@ -179,6 +180,7 @@ def draw_dag(dag: nx.DiGraph, partition: list = None, draw_weights=False, figsiz
     for v in dag.nodes:
         dag.nodes[v]['layer'] = layers[v]
     # pos = nx.multipartite_layout(dag, align="horizontal", subset_key='layer', scale=1)
+    # noinspection PyUnresolvedReferences
     pos = nx.bfs_layout(dag, start=PLATFORM, align="horizontal", scale=1)
     pos = {k: [x, -y] for k, (x, y) in pos.items()}
     nx.draw(dag, ax=ax, pos=pos, arrows=True, arrowsize=20, width=2, with_labels=True, node_size=1000, font_size=10,
@@ -186,6 +188,7 @@ def draw_dag(dag: nx.DiGraph, partition: list = None, draw_weights=False, figsiz
     if draw_weights:
         e_labels = {(u, v): f"R{dag[u][v][RATE]}\nD{dag[u][v][DATA]}" for u, v in dag.edges}
         nx.draw_networkx_edge_labels(dag, pos, edge_labels=e_labels, label_pos=0.5, font_size=10)
+    # noinspection PyUnresolvedReferences
     plt.title(dag.graph[NAME])
     plt.tight_layout()
     plt.show()

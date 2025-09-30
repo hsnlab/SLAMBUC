@@ -191,7 +191,7 @@ def plot_bicrit_heatmap(n: int = 40, show: bool = True, ext: str = "pgf"):
     df.columns.name = "eps"
     df.index.name = "lam"  # x: eps, y: lam
     df.sort_index(inplace=True)
-    cax = plt.imshow(df, extent=[-0.05, 1.05, -0.05, 1.05], cmap='gray_r', interpolation='nearest', origin="lower",
+    cax = plt.imshow(df, extent=(-0.05, 1.05, -0.05, 1.05), cmap='gray_r', interpolation='nearest', origin="lower",
                      norm='log', vmax=0.105, vmin=0.021)  # vmax=0.105, vmin=0.021
     cbar = plt.colorbar(cax, location="right", orientation="vertical", shrink=0.9, pad=0.1)
     cbar.set_label("Median runtime [sec]", labelpad=1, size=6)
@@ -362,7 +362,8 @@ def plot_cost_ser_valid(tree_type: str = "faas", n=40, show: bool = True, feasib
     df2.reset_index(inplace=True)
     df2['Lat'] = (df['Lat'] - df['L']) / df['L']
     if feasible:
-        df2['Feasible'] = df.apply(check_part_feasibility, axis=1, args=[f"../data/{tree_type}_tree_n{n}-{n + 10}.npy"])
+        df2['Feasible'] = df.apply(check_part_feasibility, axis=1,
+                                   args=(f"../data/{tree_type}_tree_n{n}-{n + 10}.npy",))
         df2['Solvable'] = df.apply(check_part_solvable, axis=1)
     # df2.dropna(subset=['Lat'], inplace=True)
     fig = plt.figure(figsize=(COLUMN_W, COLUMN_W - 0.5))
@@ -442,7 +443,8 @@ def plot_cost_par_valid(tree_type: str = "faas", n=40, show: bool = True, feasib
     df2.reset_index(inplace=True)
     df2['Lat'] = (df['Lat'] - df['L']) / df['L']
     if feasible:
-        df2['Feasible'] = df.apply(check_part_feasibility, axis=1, args=[f"../data/{tree_type}_tree_n{n}-{n + 10}.npy"])
+        df2['Feasible'] = df.apply(check_part_feasibility, axis=1,
+                                   args=(f"../data/{tree_type}_tree_n{n}-{n + 10}.npy",))
         df2['Solvable'] = df.apply(check_part_solvable, axis=1)
     fig = plt.figure(figsize=(COLUMN_W, (COLUMN_W - 0.5) / 3))
     gs = fig.add_gridspec(1, 3)
@@ -520,7 +522,7 @@ def plot_cost_valid_bar(n=40, show: bool = True, ext: str = "pgf"):
             df2.loc[[t]] = (df2.loc[[t]] - df2.loc[t, "OPT"].Cost) / df2.loc[t, "OPT"].Cost
         df2.reset_index(inplace=True)
         df2['Lat'] = (df['Lat'] - df['L']) / df['L']
-        df2['Feasible'] = df.apply(check_part_feasibility, axis=1, args=[f"../data/{_type}_tree_n{n}-{n + 10}.npy"])
+        df2['Feasible'] = df.apply(check_part_feasibility, axis=1, args=(f"../data/{_type}_tree_n{n}-{n + 10}.npy",))
         df2['Solvable'] = df.apply(check_part_solvable, axis=1)
         cnt = {"F": [], "I": [], "U": []}
         for alg in CALGS.keys():

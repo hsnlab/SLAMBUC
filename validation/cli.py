@@ -70,7 +70,7 @@ def perf(alg: str, n: int, cpu: int, data_dir: str, instance: int, timeout: int)
 class TestValuesParamType(click.ParamType):
     name = "Comma-sep values"
 
-    def convert(self, value, param, ctx):
+    def convert(self, value, param, ctx) -> tuple:
         if value is not None:
             try:
                 value = tuple(float(v) for v in value.split(','))
@@ -86,7 +86,7 @@ class TestValuesParamType(click.ParamType):
 @click.option("-i", "--instance", type=click.IntRange(1, MAX_INST), default=None, help="Tree instance num.")
 @click.option("-v", "--value", type=TestValuesParamType(), default=None, help="Comma-separated attr values")
 @click.option("-t", "--timeout", type=click.IntRange(min=0), default=DEF_TIMEOUT, help="Timeout")
-def sens(attr: str, n: int, data_dir: str, instance: int, timeout: int, value: str):
+def sens(attr: str, n: int, data_dir: str, instance: int, timeout: int, value: tuple):
     """Perform sensitivity tests."""
     match STYPE(attr):
         case STYPE.MEM:

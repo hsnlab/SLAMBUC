@@ -39,10 +39,10 @@ def build_greedy_dag_mtx_model(dag: nx.DiGraph, root: int = 1, M: int = math.inf
     sum_cost = lp.LpAffineExpression()
     for j in X:
         cost_pre = 0
-        nodes = set()
+        _nodes = set()
         for v in iclosed_subgraph(dag, source=j):
-            nodes |= {v}
-            cost_vj = par_subgraph_cost(dag, j, nodes, N)
+            _nodes |= {v}
+            cost_vj = par_subgraph_cost(dag, j, _nodes, N)
             X[v][j] = lp.LpVariable(f"x_{v:02d}_{j:02d}", cat=lp.LpBinary) if v != root else 1
             sum_cost += (cost_vj - cost_pre) * X[v][j]
             cost_pre = cost_vj
@@ -132,8 +132,8 @@ def greedy_dag_partitioning(dag: nx.DiGraph, root: int = 1, M: int = math.inf, L
 
 ########################################################################################################################
 
-def build_dag_mtx_model(dag: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
-                        N: int = 1, cpath: set[int] = frozenset(), delay: int = 1,
+def build_dag_mtx_model(dag: dict[str | int, dict[str | int, dict[str, int]]] | nx.DiGraph, root: int = 1,
+                        M: int = math.inf, L: int = math.inf, N: int = 1, cpath: set[int] = frozenset(), delay: int = 1,
                         path_tree: bool = False) -> tuple[lp.LpProblem, dict[int, dict[int, lp.LpVariable]]]:
     """
     Generate the matrix ILP model based on parallel metric calculations.
@@ -154,6 +154,7 @@ def build_dag_mtx_model(dag: nx.DiGraph, root: int = 1, M: int = math.inf, L: in
         blk_mem = dag.nodes[j][MEMORY] * X[j][j]
         # Add coefficients for single node block [j]
         R_j = sum(dag[p][j][RATE] for p in dag.predecessors(j))
+        # noinspection PyUnresolvedReferences
         D_j = sum(dag[p][j][RATE] * dag[p][j][DATA] for p in dag.predecessors(j))
         t_j = dag.nodes[j][RUNTIME]
         sum_cost += (D_j + R_j * t_j

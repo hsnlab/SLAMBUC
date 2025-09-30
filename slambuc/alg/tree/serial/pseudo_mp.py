@@ -17,6 +17,7 @@ import itertools
 import math
 import multiprocessing
 import operator
+import typing
 from collections.abc import Generator
 
 import networkx as nx
@@ -28,7 +29,8 @@ from slambuc.alg.util import (ipostorder_dfs, ibacktrack_chain, recreate_subtree
                               ileft_right_dfs, verify_limits)
 
 
-def isubtree_cutoffs(tree: nx.DiGraph, root: int = 1, lb: int = 1, ub: int = math.inf) -> tuple[tuple[int, int], int]:
+def isubtree_cutoffs(tree: nx.DiGraph, root: int = 1, lb: int = 1,
+                     ub: int | float = math.inf) -> typing.Generator[tuple[tuple[int, int], int]]:
     """
     Recursively return edges that cut off non-trivial subtrees from *tree* with size between *lb* and *ub*.
 
@@ -50,7 +52,7 @@ def isubtree_cutoffs(tree: nx.DiGraph, root: int = 1, lb: int = 1, ub: int = mat
                     yield (v, br), st
 
 
-def get_cpu_splits(tree: nx.DiGraph, root: int = 1, workers: int = None) -> tuple[tuple[int, int]]:
+def get_cpu_splits(tree: nx.DiGraph, root: int = 1, workers: int = None) -> list[tuple[int, int]]:
     """
     Calculate the cuts for parallelization based on *workers* count and subtree size heuristics.
 
@@ -67,7 +69,7 @@ def get_cpu_splits(tree: nx.DiGraph, root: int = 1, workers: int = None) -> tupl
 
 
 def isubtree_sync_cutoffs(tree: nx.DiGraph, root: int = 1,
-                          size: int = math.inf) -> Generator[tuple[tuple[int], int, set[int]]]:
+                          size: int = math.inf) -> Generator[tuple[tuple[int | str, int], int | None, set[int]]]:
     """
     Recursively return edges that cut off non-trivial subtrees from *tree* with given *size*.
 
@@ -97,7 +99,7 @@ def isubtree_sync_cutoffs(tree: nx.DiGraph, root: int = 1,
             yield (PLATFORM, root), None, sync[root]
 
 
-def isubtree_splits(tree: nx.DiGraph, root: int = 1) -> Generator[tuple[tuple[int], int, set[int]]]:
+def isubtree_splits(tree: nx.DiGraph, root: int = 1) -> Generator[tuple[tuple[int | str, int], set[int]]]:
     """
     Return the heuristic cutoff edges of given *tree* along with the mandatory synchronization points by assuming
     the subtree size equals *sqrt(n)*.
@@ -112,10 +114,11 @@ def isubtree_splits(tree: nx.DiGraph, root: int = 1) -> Generator[tuple[tuple[in
 ########################################################################################################################
 
 
-def _btree_partitioning(ready: multiprocessing.SimpleQueue, sync: dict[int, multiprocessing.SimpleQueue],
-                        tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
-                        cpath: set[int] = frozenset(), delay: int = 1,
-                        bidirectional: bool = True) -> None | dict[tuple[int, int], dict[int, SubBTreePart]]:
+def _btree_partitioning(ready: typing.Union[multiprocessing.SimpleQueue, None],
+                        sync: dict[int, multiprocessing.SimpleQueue],
+                        tree: dict[str | int, dict[str | int, dict[str, int]]] | nx.DiGraph, root: int = 1,
+                        M: int = math.inf, L: int = math.inf, cpath: set[int] = frozenset(), delay: int = 1,
+                        bidirectional: bool = True) -> None | dict[int, dict[tuple[int, int], SubBTreePart]]:
     """
     Calculates minimal-cost partitioning of a subgraph with *root* using the bottom-up tree traversal approach
     while waits for subcases at sync edges.
@@ -285,9 +288,10 @@ def pseudo_mp_btree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.
 ########################################################################################################################
 
 
-def _ltree_partitioning(ready: multiprocessing.SimpleQueue, sync: dict[int, multiprocessing.SimpleQueue],
-                        tree: nx.DiGraph, root: int = 1, M: int = math.inf,
-                        L: int = math.inf, cpath: set[int] = frozenset(), delay: int = 1,
+def _ltree_partitioning(ready: typing.Union[multiprocessing.SimpleQueue, None],
+                        sync: dict[int, multiprocessing.SimpleQueue],
+                        tree: dict[str | int, dict[str | int, dict[str, int]]] | nx.DiGraph, root: int = 1,
+                        M: int = math.inf, L: int = math.inf, cpath: set[int] = frozenset(), delay: int = 1,
                         bidirectional: bool = True) -> None | dict[int, dict[int, SubBTreePart]]:
     """
     Calculates minimal-cost partitioning of a subgraph with *root* using the left-right tree traversal approach

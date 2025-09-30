@@ -37,7 +37,7 @@ def wrand_sample(population: list[int | float], weights: list[int], k: int = 1) 
     acc_weights = list(itertools.accumulate(weights))
     w_sum, opted = acc_weights[-1], set()
     while len(opted) < k:
-        idx = bisect.bisect_left(acc_weights, w_sum * random.random())
+        idx = bisect.bisect_left(acc_weights, int(w_sum * random.random()))
         # Overwrite already drawn item to ensure that one item is chosen only for once
         opted.add(idx)
     return list(population[idx] for idx in opted)

@@ -66,6 +66,7 @@ def test_tree_partitioning():
 
 def test_random_tree_partitioning(n: int = 10):
     tree = get_random_tree(10)
+    # noinspection PyUnresolvedReferences
     tree.graph[NAME] += "-meta"
     params = dict(tree=tree,
                   root=1,

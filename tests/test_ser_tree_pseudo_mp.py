@@ -76,6 +76,7 @@ def test_subtree_split(tree: nx.DiGraph = None, size: int = None, draw: bool = T
 
 def test_rand_cpu_cutoff(n: int = 10, workers: int = None, draw: bool = True):
     tree = get_random_tree(n)
+    # noinspection PyUnresolvedReferences
     tree.graph[NAME] += "-ser_pseudo_mp"
     test_cpu_cutoff(tree, draw=False)
     print(f" CPU-based cutoffs ".center(80, '='))
@@ -89,6 +90,7 @@ def test_rand_cpu_cutoff(n: int = 10, workers: int = None, draw: bool = True):
 
 def test_rand_subtree_splits(n: int = 10, draw: bool = True):
     tree = get_random_tree(n)
+    # noinspection PyUnresolvedReferences
     tree.graph[NAME] += "-ser_pseudo_mp"
     test_subtree_split(tree, draw=False)
     cuts = list(isubtree_splits(tree, root=1))
@@ -123,6 +125,7 @@ def test_ser_tree_pseudo_partitioning():
 
 def test_random_tree_partitioning(n: int = 10):
     tree = get_random_tree(n)
+    # noinspection PyUnresolvedReferences
     tree.graph[NAME] += "-ser_pseudo_mp"
     params = dict(tree=tree,
                   root=1,

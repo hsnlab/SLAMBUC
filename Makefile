@@ -4,7 +4,7 @@ clean:
 	rm -rf .pytest_cache
 
 build: clean
-	#python3.13 setup.py sdist bdist_wheel
+	@#python3.13 setup.py sdist bdist_wheel
 	python3.13 -m build --sdist --wheel --outdir dist/ .
 
 check:
@@ -17,7 +17,7 @@ release: build check
 	git push --tags
 
 publish: build check
-	#cat token.txt | xargs -I {} twine upload --repository pypi -u __token__ -p {} dist/*
+	@#cat token.txt | xargs -I {} twine upload --repository pypi -u __token__ -p {} dist/*
 	twine upload --verbose --repository SLAMBUC dist/*
 
 ######## Testing
@@ -25,7 +25,7 @@ publish: build check
 test:
 	python3.13 tests/validate_algs.py
 	python3.13 -m pytest -vv tests/
-	#python3.10 -m pytest -vv tests/
+	@#python3.10 -m pytest -vv tests/
 
 test-publish: build check
 	twine upload --verbose --repository test-SLAMBUC dist/*

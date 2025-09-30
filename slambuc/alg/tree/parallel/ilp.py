@@ -14,6 +14,7 @@
 import collections
 import itertools
 import math
+import typing
 from collections.abc import Generator
 
 import networkx as nx
@@ -70,7 +71,7 @@ def ifeasible_par_subtrees(tree: nx.DiGraph, root: int, M: int, N: int = 1) -> G
 
 def build_par_tree_cfg_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
                              N: int = 1, cpath: set[int] = frozenset(), delay: int = 1,
-                             isubtrees: iter = ifeasible_par_subtrees) -> tuple[
+                             isubtrees: typing.Callable = ifeasible_par_subtrees) -> tuple[
     lp.LpProblem, dict[int, list[lp.LpVariable]]]:
     """
     Generate the configuration ILP model using parallel metric calculation.
@@ -179,8 +180,9 @@ def tree_par_hybrid_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.
 
 ########################################################################################################################
 
-def build_greedy_par_tree_mtx_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
-                                    N: int = 1, cpath: set[int] = frozenset(), subchains: bool = False,
+def build_greedy_par_tree_mtx_model(tree: dict[str | int, dict[str | int, dict[str, int]]] | nx.DiGraph,
+                                    root: int = 1, M: int = math.inf, L: int = math.inf, N: int = 1,
+                                    cpath: set[int] = frozenset(), subchains: bool = False,
                                     delay: int = 1) -> tuple[lp.LpProblem, dict[int, dict[int, lp.LpVariable]]]:
     """
     Generate the matrix ILP model using greedy subcase building and parallel metric calculation.
@@ -195,10 +197,10 @@ def build_greedy_par_tree_mtx_model(tree: nx.DiGraph, root: int = 1, M: int = ma
     sum_cost = lp.LpAffineExpression()
     for j in X:
         cost_pre = 0
-        nodes = set()
+        _nodes = set()
         for v in nx.dfs_preorder_nodes(tree, source=j):
-            nodes |= {v}
-            cost_vj = par_subtree_cost(tree, j, nodes, N)
+            _nodes |= {v}
+            cost_vj = par_subtree_cost(tree, j, _nodes, N)
             X[v][j] = lp.LpVariable(f"x_{v:02d}_{j:02d}", cat=lp.LpBinary) if v != root else 1
             sum_cost += (cost_vj - cost_pre) * X[v][j]
             cost_pre = cost_vj
@@ -251,7 +253,8 @@ def build_greedy_par_tree_mtx_model(tree: nx.DiGraph, root: int = 1, M: int = ma
     return model, X
 
 
-def build_par_tree_mtx_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
+def build_par_tree_mtx_model(tree: dict[str | int, dict[str | int, dict[str, int]]] | nx.DiGraph,
+                             root: int = 1, M: int = math.inf, L: int = math.inf,
                              N: int = 1, cpath: set[int] = frozenset(), subchains: bool = False,
                              delay: int = 1) -> tuple[lp.LpProblem, dict[int, dict[int, lp.LpVariable]]]:
     """

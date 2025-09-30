@@ -17,6 +17,7 @@ import pathlib
 import pickle
 import warnings
 from collections.abc import Generator
+from importlib.abc import Traversable
 
 import networkx as nx
 import numpy as np
@@ -24,7 +25,7 @@ import numpy as np
 from slambuc.alg.app.common import *
 
 
-def encode_service_tree(tree: nx.DiGraph, root: int = 0, pad_size: int = 0) -> np.ndarray[np.int64]:
+def encode_service_tree(tree: nx.DiGraph, root: int = 0, pad_size: int = 0) -> np.ndarray:
     """
     Encode the given app *tree* into an array with size of **5*n** where n is the size of the tree.
 
@@ -50,10 +51,10 @@ def encode_service_tree(tree: nx.DiGraph, root: int = 0, pad_size: int = 0) -> n
         dtype=np.int64)
     # Padding each vector to have a uniform length for saving
     pad_width = max(0, pad_size - len(tree) + 1)
-    return np.pad(data_seq.reshape((5, -1)), ((0, 0), (0, pad_width)))
+    return np.pad(data_seq.reshape((5, -1)), pad_width=((0, 0), (0, pad_width)))
 
 
-def decode_service_tree(tdata: np.ndarray[np.int64]) -> nx.DiGraph:
+def decode_service_tree(tdata: np.ndarray) -> nx.DiGraph:
     """
     Decode and rebuild app tree from value arrays.
 
@@ -73,7 +74,7 @@ def decode_service_tree(tdata: np.ndarray[np.int64]) -> nx.DiGraph:
     return tree
 
 
-def save_trees_to_file(trees: list[nx.DiGraph], file_name: str = "test_trees.npy", padding: int = 0):
+def save_trees_to_file(trees: list[nx.DiGraph], file_name: str | pathlib.Path = "test_trees.npy", padding: int = 0):
     """
     Convert trees into a compact format and save them in a single file.
 
@@ -86,7 +87,7 @@ def save_trees_to_file(trees: list[nx.DiGraph], file_name: str = "test_trees.npy
         np.save(file_name, np.stack(enc_trees))
 
 
-def get_tree_from_file(file_name: str, tree_num: int) -> nx.DiGraph:
+def get_tree_from_file(file_name: str | pathlib.Path, tree_num: int) -> nx.DiGraph:
     """
     Load and decode a app tree from the given *file_name* with specific ID *tree_num*.
 
@@ -98,7 +99,7 @@ def get_tree_from_file(file_name: str, tree_num: int) -> nx.DiGraph:
     return decode_service_tree(np_trees[tree_num - 1, :])
 
 
-def iload_trees_from_file(file_name: str) -> Generator[nx.DiGraph]:
+def iload_trees_from_file(file_name: str | pathlib.Path) -> Generator[nx.DiGraph]:
     """
     Generator of app trees loaded from given *file_name*.
 
@@ -110,7 +111,8 @@ def iload_trees_from_file(file_name: str) -> Generator[nx.DiGraph]:
         yield decode_service_tree(np_trees[idx, :])
 
 
-def load_hist_params(hist_dir: str | pathlib.Path, hist_name: str) -> tuple[list[int | float], list[int | float]]:
+def load_hist_params(hist_dir: str | pathlib.Path | Traversable,
+                     hist_name: str) -> tuple[list[int | float], list[int | float]]:
     """
     Load pickled attributes from given file.
 

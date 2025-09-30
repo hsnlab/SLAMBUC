@@ -17,6 +17,7 @@ import itertools
 import math
 import pickle
 import random
+import typing
 
 import pandas as pd
 import scipy
@@ -28,7 +29,7 @@ HIST_DATA_DIR = importlib.resources.files("slambuc.generator.cluster").joinpath(
 DIST_CACHE = {}
 
 
-def draw(hist_name: str, num: int = 1, path: list = tuple(), ndigits: int = 2, positive: bool = True,
+def draw(hist_name: str, num: int = 1, path: typing.Iterable = tuple(), ndigits: int = 2, positive: bool = True,
          output_integer: bool = False, seed: int = None) -> list[int | float]:
     """
     Draw random samples from a given distribution.

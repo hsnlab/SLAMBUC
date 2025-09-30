@@ -19,9 +19,9 @@ import typing
 import networkx as nx
 
 from slambuc.alg import COST, INFEASIBLE, T_BRESULTS
-from slambuc.alg.chain.path.dp import chain_partitioning, extract_barr
 from slambuc.alg.app import *
 from slambuc.alg.app.common import LABEL
+from slambuc.alg.chain.path.dp import chain_partitioning, extract_barr
 from slambuc.alg.util import ipostorder_dfs, isubchains, ibacktrack_chain, leaf_label_nodes, recreate_subchain_blocks
 
 

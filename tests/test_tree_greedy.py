@@ -63,6 +63,7 @@ def test_failed_greedy_partitioning(graph_path: str, L=math.inf):
 
 def test_random_greedy_partitioning(n: int = 10):
     tree = get_random_tree(n)
+    # noinspection PyUnresolvedReferences
     tree.graph[NAME] += "-greedy"
     params = dict(tree=tree,
                   root=1,

@@ -186,6 +186,7 @@ def test_par_tree():
 
 def test_random_par_tree(n: int = 10):
     tree = get_random_tree(n)
+    # noinspection PyUnresolvedReferences
     tree.graph[NAME] += "-par_ilp_mtx"
     params = dict(tree=tree,
                   root=1,

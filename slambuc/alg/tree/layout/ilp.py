@@ -36,6 +36,7 @@ def ifeasible_gen_subtrees(tree: nx.DiGraph, root: int, M: int, N: int = 1) -> G
     """
     subtrees = collections.defaultdict(list)
     for _, n in ipostorder_dfs(tree, root):
+        # noinspection PyTypeChecker
         for children in ipowerset(tuple(tree.successors(n))):
             for sts in itertools.product(*(subtrees[c] for c in children)):
                 st = {n}.union(*sts)
@@ -49,7 +50,7 @@ def ifeasible_gen_subtrees(tree: nx.DiGraph, root: int, M: int, N: int = 1) -> G
 def build_gen_tree_cfg_model(tree: nx.DiGraph, root: int = 1, flavors: list[Flavor] = (Flavor(),),
                              exec_calc: collections.abc.Callable[[int, int, int], int] = lambda i, t, n: t,
                              L: int = math.inf, cp_end: int = None,
-                             delay: int = 1) -> tuple[lp.LpProblem, list[lp.LpVariable]]:
+                             delay: int = 1) -> tuple[lp.LpProblem, dict[Flavor, dict[int, list[lp.LpVariable]]]]:
     """
     Generate the configuration ILP model with the given *flavors*.
 
@@ -80,6 +81,7 @@ def build_gen_tree_cfg_model(tree: nx.DiGraph, root: int = 1, flavors: list[Flav
     for v in tree:
         if v is PLATFORM:
             continue
+        # noinspection PyTypeChecker
         model += lp.lpSum(X[f][v] for f in X) == 1, f"Cf_{v:03d}"
     # Latency constraint
     model += lp.lpSum(l_x) <= L if L < math.inf else lp.lpSum(l_x) >= 0, LP_LAT
@@ -130,10 +132,11 @@ def recreate_st_from_gen_xdict(tree: nx.DiGraph, X: dict[Flavor, dict[int, list[
 ########################################################################################################################
 
 
-def build_gen_tree_mtx_model(tree: nx.DiGraph, root: int = 1, flavors: list[Flavor] = (Flavor(),),
+def build_gen_tree_mtx_model(tree: dict[str | int, dict[str | int, dict[str, int]]] | nx.DiGraph, root: int = 1,
+                             flavors: list[Flavor] = (Flavor(),),
                              exec_calc: collections.abc.Callable[[int, int, int], int] = lambda i, t, n: t,
                              L: int = math.inf, cp_end: int = None, subchains: bool = False,
-                             delay: int = 1) -> tuple[lp.LpProblem, dict[int, dict[int, dict[int, lp.LpVariable]]]]:
+                             delay: int = 1) -> tuple[lp.LpProblem, dict[Flavor, dict[int, dict[int, lp.LpVariable]]]]:
     """
     Generate the matrix ILP model with the given *flavors*.
 
@@ -148,10 +151,10 @@ def build_gen_tree_mtx_model(tree: nx.DiGraph, root: int = 1, flavors: list[Flav
     for fi, f in enumerate(flavors):
         for j in X[f]:
             cost_pre = 0
-            nodes = set()
+            _nodes = set()
             for v in nx.dfs_preorder_nodes(tree, source=j):
-                nodes |= {v}
-                cost_vj = gen_subtree_cost(tree, j, nodes, f.ncore, exec_calc)
+                _nodes |= {v}
+                cost_vj = gen_subtree_cost(tree, j, _nodes, f.ncore, exec_calc)
                 X[f][v][j] = lp.LpVariable(f"x_{fi}_{v:02d}_{j:02d}", cat=lp.LpBinary)
                 sum_cost += (cost_vj - cost_pre) * X[f][v][j]
                 cost_pre = cost_vj
@@ -160,6 +163,7 @@ def build_gen_tree_mtx_model(tree: nx.DiGraph, root: int = 1, flavors: list[Flav
     for v in tree:
         if v is PLATFORM:
             continue
+        # noinspection PyTypeChecker
         model += lp.lpSum(X[f][v] for f in flavors) == 1, f"Cf_{v:02d}"
     # Knapsack constraints
     for fi, f in enumerate(X):

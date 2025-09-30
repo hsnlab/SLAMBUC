@@ -219,6 +219,7 @@ def test_gen_tree():
 
 def test_random_gen_tree(n: int = 10):
     tree = get_random_tree(n)
+    # noinspection PyUnresolvedReferences
     tree.graph[NAME] += "-gen_ilp"
     params = dict(tree=tree,
                   root=1,

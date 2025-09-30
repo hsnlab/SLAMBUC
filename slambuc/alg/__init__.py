@@ -20,14 +20,14 @@ T_BLOCK = list[int]  # list of block nodes
 T_PART = list[T_BLOCK]  # partitioning as list of blocks
 T_RESULTS = tuple[T_PART, int, int]  # Partitioning, sum cost, sum latency
 T_PART_GEN = Generator[T_PART]
-T_IBLOCK = list[int, int]  # Block interval start and end nodes
+T_IBLOCK = tuple[int, int]  # Block interval start and end nodes
 T_IBLOCK_GEN = Generator[T_IBLOCK]
 T_FBLOCK = tuple[T_BLOCK, Flavor]
 T_FPART = list[T_FBLOCK]
 T_FRESULTS = tuple[T_FPART, int, int]
-T_BARRS = list[int] | set[int]  # list/set of barrier nodes
+T_BARRS = list[int] | set[int] | dict[int, Flavor]  # list/set of barrier nodes
 T_BARRS_GEN = Generator[T_BARRS]
-T_BRESULTS = tuple[T_BARRS, int, int]
+T_BRESULTS = tuple[T_BARRS, int, int] | tuple[None, None, None] | tuple[None, None, int] | tuple[list, None, int]
 
 # Constants for attribute indices in DP matrix
 import math

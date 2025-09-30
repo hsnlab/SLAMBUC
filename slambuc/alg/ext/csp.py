@@ -21,7 +21,7 @@ import cspy
 import networkx as nx
 import numpy as np
 
-from slambuc.alg import INFEASIBLE, T_BLOCK, T_RESULTS, T_PART
+from slambuc.alg import INFEASIBLE, T_BLOCK, T_RESULTS
 from slambuc.alg.app.common import SEP, ASSIGN, Flavor
 from slambuc.alg.util import (leaf_label_nodes, ibacktrack_chain, iflattened_tree, gen_subtree_memory, gen_subtree_cost,
                               gen_subchain_latency, verify_limits)
@@ -42,7 +42,7 @@ def encode_state(grp: T_BLOCK, flavor: Flavor) -> str:
     return f"{SEP.join(map(str, grp))}{ASSIGN}{SEP.join(map(str, flavor))}"
 
 
-def decode_state(name: str) -> list[T_BLOCK, str]:
+def decode_state(name: str) -> tuple[T_BLOCK, str]:
     """
     Decode DAG node name from encoded str into partition block (list of int) and flavor's memory (mem).
 
@@ -55,7 +55,7 @@ def decode_state(name: str) -> list[T_BLOCK, str]:
 
 def ibuild_gen_csp_dag(tree: nx.DiGraph, root: int = 1, flavors: list[Flavor] = (Flavor(),),
                        exec_calc: Callable[[int, int, int], int] = lambda i, t, n: t,
-                       cpath: set[int] = frozenset(), delay: int = 1) -> Generator[nx.DiGraph, list[list[int]]]:
+                       cpath: set[int] = frozenset(), delay: int = 1) -> Generator[tuple[nx.DiGraph, list[int]]]:
     """
     Calculate all state-space DAGs of the given *tree* based on the alternative chain decompositions.
 
@@ -77,8 +77,10 @@ def ibuild_gen_csp_dag(tree: nx.DiGraph, root: int = 1, flavors: list[Flavor] = 
         # Initiate data structure for DAG
         _cache = collections.defaultdict(list)
         _cache.update({START: [START], END: [END]})
+        # noinspection PyUnresolvedReferences
         dag = nx.DiGraph(directed=True, n_res=2, **tree.graph)
         # Iterate the subchains backward
+        # noinspection PyTypeChecker
         for prev, chain in itertools.pairwise(itertools.chain([_cache[END]], reversed(chains))):
             # Generate the subcases of the given subchain
             for i, b in enumerate(reversed(chain), start=1):
@@ -146,8 +148,7 @@ def csp_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L:
             model = solver(dag, max_res=[len(dag.edges), L], min_res=[1, 0], time_limit=timeout, **cspargs)
             model.run()
             if model.path is not None and model.total_cost < best_res[1]:
-                best_res = extract_grp_from_path(model.path, flavors=False), model.total_cost, model.consumed_resources[
-                    -1]
+                best_res = extract_grp_from_path(model.path, False), model.total_cost, model.consumed_resources[-1]
                 if not exhaustive:
                     # Stop at first feasible solution
                     break
@@ -160,8 +161,8 @@ def csp_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L:
     return best_res
 
 
-def csp_gen_tree_partitioning(tree: nx.DiGraph, root: int = 1, flavors: list[tuple[int, int]] = ((math.inf, 1),),
-                              exec_calc: collections.abc.Callable[[int, int], int] = lambda i, t, n: t,
+def csp_gen_tree_partitioning(tree: nx.DiGraph, root: int = 1, flavors: list[Flavor] = ((math.inf, 1),),
+                              exec_calc: collections.abc.Callable[[int, int, int], int] = lambda i, t, n: t,
                               L: int = math.inf, cp_end: int = None, delay: int = 1, solver=cspy.BiDirectional,
                               timeout: int = None, **cspargs) -> T_RESULTS:
     """
@@ -203,7 +204,7 @@ def csp_gen_tree_partitioning(tree: nx.DiGraph, root: int = 1, flavors: list[tup
     return best_res
 
 
-def extract_grp_from_path(path: list[str], flavors: bool = True) -> T_PART:
+def extract_grp_from_path(path: list[str], flavors: bool = True) -> list[tuple[T_BLOCK, str]] | list[tuple[T_BLOCK]]:
     """
     Extract partitioning from *path* and recreate partition blocks.
 

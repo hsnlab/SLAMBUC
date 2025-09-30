@@ -13,7 +13,7 @@
 # limitations under the License.
 import networkx as nx
 
-from slambuc.alg import T_RESULTS
+from slambuc.alg import T_RESULTS, T_PART
 from slambuc.alg.app import PLATFORM
 from slambuc.alg.util import recalculate_partitioning
 
@@ -30,7 +30,8 @@ def baseline_singleton_partitioning(tree: nx.DiGraph, root: int = 1, N: int = 1,
     :param delay:   invocation delay between blocks
     :return:        tuple of partitioning, reached sum cost and latency on the critical path
     """
-    partitioning = [sorted(filter(lambda v: v is not PLATFORM, tree))]
+    partitioning: T_PART = [sorted(filter(lambda v: v is not PLATFORM, tree))]
+    # noinspection PyTypeChecker
     return partitioning, *recalculate_partitioning(tree, partitioning, root, N, cp_end, delay)
 
 
@@ -47,4 +48,5 @@ def baseline_no_partitioning(tree: nx.DiGraph, root: int = 1, N: int = 1, cp_end
     :return:        tuple of partitioning, reached sum cost and latency on the critical path
     """
     partitioning = [[v] for v in tree if v is not PLATFORM]
+    # noinspection PyTypeChecker
     return partitioning, *recalculate_partitioning(tree, partitioning, root, N, cp_end, delay)

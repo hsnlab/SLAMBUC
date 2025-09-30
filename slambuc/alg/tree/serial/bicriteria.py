@@ -38,9 +38,9 @@ class WeightedSubBTreePart(typing.NamedTuple):
         return repr(tuple(self))
 
 
-def biheuristic_btree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
-                                   cp_end: int = None, delay: int = 1, Epsilon: float = 0.0, Lambda: float = 0.0,
-                                   bidirectional: bool = True) -> T_RESULTS:
+def biheuristic_btree_partitioning(tree: dict[str | int, dict[str | int, dict[str, int]]] | nx.DiGraph, root: int = 1,
+                                   M: int = math.inf, L: int = math.inf, cp_end: int = None, delay: int = 1,
+                                   Epsilon: float = 0.0, Lambda: float = 0.0, bidirectional: bool = True) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning of a app graph(tree) with respect to an upper bound **M** on the total
     memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes, while
@@ -208,6 +208,7 @@ def biheuristic_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math
     """
     partition, *_ = biheuristic_btree_partitioning(tree, root, M, L, cp_end, delay, Epsilon, Lambda, bidirectional)
     if partition:
+        # noinspection PyTypeChecker
         return partition, *recalculate_ser_partitioning(tree, partition, root, cp_end, delay)
     else:
         # No feasible solution
@@ -228,9 +229,9 @@ class WeightedSubLTreePart(typing.NamedTuple):
         return repr(tuple(self))
 
 
-def bifptas_ltree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
-                               cp_end: int = None, delay: int = 1, Epsilon: float = 0.0, Lambda: float = 0.0,
-                               bidirectional: bool = True) -> T_RESULTS:
+def bifptas_ltree_partitioning(tree: dict[str | int, dict[str | int, dict[str, int]]] | nx.DiGraph, root: int = 1,
+                               M: int = math.inf, L: int = math.inf, cp_end: int = None, delay: int = 1,
+                               Epsilon: float = 0.0, Lambda: float = 0.0, bidirectional: bool = True) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning of a app graph(tree) with respect to an upper bound **M** on the total
     memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes, while
@@ -415,6 +416,7 @@ def bifptas_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf
     """
     partition, *_ = bifptas_ltree_partitioning(tree, root, M, L, cp_end, delay, Epsilon, Lambda, bidirectional)
     if partition:
+        # noinspection PyTypeChecker
         return partition, *recalculate_ser_partitioning(tree, partition, root, cp_end, delay)
     else:
         # No feasible solution
@@ -435,9 +437,9 @@ class WeightedDualSubLTreePart(typing.NamedTuple):
         return repr(tuple(self))
 
 
-def bifptas_dual_ltree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
-                                    cp_end: int = None, delay: int = 1, Epsilon: float = 0.0, Lambda: float = 0.0,
-                                    bidirectional: bool = True) -> T_RESULTS:
+def bifptas_dual_ltree_partitioning(tree: dict[str | int, dict[str | int, dict[str, int]]] | nx.DiGraph, root: int = 1,
+                                    M: int = math.inf, L: int = math.inf, cp_end: int = None, delay: int = 1,
+                                    Epsilon: float = 0.0, Lambda: float = 0.0, bidirectional: bool = True) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning of a app graph(tree) with respect to an upper bound **M** on the total
     memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes, while
@@ -575,6 +577,7 @@ def bifptas_dual_ltree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = ma
             TDP[n][weight_n_max, lat_n] = dp[weight_n_max]
     # Subcases under the root node contain the feasible partitioning
     if opt_wl := max(TDP[root], key=operator.itemgetter(0), default=None):
+        # noinspection PyTypeChecker
         return recreate_subtree_blocks(tree, TDP[root][opt_wl].barr), *opt_wl
     else:
         # No feasible solution
@@ -612,6 +615,7 @@ def bifptas_dual_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = mat
     """
     partition, *_ = bifptas_dual_ltree_partitioning(tree, root, M, L, cp_end, delay, Epsilon, Lambda, bidirectional)
     if partition:
+        # noinspection PyTypeChecker
         return partition, *recalculate_ser_partitioning(tree, partition, root, cp_end, delay)
     else:
         # No feasible solution

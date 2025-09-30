@@ -21,14 +21,13 @@ from slambuc.alg.util import (ser_chain_sublatency, split_chain, ser_chain_subco
                               ser_chain_submemory)
 
 
-def ifeasible_greedy_blocks(memory: list[int], M: int) -> T_IBLOCK_GEN:
+def ifeasible_greedy_blocks(memory: list[int], M: int | float) -> T_IBLOCK_GEN:
     """
     Generate all feasible (connected) blocks that meet the memory constraint *M* in a greedy manner.
 
     Block memories are calculated by assuming a serialized platform execution model.
 
     :param memory:  list of node memory values
-    :param rate:    list of rate values
     :param M:       upper block memory limit
     :return:        generator of blocks
     """
@@ -36,7 +35,7 @@ def ifeasible_greedy_blocks(memory: list[int], M: int) -> T_IBLOCK_GEN:
     yield from ((i, j) for i in range(n) for j in range(i, n) if ser_chain_submemory(memory, i, j) <= M)
 
 
-def ifeasible_blocks(memory: list[int], M: int) -> T_IBLOCK_GEN:
+def ifeasible_blocks(memory: list[int], M: int | float) -> T_IBLOCK_GEN:
     """
     Generate all feasible (connected) blocks that meet the memory constraint *M* assuming serialized executions.
 
@@ -56,7 +55,7 @@ def ifeasible_blocks(memory: list[int], M: int) -> T_IBLOCK_GEN:
 
 def build_chain_cfg_model(runtime: list[int], memory: list[int], rate: list[int], data: list[int],
                           M: int = math.inf, L: int = math.inf, start: int = 0, end: int = None,
-                          delay: int = 1) -> tuple[lp.LpProblem, dict[lp.LpVariable]]:
+                          delay: int = 1) -> tuple[lp.LpProblem, dict[tuple[int, int], lp.LpVariable]]:
     """
     Generate the configuration ILP model for chains.
 

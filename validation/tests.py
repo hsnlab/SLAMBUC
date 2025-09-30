@@ -131,7 +131,7 @@ APPROX_SENS_ALGS = dict(
 
 
 def perform_mem_sens_tests(n: int = DEF_TREE_SIZE, data_dir: str = DATA_DIR, output_prefix: str = "test_alg_sens",
-                           tree_num: int = None, value: str = None, timeout: int = DEF_TIMEOUT):
+                           tree_num: int = None, value: tuple = None, timeout: int = DEF_TIMEOUT):
     log.info(" M-sensitivity tests ".center(80, '#'))
     if value:
         v, *_ = value
@@ -151,7 +151,7 @@ def perform_mem_sens_tests(n: int = DEF_TREE_SIZE, data_dir: str = DATA_DIR, out
 
 
 def perform_lat_sens_tests(n: int = DEF_TREE_SIZE, data_dir: str = DATA_DIR, output_prefix: str = "test_alg_sens",
-                           tree_num: int = None, value: str = None, timeout: int = DEF_TIMEOUT):
+                           tree_num: int = None, value: tuple = None, timeout: int = DEF_TIMEOUT):
     log.info(" L-sensitivity tests ".center(80, '#'))
     if value:
         v, *_ = value
@@ -171,7 +171,7 @@ def perform_lat_sens_tests(n: int = DEF_TREE_SIZE, data_dir: str = DATA_DIR, out
 
 
 def perform_cpu_sens_tests(n: int = DEF_TREE_SIZE, data_dir: str = DATA_DIR, output_prefix: str = "test_alg_sens",
-                           tree_num: int = None, value: str = None, timeout: int = DEF_TIMEOUT):
+                           tree_num: int = None, value: tuple = None, timeout: int = DEF_TIMEOUT):
     log.info(" CPU-sensitivity tests ".center(80, '#'))
     if value:
         v, *_ = value
@@ -191,7 +191,7 @@ def perform_cpu_sens_tests(n: int = DEF_TREE_SIZE, data_dir: str = DATA_DIR, out
 
 
 def perform_epsilon_sens_tests(n: int = DEF_TREE_SIZE, data_dir: str = DATA_DIR, output_prefix: str = "test_alg_sens",
-                               tree_num: int = None, value: str = None, timeout: int = DEF_TIMEOUT):
+                               tree_num: int = None, value: tuple = None, timeout: int = DEF_TIMEOUT):
     log.info(" Epsilon-sensitivity tests ".center(80, '#'))
     if value:
         v, *_ = value
@@ -211,7 +211,7 @@ def perform_epsilon_sens_tests(n: int = DEF_TREE_SIZE, data_dir: str = DATA_DIR,
 
 
 def perform_lambda_sens_tests(n: int = DEF_TREE_SIZE, data_dir: str = DATA_DIR, output_prefix: str = "test_alg_sens",
-                              tree_num: int = None, value: str = None, timeout: int = DEF_TIMEOUT):
+                              tree_num: int = None, value: tuple = None, timeout: int = DEF_TIMEOUT):
     log.info(" Lambda-sensitivity tests ".center(80, '#'))
     if value:
         v, *_ = value
@@ -232,7 +232,7 @@ def perform_lambda_sens_tests(n: int = DEF_TREE_SIZE, data_dir: str = DATA_DIR, 
 
 def perform_bicriteria_sens_tests(n: int = DEF_TREE_SIZE, data_dir: str = DATA_DIR,
                                   output_prefix: str = "test_alg_sens", tree_num: int = None,
-                                  value: str = None, timeout: int = DEF_TIMEOUT):
+                                  value: tuple = None, timeout: int = DEF_TIMEOUT):
     log.info(" (Epsilon, Lambda)-sensitivity tests ".center(80, '#'))
     if value:
         v_e, v_l = value

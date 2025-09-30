@@ -57,6 +57,7 @@ def extract_inv_rate_from_file(file_name: str | pathlib.Path, cache: bool = Fals
         cache_file = pathlib.Path(pathlib.Path(file_name).stem + "_rate").with_suffix('.npy')
         with open(cache_file, 'wb') as f:
             print(">>>> Dump inv. rate data into", f.name)
+            # noinspection PyTypeChecker
             np.save(f, inv_calls, allow_pickle=False)
     return inv_calls
 
@@ -84,6 +85,7 @@ def extract_inv_rate_hist(csv_dir: str, use_cache: bool = True):
     inv_hist = np.histogram(sum_inv_data, bins=RATE_BIN_CALC_METHOD, range=RATE_RANGE, density=DENSITY)
     with open(f"{RATE_HIST_NAME}.pkl", 'wb') as f:
         print("Dump hist params into:", f.name)
+        # noinspection PyTypeChecker
         pickle.dump(inv_hist, f, protocol=5, fix_imports=True)
 
 
@@ -107,6 +109,7 @@ def extract_rw_overhead_from_file(file_name: str | pathlib.Path, cache: bool = F
         cache_file = pathlib.Path(pathlib.Path(file_name).stem + "_data").with_suffix('.npy')
         with open(cache_file, 'wb') as f:
             print(">>>> Dump R/W overhead data into", f.name)
+            # noinspection PyTypeChecker
             np.save(f, data_rw, allow_pickle=False)
     return data_rw
 
@@ -134,6 +137,7 @@ def extract_rw_overhead_hist(csv_dir: str, use_cache: bool = True):
     inv_hist = np.histogram(sum_rw_data, bins=DATA_BIN_CALC_METHOD, range=DATA_RANGE, density=DENSITY)
     with open(f"{DATA_HIST_NAME}.pkl", 'wb') as f:
         print("Dump hist params into:", f.name)
+        # noinspection PyTypeChecker
         pickle.dump(inv_hist, f, protocol=5, fix_imports=True)
 
 
@@ -175,11 +179,13 @@ def extract_all_call_params(csv_dir: str, use_cache: bool = True):
     if use_cache and not pathlib.Path(f"{RATE_HIST_NAME}.npy").exists():
         with open(f"{RATE_HIST_NAME}.npy", 'wb') as f:
             print(">>>> Dump inv. rate data into", f.name)
+            # noinspection PyTypeChecker
             np.save(f, sum_inv_data, allow_pickle=False)
     print("Create inv. rate histograms...")
     inv_hist = np.histogram(sum_inv_data, bins=RATE_BIN_CALC_METHOD, range=RATE_RANGE, density=DENSITY)
     with open(f"{RATE_HIST_NAME}.pkl", 'wb') as f:
         print("Dump rate hist params into:", f.name)
+        # noinspection PyTypeChecker
         pickle.dump(inv_hist, f, protocol=5, fix_imports=True)
     print("Assemble R/W data...")
     sum_rw_data = list(itertools.chain.from_iterable(sum_rw_data))
@@ -188,11 +194,13 @@ def extract_all_call_params(csv_dir: str, use_cache: bool = True):
     if use_cache and not pathlib.Path(f"{DATA_HIST_NAME}.npy").exists():
         with open(f"{DATA_HIST_NAME}.npy", 'wb') as f:
             print(">>>> Dump R/W data into", f.name)
+            # noinspection PyTypeChecker
             np.save(f, sum_inv_data, allow_pickle=False)
     print("Create R/W data histograms...")
     data_hist = np.histogram(sum_rw_data, bins=DATA_BIN_CALC_METHOD, range=DATA_RANGE, density=DENSITY)
     with open(f"{DATA_HIST_NAME}.pkl", 'wb') as f:
         print("Dump R/W hist params into:", f.name)
+        # noinspection PyTypeChecker
         pickle.dump(data_hist, f, protocol=5, fix_imports=True)
 
 
@@ -231,11 +239,13 @@ def extract_all_call_params_from_cache(cache_dir: str):
     if not pathlib.Path(f"{RATE_HIST_NAME}.npy").exists():
         with open(f"{RATE_HIST_NAME}.npy", 'wb') as f:
             print(">>>> Dump inv. rate data into", f.name)
+            # noinspection PyTypeChecker
             np.save(f, sum_inv_data, allow_pickle=False)
     print("Create inv. rate histograms...")
     inv_hist = np.histogram(sum_inv_data, bins=RATE_BIN_CALC_METHOD, range=RATE_RANGE, density=DENSITY)
     with open(f"{RATE_HIST_NAME}.pkl", 'wb') as f:
         print("Dump rate hist params into:", f.name)
+        # noinspection PyTypeChecker
         pickle.dump(inv_hist, f, protocol=5, fix_imports=True)
     print("Assemble R/W data...")
     sum_rw_data = list(itertools.chain.from_iterable(sum_rw_data))
@@ -244,11 +254,13 @@ def extract_all_call_params_from_cache(cache_dir: str):
     if not pathlib.Path(f"{DATA_HIST_NAME}.npy").exists():
         with open(f"{DATA_HIST_NAME}.npy", 'wb') as f:
             print(">>>> Dump R/W data into", f.name)
+            # noinspection PyTypeChecker
             np.save(f, sum_inv_data, allow_pickle=False)
     print("Create R/W data histograms...")
     data_hist = np.histogram(sum_rw_data, bins=DATA_BIN_CALC_METHOD, range=DATA_RANGE, density=DENSITY)
     with open(f"{DATA_HIST_NAME}.pkl", 'wb') as f:
         print("Dump R/W hist params into:", f.name)
+        # noinspection PyTypeChecker
         pickle.dump(data_hist, f, protocol=5, fix_imports=True)
 
 

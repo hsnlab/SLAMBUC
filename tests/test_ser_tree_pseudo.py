@@ -82,6 +82,7 @@ def test_ser_tree_pseudo_partitioning():
 
 def test_random_tree_partitioning(n: int = 10):
     tree = get_random_tree(n)
+    # noinspection PyUnresolvedReferences
     tree.graph[NAME] += "-ser_pseudo"
     params = dict(tree=tree,
                   root=1,

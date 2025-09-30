@@ -59,6 +59,7 @@ def test_failed_tree_partitioning(graph_path: str, L=math.inf):
 
 def test_random_tree_partitioning(n: int = 10):
     tree = get_random_tree(n)
+    # noinspection PyUnresolvedReferences
     tree.graph[NAME] += "-min"
     params = dict(tree=tree,
                   root=1,

@@ -33,6 +33,7 @@ from slambuc.misc.util import print_lp_desc, evaluate_ser_tree_partitioning, get
 
 def test_feasible_subtrees(branch: int = 2, depth: int = 2):
     tree = nx.balanced_tree(branch, depth, create_using=nx.DiGraph)
+    # noinspection PyTypeChecker
     nx.set_node_attributes(tree, 1, MEMORY)
     tree.add_edge(PLATFORM, 0)
     print("  All blocks (exhaustive)  ".center(80, '='))
@@ -211,6 +212,7 @@ def test_ser_tree():
 
 def test_random_ser_tree(n: int = 10):
     tree = get_random_tree(n)
+    # noinspection PyUnresolvedReferences
     tree.graph[NAME] += "-ser_ilp_cfg"
     params = dict(tree=tree,
                   root=1,

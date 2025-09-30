@@ -14,12 +14,14 @@
 import collections
 import math
 import sys
+import typing
 import warnings
 
 import docplex
 import docplex.cp.model as cpo
 import docplex.mp.model as cpx
 import networkx as nx
+from docplex.mp.dvar import Var
 
 if sys.version_info.minor > 10 and docplex.docplex_version_minor <= 30:
     warnings.warn(f"docplex[{docplex.version.docplex_version_string}] package does not support Python version >3.12!")
@@ -32,11 +34,12 @@ from slambuc.alg.util import (ibacktrack_chain, induced_subtrees, ser_subchain_l
 from slambuc.misc.util import get_cpo_path
 
 CPO_PATH = get_cpo_path()
+T_VARS = dict[int, list[cpo.CpoIntVar]]
 
 
-def build_tree_cfg_cpo_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
-                             L: int = math.inf, cpath: set[int] = frozenset(), delay: int = 1,
-                             isubtrees: iter = ifeasible_subtrees) -> tuple[cpo.CpoModel, list[cpo.CpoIntVar]]:
+def build_tree_cfg_cpo_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
+                             cpath: set[int] = frozenset(), delay: int = 1,
+                             isubtrees: typing.Callable = ifeasible_subtrees) -> tuple[cpo.CpoModel, T_VARS]:
     """
     Generate the configuration CP model.
 
@@ -131,7 +134,7 @@ def recreate_subtrees_from_cpo_xdict(tree: nx.DiGraph, result: cpo.CpoSolveResul
 
 def build_greedy_tree_cplex_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
                                   L: int = math.inf, cpath: set[int] = frozenset(),
-                                  delay: int = 1) -> tuple[cpx.Model, dict[int, dict[int, docplex.mp.dvar]]]:
+                                  delay: int = 1) -> tuple[cpx.Model, dict[int, dict[int, Var]]]:
     """
     Generate the matrix ILP model using CPLEX Python binding.
 
@@ -187,9 +190,9 @@ def build_greedy_tree_cplex_model(tree: nx.DiGraph, root: int = 1, M: int = math
     return model, X
 
 
-def build_tree_cplex_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
-                           L: int = math.inf, cpath: set[int] = frozenset(),
-                           delay: int = 1) -> tuple[cpx.Model, dict[int, dict[int, docplex.mp.dvar]]]:
+def build_tree_cplex_model(tree: dict[str | int, dict[str | int, dict[str, int]]] | nx.DiGraph, root: int = 1,
+                           M: int = math.inf, L: int = math.inf, cpath: set[int] = frozenset(),
+                           delay: int = 1) -> tuple[cpx.Model, dict[int, dict[int, Var]]]:
     """
     Generate the matrix ILP model using CPLEX Python binding.
 
@@ -198,7 +201,7 @@ def build_tree_cplex_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
     # Model
     model = cpx.Model(name="Tree_Partitioning")
     # Decision variable matrix with trivial variables
-    X = {j: {j: model.binary_var(f"x_{j:02d}_{j:02d}")} for j in tree.nodes if j is not PLATFORM}
+    X: dict[int, dict] = {j: {j: model.binary_var(f"x_{j:02d}_{j:02d}")} for j in tree.nodes if j is not PLATFORM}
     # Empty objective
     sum_cost = model.linear_expr()
     # Empty latency constraint
@@ -248,7 +251,7 @@ def build_tree_cplex_model(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
 
 
 def tree_cplex_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
-                            cp_end: int = None, delay: int = 1, **kwargs) -> T_RESULTS:
+                            cp_end: int = None, delay: int = 1, **kwargs) -> tuple[T_PART, float, float | None]:
     """
     Calculates minimal-cost partitioning of a tree based on matrix CPLEX ILP formulation.
 
@@ -275,7 +278,7 @@ def tree_cplex_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, 
         return INFEASIBLE
 
 
-def extract_subtrees_from_cplex_xmatrix(X: dict[int, dict[int, docplex.mp.dvar]]) -> T_PART:
+def extract_subtrees_from_cplex_xmatrix(X: dict[int, dict[int, Var]]) -> T_PART:
     """
     Extract barrier nodes from variable matrix(dict-of-dict) and recreate partitioning blocks.
 

@@ -88,8 +88,9 @@ def min_chain_partitioning(runtime: list[int], memory: list[int], rate: list[int
     if k_max < k_min:
         return None, None, None
     # Check single node partitioning
+    _cache = [[0, 0], 0, 0, [0, 0]]
     if len(runtime) == 1:
-        return [0], block_cost(0), block_latency(0, 0)
+        return [0], block_cost(0, _cache), block_latency(0, 0, _cache)
     # Initialize DP matrix with an additional trailing element for the backward reference of the trivial singleton cases
     DP = [State() for _ in range(n + 1)]
     # Initialize default reference values for the trivial singleton subcases

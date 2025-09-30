@@ -21,7 +21,7 @@ import networkx as nx
 import pulp
 import tabulate
 
-from slambuc.alg import LP_LAT, T_PART, T_BARRS
+from slambuc.alg import LP_LAT, T_PART, T_BARRS, T_FPART
 from slambuc.alg.app.common import *
 from slambuc.alg.util import (ichain, path_blocks, chain_memory, chain_cost, chain_latency, leaf_label_nodes,
                               chain_cpu, ser_chain_subcost, ser_chain_sublatency, ser_subtree_cost,
@@ -57,7 +57,7 @@ def get_cpo_path() -> str:
     return str(cpo_path) if cpo_path.exists() else None
 
 
-def get_glpk_path() -> str:
+def get_glpk_path() -> str | None:
     """
     Return local GLPK path.
 
@@ -360,6 +360,7 @@ def evaluate_tree_partitioning(tree: nx.DiGraph, partition: T_PART, opt_cost: in
     :param unit:        rounding unit
     """
     tree = leaf_label_nodes(tree)
+    # noinspection PyUnresolvedReferences
     print(tree.graph.get(NAME, "tree").center(80, '#'))
     print("Runtime:", [tree.nodes[v][RUNTIME] for v in tree.nodes if v is not PLATFORM])
     print("Memory:", [tree.nodes[v][MEMORY] for v in tree.nodes if v is not PLATFORM])
@@ -375,7 +376,7 @@ def evaluate_tree_partitioning(tree: nx.DiGraph, partition: T_PART, opt_cost: in
 ########################################################################################################################
 
 
-def print_ser_tree_block_stat(tree: nx.DiGraph, partition: T_PART, cpath: list[int]):
+def print_ser_tree_block_stat(tree: nx.DiGraph, partition: T_PART, cpath: typing.Iterable[int]):
     """
     Print cost memory and latency values of partition blocks in tabulated format.
 
@@ -425,6 +426,7 @@ def evaluate_ser_tree_partitioning(tree: nx.DiGraph, partition: T_PART, opt_cost
     :param draw:        draw tree
     """
     tree = leaf_label_nodes(tree)
+    # noinspection PyUnresolvedReferences
     print(tree.graph.get(NAME, "tree").center(80, '#'))
     print("Runtime:", [tree.nodes[v][RUNTIME] for v in tree.nodes if v is not PLATFORM])
     print("Memory:", [tree.nodes[v][MEMORY] for v in tree.nodes if v is not PLATFORM])
@@ -441,7 +443,7 @@ def evaluate_ser_tree_partitioning(tree: nx.DiGraph, partition: T_PART, opt_cost
     print('#' * 80)
 
 
-def print_par_tree_block_stat(tree: nx.DiGraph, partition: T_PART, cpath: list[int], N: int = 1):
+def print_par_tree_block_stat(tree: nx.DiGraph, partition: T_PART, cpath: typing.Iterable[int], N: int = 1):
     """
     Print cost memory and latency values of partition blocks in tabulated format  assuming parallelized execution model.
 
@@ -477,7 +479,8 @@ def print_par_cpath_stat(tree: nx.DiGraph, partition: T_PART, cpath: list[int] =
 
 
 def evaluate_par_tree_partitioning(tree: nx.DiGraph, partition: T_PART, opt_cost: int, opt_lat: int, root: int,
-                                   cp_end: int, M: int, L: int, N: int, delay: int, draw: bool = True, **params):
+                                   cp_end: int, M: int | None, L: int | None, N: int, delay: int, draw: bool = True,
+                                   **params):
     """
     Evaluate tree partitioning and print its characteristics assuming a parallelized platform execution model.
 
@@ -494,6 +497,7 @@ def evaluate_par_tree_partitioning(tree: nx.DiGraph, partition: T_PART, opt_cost
     :param draw:        draw tree
     """
     tree = leaf_label_nodes(tree)
+    # noinspection PyUnresolvedReferences
     print(tree.graph.get(NAME, "tree").center(80, '#'))
     print("Runtime:", [tree.nodes[v][RUNTIME] for v in tree.nodes if v is not PLATFORM])
     print("Memory:", [tree.nodes[v][MEMORY] for v in tree.nodes if v is not PLATFORM])
@@ -509,7 +513,7 @@ def evaluate_par_tree_partitioning(tree: nx.DiGraph, partition: T_PART, opt_cost
     print('#' * 80)
 
 
-def evaluate_gen_tree_partitioning(tree: nx.DiGraph, partition: T_PART, opt_cost: int, opt_lat: int, root: int,
+def evaluate_gen_tree_partitioning(tree: nx.DiGraph, partition: T_FPART, opt_cost: int, opt_lat: int, root: int,
                                    flavors: list, cp_end: int, L: int, delay: int, draw: bool = True, **params):
     """
     Evaluate tree partitioning and print its characteristics assuming parallelized platform execution model.
@@ -526,6 +530,7 @@ def evaluate_gen_tree_partitioning(tree: nx.DiGraph, partition: T_PART, opt_cost
     :param draw:        draw tree
     """
     tree = leaf_label_nodes(tree)
+    # noinspection PyUnresolvedReferences
     print(tree.graph.get(NAME, "tree").center(80, '#'))
     print("Runtime:", [tree.nodes[v][RUNTIME] for v in tree.nodes if v is not PLATFORM])
     print("Memory:", [tree.nodes[v][MEMORY] for v in tree.nodes if v is not PLATFORM])
@@ -603,7 +608,7 @@ def evaluate_ser_chain_partitioning(partition: T_PART, opt_cost: int, opt_lat: i
     print('#' * 80)
 
 
-def print_par_dag_block_stat(dag: nx.DiGraph, partition: T_PART, cpath: list[int], N: int = 1):
+def print_par_dag_block_stat(dag: nx.DiGraph, partition: T_PART, cpath: typing.Iterable[int], N: int = 1):
     """
     Print cost memory and latency values of partition blocks in tabulated format  assuming a
     parallelized execution model.
@@ -622,7 +627,8 @@ def print_par_dag_block_stat(dag: nx.DiGraph, partition: T_PART, cpath: list[int
     print(tabulate.tabulate(stat, ['Block', 'Cost', 'Memory', 'Latency'], numalign='decimal', stralign='center'))
 
 
-def print_dag_cpath_stat(dag: nx.DiGraph, partition: T_PART, cpath: list[int] = None, delay: int = 10, N: int = 1):
+def print_dag_cpath_stat(dag: nx.DiGraph, partition: T_PART, cpath: typing.Iterable[int] = None, delay: int = 10,
+                         N: int = 1):
     """
     Print the related block of the critical path assuming a parallelized execution model.
 
@@ -657,6 +663,7 @@ def evaluate_par_dag_partitioning(dag: nx.DiGraph, partition: T_PART, opt_cost: 
     :param delay:       platform invocation delay
     :param draw:        draw tree
     """
+    # noinspection PyUnresolvedReferences
     print(dag.graph.get(NAME, "tree").center(80, '#'))
     print(f"Tree partitioning [{M=}, {L=}:{(root, cp_end)}, {N=}] => {partition} - opt_cost: {opt_cost},"
           f" opt_lat: {opt_lat}")
@@ -684,7 +691,7 @@ def print_lp_desc(model: pulp.LpProblem):
             print(f.read())
 
 
-def convert_var_dict(X: dict[int, dict[int]]) -> list[list[pulp.LpVariable]]:
+def convert_var_dict(X: dict[int, dict[int, ...]]) -> list[list[pulp.LpVariable]]:
     """
     Convert dict-of-dict variable matrix into list-of-list format.
 

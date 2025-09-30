@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from .dp import chain_partitioning, vec_chain_partitioning
 from .greedy import greedy_chain_partitioning
 from .min import min_chain_partitioning
-from .dp import chain_partitioning, vec_chain_partitioning
 from .sp import sp_chain_partitioning

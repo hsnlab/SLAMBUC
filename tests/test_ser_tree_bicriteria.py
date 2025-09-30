@@ -57,6 +57,7 @@ def test_ser_bicriteria_tree_partitioning():
 
 def test_random_bicriteria_tree_partitioning(n: int = 10):
     tree = get_random_tree(n)
+    # noinspection PyUnresolvedReferences
     tree.graph[NAME] += "-ser_bic"
     params = dict(tree=tree,
                   root=1,
@@ -71,6 +72,7 @@ def test_random_bicriteria_tree_partitioning(n: int = 10):
 def get_accuracy_stats(n: int = 10, M: int = 6, L: int = math.inf, Epsilon: float = 0.0, Lambda: float = 0.0,
                        stop_failed: bool = False):
     tree = get_random_tree(n)
+    # noinspection PyUnresolvedReferences
     tree.graph[NAME] += "-ser_bic"
     params = dict(tree=tree,
                   root=1,
@@ -80,7 +82,7 @@ def get_accuracy_stats(n: int = 10, M: int = 6, L: int = math.inf, Epsilon: floa
                   L=L,
                   delay=10,
                   bidirectional=False)
-    bic_params = params.copy()
+    bic_params: dict = params.copy()
     bic_params.update(Epsilon=Epsilon, Lambda=Lambda)
     #
     # Btree exact

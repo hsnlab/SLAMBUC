@@ -20,6 +20,6 @@ packaging>=24.2
 build
 ### Ext ###
 pydoc-markdown
-#docplex~=2.30.251
+docplex~=2.30.251
 #fitter~=1.7.1
 #spar~=0.0.7

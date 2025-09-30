@@ -40,7 +40,7 @@ def ichain_blocks(memory: list[int], M: int) -> T_PART_GEN:
 
 def greedy_ser_chain_partitioning(runtime: list[int], memory: list[int], rate: list[int], data: list[int],
                                   M: int = math.inf, L: int = math.inf, start: int = 0, end: int = None,
-                                  delay: int = 1) -> T_RESULTS:
+                                  delay: int = 1) -> list[T_RESULTS]:
     """
     Calculates all minimal-cost partitioning outcomes of a given chain by applying exhaustive search.
 

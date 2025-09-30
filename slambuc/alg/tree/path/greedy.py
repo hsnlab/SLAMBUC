@@ -23,7 +23,7 @@ from slambuc.alg.util import (isubtrees, ibacktrack_chain, ipowerset, path_block
                               chain_cpu, chain_memory_opt)
 
 
-def ichains_exhaustive(tree: nx.DiGraph, root: int, M: int, N: int) -> Generator[list[int]]:
+def ichains_exhaustive(tree: nx.DiGraph, root: int, M: int, N: int) -> Generator[set[int]]:
     """
     Calculate all combinations of edge cuts and returns only if it is feasible wrt. the chain connectivity, M, and N.
 
@@ -40,6 +40,7 @@ def ichains_exhaustive(tree: nx.DiGraph, root: int, M: int, N: int) -> Generator
         barr = {root}.union(v for _, v in cuts)
         # Check whether the subtrees are chains and meet the memory requirement M and N
         for b, nodes in isubtrees(tree, barr):
+            # noinspection PyUnresolvedReferences
             if max(d for _, d in tree.subgraph(nodes).out_degree) > 1:
                 break
             memory, rate = zip(*[(tree.nodes[v][MEMORY], tree[u][v][RATE]) for u, v in
@@ -50,7 +51,7 @@ def ichains_exhaustive(tree: nx.DiGraph, root: int, M: int, N: int) -> Generator
             yield barr
 
 
-def ifeasible_chains(tree: nx.DiGraph, root: int, M: int, N: int) -> Generator[list[int]]:
+def ifeasible_chains(tree: nx.DiGraph, root: int, M: int, N: int) -> Generator[set[int]]:
     """
     Calculate only feasible chain partitions and returns the one which meets the limits M and N.
 

@@ -45,7 +45,7 @@ DEF_JOB_TREE_PREFIX = "job_tree"
 
 
 def convert_tasks_to_dag(job_name: str, tasks: pd.DataFrame, mem_max: int = DEF_MEM_MAX,
-                         data_mean: int = None) -> tuple[nx.DiGraph, int]:
+                         data_mean: int = None) -> tuple[nx.DiGraph, int] | None:
     """
     Convert the task lines of given job *job_name* into a DAG and return it with the generated front-end root node.
 

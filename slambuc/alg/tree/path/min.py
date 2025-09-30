@@ -17,7 +17,7 @@ import typing
 
 import networkx as nx
 
-from slambuc.alg import INFEASIBLE, T_BLOCK, T_RESULTS
+from slambuc.alg import INFEASIBLE, T_RESULTS, T_PART
 from slambuc.alg.app import *
 from slambuc.alg.util import ipostorder_dfs, ibacktrack_chain
 
@@ -37,8 +37,9 @@ class MinTBlock(typing.NamedTuple):
         return repr(tuple(self))
 
 
-def min_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N: int = math.inf, L: int = math.inf,
-                          cp_end: int = None, delay: int = 1, unit: int = 100, full: bool = True) -> T_RESULTS:
+def min_tree_partitioning(tree: dict[str | int, dict[str | int, dict[str, int]]] | nx.DiGraph, root: int = 1,
+                          M: int = math.inf, N: int = math.inf, L: int = math.inf, cp_end: int = None, delay: int = 1,
+                          unit: int = 100, full: bool = True) -> T_RESULTS | tuple[list, None, int]:
     """
     Calculates minimal-cost partitioning of an app graph(tree) with respect to an upper bound **M** on the total
     memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes.
@@ -153,7 +154,7 @@ def min_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N:
 
 
 def extract_min_blocks(tree: nx.DiGraph, DP: list[collections.deque[MinTBlock]],
-                       root: int, full: bool = True) -> T_BLOCK:
+                       root: int, full: bool = True) -> T_PART:
     """
     Extract subtree roots of partitioning from the tailing nodes stored in the *DP* matrix.
 

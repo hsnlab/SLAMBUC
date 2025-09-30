@@ -23,7 +23,7 @@ from slambuc.alg import INFEASIBLE, T_BARRS, MEM, CPU, COST, LAT, BARR
 
 class State(typing.NamedTuple):
     """Store block attributes for a given DP subcase."""
-    barr: int = None  # Barrier/heading node of the last block in the given subcase partitioning
+    barr: int | None = None  # Barrier/heading node of the last block in the given subcase partitioning
     cost: int = math.inf  # Sum cost of the partitioning
     lat: int = math.inf  # Sum latency of the partitioning regarding the limited subchain[start, end]
 
@@ -73,6 +73,7 @@ def chain_partitioning(runtime: list, memory: list, rate: list, M: int = math.in
     @functools.lru_cache(maxsize=n - 1)
     def block_cpu(_b: int, _w: int) -> int:
         """Calculate memory of block[b, w]"""
+        # noinspection PyTypeChecker
         r_max = itertools.chain((1,), enumerate(itertools.accumulate(reversed(rate[_b: _w + 1]), max)))
         return functools.reduce(lambda pre, max_i: max(pre, math.ceil(max_i[1] / rate[_w - max_i[0]])), r_max)
 
@@ -240,13 +241,13 @@ def vec_chain_partitioning(runtime: list, memory: list, rate: list, M: int = np.
     k_max = math.floor(min((L - sum(runtime[start: end + 1])) / delay + 1, n))
     if k_max < k_min:
         return INFEASIBLE
-    # Check single node partitioning
-    if len(runtime) == 1:
-        return [0], block_cost(0), block_latency(0, 0)
-    # Initialize DP matrix -> DP[i][j][BARR, COST, LAT]
-    DP = np.full((n, n, 3), np.inf)
     # Define cache for cumulative block attribute calculations: [MEM, COST, LAT]
     __cache = [[0, 0], 0, 0, [0, 0]]
+    # Check single node partitioning
+    if len(runtime) == 1:
+        return [0], block_cost(0, __cache), block_latency(0, 0, __cache)
+    # Initialize DP matrix -> DP[i][j][BARR, COST, LAT]
+    DP = np.full((n, n, 3), np.inf)
     # Initialize default values for grouping the first w nodes into one group
     for w in range(0, n):
         if block_memory(0, w, __cache, from_left=True) > M or block_cpu(w, __cache, from_left=True) > N:
@@ -266,7 +267,7 @@ def vec_chain_partitioning(runtime: list, memory: list, rate: list, M: int = np.
             feasible_idx = np.flatnonzero((subcases[:, LAT] <= L) & (subcases[:, COST] <= DP[w, 1:b + 1, COST]))
             DP[w, feasible_idx + 1] = subcases[feasible_idx]
     # Index of optimal cost partition, the fist one if multiple min values exist
-    k_opt = np.argmin(DP[n - 1, :, COST])
+    k_opt = int(np.argmin(DP[n - 1, :, COST]))
     _, opt_cost, opt_lat = DP[n - 1, k_opt]
     if opt_cost < np.inf:
         return DP if ret_dp else extract_vec_barr(DP, k_opt), opt_cost, opt_lat

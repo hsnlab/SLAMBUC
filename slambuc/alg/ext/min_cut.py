@@ -23,6 +23,7 @@ from slambuc.alg.app import RATE, DATA, PLATFORM
 from slambuc.alg.util import recreate_subtree_blocks, recalculate_partitioning
 
 
+# noinspection PyUnresolvedReferences
 def min_weight_subchain_split(tree: nx.DiGraph, root: int) -> set[int]:
     """
     Return chain-based edge cuts with the minimal edge weight (amount of transferred data).

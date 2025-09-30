@@ -163,6 +163,7 @@ def test_random_validation(n: int = 10, cache_failed: bool = False, stop_failed=
     singleton_lat = ser_subchain_latency(tree, 1, set(range(1, n + 1)), set(cpath))
     rand_factor = 1 - 1 / random.randint(2, len(cpath))
     params = dict(tree=tree, root=1, cp_end=cp_end, M=6, delay=10, L=int(rand_factor * singleton_lat))
+    # noinspection PyUnresolvedReferences
     print(tree.graph.get(NAME, "tree").center(80, '#'))
     print("Runtime:", [tree.nodes[v][RUNTIME] for v in tree.nodes if v is not PLATFORM])
     print("Memory:", [tree.nodes[v][MEMORY] for v in tree.nodes if v is not PLATFORM])
@@ -182,7 +183,9 @@ def test_random_validation(n: int = 10, cache_failed: bool = False, stop_failed=
                      all(c_grdy == c for c in c_algs) if all((c_grdy, *c_algs)) else True,
                      all(l in l_grdy for l in l_algs)))
     if not validated and cache_failed:
+        # noinspection PyUnresolvedReferences
         tree.graph[NAME] = f"failed_{tree.graph[NAME]}_L{params['L']}_M{params['M']}.gml"
+        # noinspection PyUnresolvedReferences
         nx.write_gml(tree, tree.graph[NAME], stringizer=str)
     result = 'SUCCESS' if validated else 'FAILED'
     print(f"Validation: {result}")

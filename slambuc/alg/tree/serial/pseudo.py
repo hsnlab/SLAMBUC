@@ -36,10 +36,11 @@ class SubBTreePart(typing.NamedTuple):
         return repr(tuple(self))
 
 
-def pseudo_btree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf, cp_end: int = None,
-                              delay: int = 1, bidirectional: bool = True) -> T_RESULTS:
+def pseudo_btree_partitioning(tree: dict[str | int, dict[str | int, dict[str, int]]] | nx.DiGraph, root: int = 1,
+                              M: int = math.inf, L: int = math.inf, cp_end: int = None, delay: int = 1,
+                              bidirectional: bool = True) -> T_RESULTS:
     """
-    Calculates minimal-cost partitioning of a app graph(tree) with respect to an upper bound **M** on the total
+    Calculates minimal-cost partitioning of an app graph(tree) with respect to an upper bound **M** on the total
     memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes, while
     applying bottom-up tree traversal approach.
     
@@ -153,8 +154,9 @@ class SubLTreePart(typing.NamedTuple):
         return repr(tuple(self))
 
 
-def pseudo_ltree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf, cp_end: int = None,
-                              delay: int = 1, bidirectional: bool = True) -> T_RESULTS:
+def pseudo_ltree_partitioning(tree: dict[str | int, dict[str | int, dict[str, int]]] | nx.DiGraph, root: int = 1,
+                              M: int = math.inf, L: int = math.inf, cp_end: int = None, delay: int = 1,
+                              bidirectional: bool = True) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning of a app graph(tree) with respect to an upper bound **M** on the total
     memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes, while

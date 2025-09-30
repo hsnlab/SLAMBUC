@@ -47,6 +47,7 @@ def test_ser_tree_greedy_partitioning():
 
 def test_random_greedy_partitioning(n: int = 10):
     tree = get_random_tree(n)
+    # noinspection PyUnresolvedReferences
     tree.graph[NAME] += "-greedy_ser"
     params = dict(tree=tree,
                   M=6,

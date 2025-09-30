@@ -15,6 +15,7 @@ import collections
 import math
 import multiprocessing
 import operator
+import typing
 
 import networkx as nx
 
@@ -26,10 +27,11 @@ from slambuc.alg.util import (ipostorder_dfs, ibacktrack_chain, recreate_subtree
                               par_inst_count, verify_limits)
 
 
-def _par_ltree_partitioning(ready: multiprocessing.SimpleQueue, sync: dict[int, multiprocessing.SimpleQueue],
-                            tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
-                            N: int = 1, cpath: set[int] = frozenset(), delay: int = 1,
-                            bidirectional: bool = True) -> None | dict[int, SubBTreePart]:
+def _par_ltree_partitioning(ready: typing.Union[multiprocessing.SimpleQueue, None],
+                            sync: dict[int, multiprocessing.SimpleQueue],
+                            tree: dict[str | int, dict[str | int, dict[str, int]]] | nx.DiGraph, root: int = 1,
+                            M: int = math.inf, L: int = math.inf, N: int = 1, cpath: set[int] = frozenset(),
+                            delay: int = 1, bidirectional: bool = True) -> None | dict[int, SubBTreePart]:
     """
     Calculates minimal-cost partitioning of a subgraph with *root* node using the left-right tree traversal approach
     while waits for subcases at *sync* edges.
