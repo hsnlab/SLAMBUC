@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.10
+#!/usr/bin/env python3
 # Copyright 2023 Janos Czentye
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,6 +25,9 @@ import networkx as nx
 import pandas as pd
 import pulp
 import tabulate
+from docplex.cp.utils import CpoException
+from docplex.mp.utils import DOcplexException
+from pulp import PulpSolverError
 
 from slambuc.alg.ext import *
 from slambuc.alg.app import *
@@ -90,7 +93,12 @@ def run_all_tests(params: dict) -> list:
     for name, tree_alg in TREE_ALGS.items():
         print(f"Executing {name}")
         t_start = time.perf_counter()
-        result = tree_alg(**params)
+        try:
+            result = tree_alg(**params)
+        except (PulpSolverError, DOcplexException, CpoException) as e :
+            print(f"Pulp solver failed for {name} with message: {e}")
+            stats.append([name, [], None, None, None])
+            continue
         alg_time = time.perf_counter() - t_start
         if name.startswith('GREEDY'):
             stats.extend([[name + f'_{i}', *res, round(alg_time, ndigits=8)] for i, res in enumerate(result)])
@@ -117,7 +125,8 @@ def compare_results(tree_path: str = None, L: int = math.inf):
     print('#' * 80)
     print("Summary:")
     print(tabulate.tabulate(stats, ['Alg.', 'Partition', 'Cost', 'Latency', 'Time (s)'],
-                            colalign=('left', 'left', 'decimal', 'decimal', 'decimal'), tablefmt='pretty'))
+                            colalign=('left', 'left', 'decimal', 'decimal', 'decimal'), tablefmt='pretty',
+                            missingval='-'))
 
 
 def test_latencies():
