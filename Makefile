@@ -25,7 +25,9 @@ publish: build check
 test:
 	python3.13 tests/validate_algs.py
 	python3.13 -m pytest -vv tests/
-	@#python3.12 -m pytest -vv tests/
+
+test12:
+	python3.12 -m pytest -vv tests/
 
 test-publish: build check
 	twine upload --verbose --repository test-SLAMBUC dist/*

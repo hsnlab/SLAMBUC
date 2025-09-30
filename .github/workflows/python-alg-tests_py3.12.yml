@@ -22,7 +22,7 @@ jobs:
       id: cache
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements_py3.10.txt') }}
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements_py3.12.txt') }}
         restore-keys: | 
           ${{ runner.os }}-pip-
     - name: Install system dependencies

@@ -30,7 +30,7 @@ from slambuc.alg.util import (ipostorder_dfs, ibacktrack_chain, recreate_subtree
 
 
 def isubtree_cutoffs(tree: nx.DiGraph, root: int = 1, lb: int = 1,
-                     ub: int | float = math.inf) -> typing.Generator[tuple[tuple[int, int], int]]:
+                     ub: int | float = math.inf) -> typing.Generator[tuple[tuple[int, int], int], None, None]:
     """
     Recursively return edges that cut off non-trivial subtrees from *tree* with size between *lb* and *ub*.
 

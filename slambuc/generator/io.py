@@ -17,7 +17,6 @@ import pathlib
 import pickle
 import warnings
 from collections.abc import Generator
-from importlib.abc import Traversable
 
 import networkx as nx
 import numpy as np
@@ -111,7 +110,7 @@ def iload_trees_from_file(file_name: str | pathlib.Path) -> Generator[nx.DiGraph
         yield decode_service_tree(np_trees[idx, :])
 
 
-def load_hist_params(hist_dir: str | pathlib.Path | Traversable,
+def load_hist_params(hist_dir: str | pathlib.Path,
                      hist_name: str) -> tuple[list[int | float], list[int | float]]:
     """
     Load pickled attributes from given file.
