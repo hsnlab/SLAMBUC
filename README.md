@@ -85,7 +85,7 @@ It is worth noting that CPLEX's python wrapper [docplex](https://pypi.org/projec
 are prepared separately for **Python3.12**.
 
 ```bash
-python3.10 -m pip install -U -r requirements_py3.12.txt
+python3.12 -m pip install -U -r requirements_py3.12.txt
 ```
 
 For solving constrained shortest path problems (CSP), we apply solution methods from
