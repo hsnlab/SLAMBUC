@@ -33,7 +33,7 @@ class State(typing.NamedTuple):
 
 def chain_partitioning(runtime: list, memory: list, rate: list, M: int = math.inf, N: int = math.inf,
                        L: int = math.inf, start: int = 0, end: int = None, delay: int = 1,
-                       unit: int = 100, ret_dp: bool = False) -> tuple[T_BARRS | list[list[State]], int, int]:
+                       unit: int = 1, ret_dp: bool = False) -> tuple[T_BARRS | list[list[State]], int, int]:
     """
     Calculates minimal-cost partitioning of a chain based on the node properties of *running time*, *memory usage* and
     *invocation rate* with respect to an upper bound **M** on the total memory of blocks and a latency constraint **L**
@@ -157,7 +157,7 @@ def extract_barr(DP: list[list[State]], k: int) -> T_BARRS:
 
 
 def vec_chain_partitioning(runtime: list, memory: list, rate: list, M: int = np.inf, N: int = np.inf, L: int = np.inf,
-                           start: int = 0, end: int = None, delay: int = 1, unit: int = 100,
+                           start: int = 0, end: int = None, delay: int = 1, unit: int = 1,
                            ret_dp: bool = False) -> tuple[T_BARRS | np.ndarray, int, int]:
     """
     Calculates minimal-cost partitioning of a chain based on the node properties of *runtime*, *memory* and *rate* with

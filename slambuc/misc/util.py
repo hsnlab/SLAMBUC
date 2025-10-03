@@ -220,7 +220,7 @@ def print_chain_summary(runtime: list[int], memory: list[int], rate: list[int]):
 
 def evaluate_chain_partitioning(partition: T_PART, opt_cost: int, opt_lat: int, runtime: list, memory: list, rate: list,
                                 M: int = math.inf, N: int = math.inf, L: int = math.inf, start: int = 0,
-                                end: int = None, delay: int = 1, unit: int = 100, **params):
+                                end: int = None, delay: int = 1, unit: int = 1, **params):
     """
     Evaluate chain partitioning and print its characteristics.
 
@@ -249,7 +249,7 @@ def evaluate_chain_partitioning(partition: T_PART, opt_cost: int, opt_lat: int, 
 
 
 def print_block_stat(partition: T_PART, runtime: list[int], memory: list[int], rate: list[int], delay: float,
-                     start: int = 0, end: int = None, unit: int = 100):
+                     start: int = 0, end: int = None, unit: int = 1):
     """
     Print block statistics.
 
@@ -303,7 +303,7 @@ def print_tree_summary(tree: nx.DiGraph):
             print(f"\t\t{i} -> {j}: {ed}")
 
 
-def print_tree_block_stat(tree: nx.DiGraph, partition: T_PART, unit: int = 100):
+def print_tree_block_stat(tree: nx.DiGraph, partition: T_PART, unit: int = 1):
     """
     Print cost memory and latency values of partition blocks in tabulated format.
 

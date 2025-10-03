@@ -693,7 +693,7 @@ def chain_cpu(rate: list[int], b: int, w: int) -> int:
     return functools.reduce(lambda pre, max_i: max(pre, math.ceil(max_i[1] / rate[w - max_i[0]])), r_max)
 
 
-def chain_cost(runtime: list[int], rate: list[int], b: int, w: int, unit: int = 100) -> int:
+def chain_cost(runtime: list[int], rate: list[int], b: int, w: int, unit: int = 1) -> int:
     """
     Calculate running time of block [b, w] with multiprocessing.
 

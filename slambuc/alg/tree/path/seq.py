@@ -39,7 +39,7 @@ class TBlock(typing.NamedTuple):
 
 def seq_tree_partitioning(tree: dict[str | int, dict[str | int, dict[str, int]]] | nx.DiGraph, root: int = 1,
                           M: int = math.inf, N: int = math.inf, L: int = math.inf, cp_end: int = None, delay: int = 1,
-                          unit: int = 100, full: bool = True) -> T_RESULTS | tuple[list, float | None, int]:
+                          unit: int = 1, full: bool = True) -> T_RESULTS | tuple[list, float | None, int]:
     """
     Calculates minimal-cost partitioning of a app graph(tree) with respect to an upper bound **M** on the total
     memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes leveraging

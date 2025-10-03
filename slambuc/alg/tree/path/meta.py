@@ -35,7 +35,7 @@ class TPart(typing.NamedTuple):
 
 
 def meta_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N: int = math.inf, L: int = math.inf,
-                           cp_end: int = None, delay: int = 1, unit: int = 100, only_barr: bool = False,
+                           cp_end: int = None, delay: int = 1, unit: int = 1, only_barr: bool = False,
                            partition=chain_partitioning, barriers=extract_barr) -> T_BRESULTS:
     """
     Calculates minimal-cost partitioning of an app graph(tree) with respect to an upper bound **M** on the total

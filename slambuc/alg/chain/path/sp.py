@@ -46,7 +46,7 @@ def decode_blk(s: str) -> list[str]:
 
 
 def _build_sp_dag(runtime: list, memory: list, rate: list, M: int = math.inf, N: int = math.inf,
-                  unit: int = 100) -> nx.DiGraph:
+                  unit: int = 1) -> nx.DiGraph:
     """
     Build configuration state graph of the given function chain.
 
@@ -123,7 +123,7 @@ def hop_limited_shortest_path(dag: dict[str | int, dict[str | int, dict[str, int
 
 
 def sp_chain_partitioning(runtime: list, memory: list, rate: list, M: int = math.inf, N: int = math.inf,
-                          L: int = math.inf, delay: int = 1, unit: int = 100, **kwargs) -> tuple[list[int], int, int]:
+                          L: int = math.inf, delay: int = 1, unit: int = 1, **kwargs) -> tuple[list[int], int, int]:
     """
     Calculates minimal-cost partitioning of a chain based on the node properties of *running time*, *memory usage* and
     *invocation rate* with respect to an upper bound **M** on the total memory of blocks and a latency constraint **L**

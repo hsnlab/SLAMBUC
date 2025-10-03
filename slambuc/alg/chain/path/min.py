@@ -20,7 +20,7 @@ from slambuc.alg.chain.path.dp import State
 
 def min_chain_partitioning(runtime: list[int], memory: list[int], rate: list[int], M: int = math.inf,
                            N: int = math.inf, L: int = math.inf, start: int = 0, end: int = None,
-                           delay: int = 1, unit: int = 100) -> T_BRESULTS:
+                           delay: int = 1, unit: int = 1) -> T_BRESULTS:
     """
     Calculates minimal-cost partitioning of a chain based on the node properties of *running time*, *memory usage* and
     *invocation rate* with respect to an upper bound **M** on the total memory of blocks and a latency constraint **L**
