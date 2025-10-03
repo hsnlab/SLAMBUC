@@ -38,10 +38,10 @@ CTX_SETTINGS = dict(
 
 @click.group('slambuc', context_settings=CTX_SETTINGS,
              epilog="See https://github.com/hsnlab/SLAMBUC for more details.")
-@click.version_option(slambuc.__version__, "-v", "--version", package_name="slambuc")
 @click.option('-j', '--json', 'format_json', is_flag=True, default=False, help="Output as valid JSON")
 @click.option('-s', '--split', 'format_split', is_flag=True, default=False, help="Split results into separate lines")
 @click.option('-q', '--quiet', 'output_quiet', is_flag=True, default=False, help="Suppress logging messages")
+@click.version_option(slambuc.__version__, "-v", "--version", package_name="slambuc")
 @click.pass_context
 def main(ctx: click.Context, format_json: bool, format_split: bool, output_quiet: bool):
     """Serverless Layout Adaptation with Memory-Bounds and User Constraints"""
@@ -91,6 +91,8 @@ class HalfOpenIntRange(click.IntRange):
 
 IntToInfRange = HalfOpenIntRange()
 
+########################################################################################################################
+
 root = click.option("--root", metavar='<NODE>', type=click.INT, required=False, default=1,
                     help="Root node ID of the call graph")
 M = click.option("--M", type=IntToInfRange, required=False, default=math.inf,
@@ -122,25 +124,25 @@ def chain__path():
 @chain__path.command("dp")
 def chain__path__dp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
-    pass
+    invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
 @chain__path.command("greedy")
 def chain__path__greedy(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
-    pass
+    invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
 @chain__path.command("min")
 def chain__path__min(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
-    pass
+    invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
 @chain__path.command("sp")
 def chain__path__sp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
-    pass
+    invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
 ########################################################################################################################
@@ -154,13 +156,13 @@ def chain__serial():
 @chain__serial.command("greedy")
 def chain__serial__greedy(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
-    pass
+    invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
 @chain__serial.command("ilp")
 def chain__serial__ilp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
-    pass
+    invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
 ########################################################################################################################
@@ -174,7 +176,7 @@ def dag():
 @dag.command("ilp")
 def dag__ilp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
-    pass
+    invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
 ########################################################################################################################
@@ -188,25 +190,25 @@ def ext():
 @ext.command("baseline")
 def ext__baseline(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
-    pass
+    invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
 @ext.command("csp")
 def ext__csp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
-    pass
+    invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
 @ext.command("greedy")
 def ext__greedy(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
-    pass
+    invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
 @ext.command("min_cut")
 def ext__min_cut(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
-    pass
+    invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
 ########################################################################################################################
@@ -227,7 +229,7 @@ def tree__layout():
 @tree__layout.command("ilp")
 def tree__layout__ilp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
-    pass
+    invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
 ########################################################################################################################
@@ -240,25 +242,25 @@ def tree__parallel():
 @tree__parallel.command("greedy")
 def tree__parallel__greedy(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
-    pass
+    invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
 @tree__parallel.command("ilp")
 def tree__parallel__ilp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
-    pass
+    invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
 @tree__parallel.command("pseudo")
 def tree__parallel__pseudo(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
-    pass
+    invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
 @tree__parallel.command("pseudo_mp")
 def tree__parallel__pseudo_mp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
-    pass
+    invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
 ########################################################################################################################
@@ -271,31 +273,31 @@ def tree__path():
 @tree__path.command("greedy")
 def tree__path__greedy(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
-    pass
+    invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
 @tree__path.command("meta")
 def tree__path__meta(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
-    pass
+    invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
 @tree__path.command("min")
 def tree__path__min(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
-    pass
+    invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
 @tree__path.command("seq")
 def tree__path__seq(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
-    pass
+    invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
 @tree__path.command("seq_state")
 def tree__path__seq_state(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
-    pass
+    invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
 ########################################################################################################################
@@ -308,28 +310,29 @@ def tree__serial():
 @tree__serial.command("bicriteria")
 def tree__serial__bicriteria(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
-    pass
+    invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
 @tree__serial.command("greedy")
 def tree__serial__greedy(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
-    pass
+    invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
 @tree__serial.command("ilp")
 def tree__serial__ilp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
-    pass
+    invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
 @tree__serial.command("ilp_cplex")
 def tree__serial__ilp_cplex(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
-    pass
+    invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
 class TreeSerialPseudoType(enum.Enum):
+    """Partitioning algorithms in `slambuc.alg.tree.serial.pseudo`."""
     btree = "pseudo_btree_partitioning"
     ltree = "pseudo_ltree_partitioning"
     DEF = ltree
@@ -345,22 +348,25 @@ def tree__serial__pseudo(filename: pathlib.Path, alg: TreeSerialPseudoType, **pa
 @tree__serial.command("pseudo_mp")
 def tree__serial__pseudo_mp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
-    pass
+    invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
 ########################################################################################################################
 
 def log_info(msg: str):
+    """Pretty print log message."""
     if not click.get_current_context().obj.get('OUTPUT_QUIET'):
         click.secho(msg, err=True)
 
 
 def log_err(msg: str):
+    """Pretty print error message."""
     if not click.get_current_context().obj.get('OUTPUT_QUIET'):
         click.secho(msg, err=True, fg='red')
 
 
 def read_input_file(filename: pathlib.Path, arg_name: str):
+    """Read input data structure(s) from file."""
     data = None
     match filename.suffix:
         case '.gml':
@@ -373,6 +379,7 @@ def read_input_file(filename: pathlib.Path, arg_name: str):
 
 
 def invoke_algorithm(filename: pathlib.Path, alg: str, parameters: dict[str, ...]):
+    """Load input data and dynamically invoke partitioning algorithm."""
     ctx = click.get_current_context()
     ##################################
     module_name = f"slambuc.alg.{inspect.currentframe().f_back.f_code.co_name.replace('__', '.')}"
