@@ -53,25 +53,8 @@ def main(ctx: click.Context, format_json: bool, format_split: bool, output_quiet
 
 ########################################################################################################################
 
-def algorithm(enum_type: enum.EnumType, *options) -> typing.Callable:
-    """Decorator for common Click arguments and options for algorithm invocation"""
 
-    def wrapped(func):
-        func = click.argument('filename', required=True, nargs=1,
-                              type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True,
-                                              resolve_path=True, path_type=pathlib.Path))(func)
-        # parameters = lambda *options: functools.reduce(lambda f, g: lambda x: f(g(x)), reversed(options))
-        for param in reversed(options):
-            func = param(func)
-        func = click.option('--alg', required=False, help="Specific algorithm to be run",
-                            type=click.Choice(enum_type, case_sensitive=False),
-                            default=enum_type['DEF'])(func)
-        return func
-
-    return wrapped
-
-
-class HalfOpenIntRange(click.IntRange):
+class HalfOpenIntRangeType(click.IntRange):
     """Custom Integer range type that supports positive half-open intervals to infinity"""
     name = "INT"
 
@@ -89,19 +72,55 @@ class HalfOpenIntRange(click.IntRange):
                 self.fail(f"'{value}' is not a valid integer or {math.inf}", param, ctx)
 
 
-IntToInfRange = HalfOpenIntRange()
+HalfOpenRange = HalfOpenIntRangeType()
+
+
+class CallGraphPathType(click.Path):
+    """Custom Integer range type that supports positive half-open intervals to infinity"""
+    name: str = "CALL_GRAPH_FILE"
+    supported: tuple[str] = ('gml', 'npy')
+    path_type = pathlib.Path
+
+    def __init__(self):
+        super().__init__(exists=True, file_okay=True, dir_okay=False, readable=True,
+                         resolve_path=True, path_type=self.path_type)
+
+    def convert(self, value: str | float, param: click.Option, ctx: click.Context) -> path_type:
+        if (ext := value.rsplit('.', maxsplit=1)[-1]) not in ('gml', 'npy'):
+            self.fail(f"Call graph format: {ext} is not in the supported format: {self.supported}!", param, ctx)
+        return self.path_type(super().convert(value, param, ctx))
+
+
+CallGraphFile = CallGraphPathType()
+
+
+def algorithm(enum_type: enum.EnumType, *options) -> typing.Callable:
+    """Decorator for common Click arguments and options for algorithm invocation"""
+
+    def wrapped(func):
+        func = click.argument('filename', required=True, nargs=1, type=CallGraphFile)(func)
+        # parameters = lambda *options: functools.reduce(lambda f, g: lambda x: f(g(x)), reversed(options))
+        for param in reversed(options):
+            func = param(func)
+        func = click.option('--alg', required=False, help="Specific algorithm to be run",
+                            type=click.Choice(enum_type, case_sensitive=False),
+                            default=enum_type['DEF'])(func)
+        return func
+
+    return wrapped
+
 
 ########################################################################################################################
 
 root = click.option("--root", metavar='<NODE>', type=click.INT, required=False, default=1,
                     help="Root node ID of the call graph")
-M = click.option("--M", type=IntToInfRange, required=False, default=math.inf,
+M = click.option("--M", type=HalfOpenRange, required=False, default=math.inf,
                  help="Upper memory bound for blocks")
-L = click.option("--L", type=IntToInfRange, required=False, default=math.inf,
+L = click.option("--L", type=HalfOpenRange, required=False, default=math.inf,
                  help="Latency limit for critical path")
 cp_end = click.option("--cp_end", metavar='<NODE>', type=click.INT, required=False, show_default='ignore',
                       help="Tail node ID of the critical path")
-delay = click.option("--delay", type=IntToInfRange, required=False, default=1,
+delay = click.option("--delay", type=HalfOpenRange, required=False, default=1,
                      help="Invocation delay between blocks")
 bidirectional = click.option("--bidirectional", metavar='BOOL', type=click.BOOL, required=False,
                              show_default=True, default=True, help="Use bidirectional subcase elimination")
