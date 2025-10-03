@@ -16,6 +16,7 @@ import enum
 import functools
 import importlib
 import inspect
+import itertools
 import json
 import math
 import os
@@ -30,13 +31,14 @@ import numpy as np
 
 import slambuc
 
-CTX_SETTINGS = dict(
+GLOBAL_CTX_SETTINGS = dict(
     help_option_names=['-h', '--help'],
-    show_default=True
+    show_default=True,
+    max_content_width=120
 )
 
 
-@click.group('slambuc', context_settings=CTX_SETTINGS,
+@click.group('slambuc', context_settings=GLOBAL_CTX_SETTINGS,
              epilog="See https://github.com/hsnlab/SLAMBUC for more details.")
 @click.option('-j', '--json', 'format_json', is_flag=True, default=False, help="Output as valid JSON")
 @click.option('-s', '--split', 'format_split', is_flag=True, default=False, help="Split results into separate lines")
@@ -112,18 +114,26 @@ def algorithm(enum_type: enum.EnumType, *options) -> typing.Callable:
 
 ########################################################################################################################
 
-root = click.option("--root", metavar='<NODE>', type=click.INT, required=False, default=1,
+root = click.option('--root', metavar='<NODE>', type=click.INT, required=False, default=1,
                     help="Root node ID of the call graph")
-M = click.option("--M", type=HalfOpenRange, required=False, default=math.inf,
+M = click.option('--M', type=HalfOpenRange, required=False, default=math.inf,
                  help="Upper memory bound for blocks")
-L = click.option("--L", type=HalfOpenRange, required=False, default=math.inf,
+L = click.option('--L', type=HalfOpenRange, required=False, default=math.inf,
                  help="Latency limit for critical path")
-cp_end = click.option("--cp_end", metavar='<NODE>', type=click.INT, required=False, show_default='ignore',
+cp_end = click.option('--cp_end', metavar='<NODE>', type=click.INT, required=False, show_default='ignore',
                       help="Tail node ID of the critical path")
-delay = click.option("--delay", type=HalfOpenRange, required=False, default=1,
+delay = click.option('--delay', type=HalfOpenRange, required=False, default=1,
                      help="Invocation delay between blocks")
-bidirectional = click.option("--bidirectional", metavar='BOOL', type=click.BOOL, required=False,
+bidirectional = click.option('--bidirectional', metavar='BOOL', type=click.BOOL, required=False,
                              show_default=True, default=True, help="Use bidirectional subcase elimination")
+timeout = click.option('--timeout', type=HalfOpenRange, required=False, show_default='ignore',
+                       help="ILP solver time limit in seconds")
+subchains = click.option('--subchains', metavar='BOOL', type=click.BOOL, required=False,
+                         show_default=True, default=False, help="Only subchain blocks are considered (path-tree)")
+Epsilon = click.option('--Epsilon', type=click.FloatRange(min=0.0, max=1.0, min_open=True, max_open=False),
+                       metavar='FLOAT', required=False, show_default='ignore', help="Weight factor for trimming")
+Lambda = click.option('--Lambda', type=click.FloatRange(min=0.0, min_open=False),
+                      metavar='FLOAT', required=False, default=0.0, help="Latency factor for trimming")
 
 
 ########################################################################################################################
@@ -326,26 +336,60 @@ def tree__serial():
     pass
 
 
+class TreeSerialBicriteriaType(enum.Enum):
+    """Partitioning algorithms in `slambuc.alg.tree.serial.bicriteria`."""
+    biheuristic = "biheuristic_tree_partitioning"
+    bifptas = "bifptas_tree_partitioning"
+    dual = "bifptas_dual_tree_partitioning"
+    DEF = bifptas
+
+
 @tree__serial.command("bicriteria")
+@algorithm(TreeSerialBicriteriaType, root, M, L, cp_end, delay, Epsilon, Lambda, bidirectional)
 def tree__serial__bicriteria(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
+class TreeSerialGreedyType(enum.Enum):
+    """Partitioning algorithms in `slambuc.alg.tree.serial.greedy`."""
+    greedy = "greedy_ser_tree_partitioning"
+    DEF = greedy
+
+
 @tree__serial.command("greedy")
+@algorithm(TreeSerialGreedyType, root, M, L, cp_end, delay)
 def tree__serial__greedy(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
+class TreeSerialILPType(enum.Enum):
+    """Partitioning algorithms in `slambuc.alg.tree.serial.ilp`."""
+    cfg = "tree_cfg_partitioning"
+    hybrid = "tree_hybrid_partitioning"
+    mtx = "tree_mtx_partitioning"
+    all = "all_tree_mtx_partitioning"
+    DEF = mtx
+
+
 @tree__serial.command("ilp")
-def tree__serial__ilp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
+@algorithm(TreeSerialILPType, root, M, L, cp_end, delay, subchains, timeout)
+def tree__serial__ilp(filename: pathlib.Path, alg: TreeSerialILPType, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
+class TreeSerialILPCplexType(enum.Enum):
+    """Partitioning algorithms in `slambuc.alg.tree.serial.ilp_cplex`."""
+    cpo = "tree_cpo_partitioning"
+    cplex = "tree_cplex_partitioning"
+    DEF = cplex
+
+
 @tree__serial.command("ilp_cplex")
-def tree__serial__ilp_cplex(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
+@algorithm(TreeSerialILPCplexType, root, M, L, cp_end, delay, timeout)
+def tree__serial__ilp_cplex(filename: pathlib.Path, alg: TreeSerialILPCplexType, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
@@ -364,8 +408,16 @@ def tree__serial__pseudo(filename: pathlib.Path, alg: TreeSerialPseudoType, **pa
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
+class TreeSerialPseudoMPType(enum.Enum):
+    """Partitioning algorithms in `slambuc.alg.tree.serial.pseudo_mp`."""
+    btree = "pseudo_mp_btree_partitioning"
+    ltree = "pseudo_mp_ltree_partitioning"
+    DEF = ltree
+
+
 @tree__serial.command("pseudo_mp")
-def tree__serial__pseudo_mp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
+@algorithm(TreeSerialPseudoMPType, root, M, L, cp_end, delay, bidirectional)
+def tree__serial__pseudo_mp(filename: pathlib.Path, alg: TreeSerialPseudoMPType, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
@@ -430,13 +482,15 @@ def invoke_algorithm(filename: pathlib.Path, alg: str, parameters: dict[str, ...
         results = alg_method(**parameters)
         _elapsed = (time.perf_counter() - _start) * 1e3
         log_info(f"  -> Algorithm finished successfully in {_elapsed:.6f} ms!")
-        feasible = all(map(bool, results))
+        feasible = all(map(bool, results)
+                       if isinstance(results, tuple)
+                       else itertools.chain(map(bool, r) for r in results))
         log_info(f"Received {'FEASIBLE' if feasible else 'INFEASIBLE'} solution:")
         dumper = functools.partial(json.dumps, indent=None, default=str) if ctx.obj.get('FORMAT_JSON') else repr
         for res in (results if ctx.obj.get('FORMAT_SPLIT') else (results,)):
             click.secho(dumper(res), fg='green' if feasible else 'yellow', bold=True)
     except Exception as e:
-        log_err(f"  -> Got unexpected error during execution: {e}")
+        log_err(f"Got unexpected error during execution: {e}")
     except KeyboardInterrupt:
         log_info("Execution interrupted. Exiting...")
         sys.exit(os.EX_OK)
