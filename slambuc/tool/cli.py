@@ -120,6 +120,8 @@ M = click.option('--M', type=HalfOpenRange, required=False, default=math.inf,
                  help="Upper memory bound for blocks")
 L = click.option('--L', type=HalfOpenRange, required=False, default=math.inf,
                  help="Latency limit for critical path")
+N = click.option('--N', type=HalfOpenRange, required=False, default=1,
+                 help="Available vCPU cores for blocks")
 cp_end = click.option('--cp_end', metavar='<NODE>', type=click.INT, required=False, show_default='ignore',
                       help="Tail node ID of the critical path")
 delay = click.option('--delay', type=HalfOpenRange, required=False, default=1,
@@ -127,9 +129,9 @@ delay = click.option('--delay', type=HalfOpenRange, required=False, default=1,
 bidirectional = click.option('--bidirectional', metavar='BOOL', type=click.BOOL, required=False,
                              show_default=True, default=True, help="Use bidirectional subcase elimination")
 timeout = click.option('--timeout', type=HalfOpenRange, required=False, show_default='ignore',
-                       help="ILP solver time limit in seconds")
+                       help="ILP solver timeout in seconds")
 subchains = click.option('--subchains', metavar='BOOL', type=click.BOOL, required=False,
-                         show_default=True, default=False, help="Only subchain blocks are considered (path-tree)")
+                         show_default=True, default=False, help="Calculate only subchain blocks (path-tree)")
 Epsilon = click.option('--Epsilon', type=click.FloatRange(min=0.0, max=1.0, min_open=True, max_open=False),
                        metavar='FLOAT', required=False, show_default='ignore', help="Weight factor for trimming")
 Lambda = click.option('--Lambda', type=click.FloatRange(min=0.0, min_open=False),
@@ -268,26 +270,58 @@ def tree__parallel():
     pass
 
 
+class TreeParallelGreedyType(enum.Enum):
+    """Partitioning algorithms in `slambuc.alg.tree.parallel.greedy`."""
+    greedy = "greedy_par_tree_partitioning"
+    DEF = greedy
+
+
 @tree__parallel.command("greedy")
+@algorithm(TreeParallelGreedyType, root, M, L, N, cp_end, delay)
 def tree__parallel__greedy(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
+class TreeParallelILPType(enum.Enum):
+    """Partitioning algorithms in `slambuc.alg.tree.parallel.ilp`."""
+    cfg = "tree_par_cfg_partitioning"
+    hybrid = "tree_par_hybrid_partitioning"
+    mtx = "tree_par_mtx_partitioning"
+    all = "all_par_tree_mtx_partitioning"
+    DEF = mtx
+
+
 @tree__parallel.command("ilp")
-def tree__parallel__ilp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
+@algorithm(TreeParallelILPType, root, M, L, N, cp_end, delay, timeout, subchains)
+def tree__parallel__ilp(filename: pathlib.Path, alg: TreeParallelILPType, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
+
+
+class TreeParallelPseudoType(enum.Enum):
+    """Partitioning algorithms in `slambuc.alg.tree.parallel.pseudo`."""
+    btree = "pseudo_par_btree_partitioning"
+    ltree = "pseudo_par_ltree_partitioning"
+    DEF = ltree
 
 
 @tree__parallel.command("pseudo")
-def tree__parallel__pseudo(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
+@algorithm(TreeParallelPseudoType, root, M, L, N, cp_end, delay, bidirectional)
+def tree__parallel__pseudo(filename: pathlib.Path, alg: TreeParallelPseudoType, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
+class TreeParallelPseudoMPType(enum.Enum):
+    """Partitioning algorithms in `slambuc.alg.tree.parallel.pseudo_mp`."""
+    ltree = "pseudo_par_mp_ltree_partitioning"
+    DEF = ltree
+
+
 @tree__parallel.command("pseudo_mp")
-def tree__parallel__pseudo_mp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
+@algorithm(TreeParallelPseudoMPType, root, M, L, N, cp_end, delay, bidirectional)
+def tree__parallel__pseudo_mp(filename: pathlib.Path, alg: TreeParallelPseudoMPType, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
