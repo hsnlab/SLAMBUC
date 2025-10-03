@@ -30,6 +30,7 @@ import networkx as nx
 import numpy as np
 
 import slambuc
+from slambuc.alg import Flavor
 
 GLOBAL_CTX_SETTINGS = dict(
     help_option_names=['-h', '--help'],
@@ -63,7 +64,7 @@ class HalfOpenIntRangeType(click.IntRange):
     def __init__(self):
         super().__init__(min=0, min_open=True, clamp=False)
 
-    def convert(self, value: str | float, param: click.Option, ctx: click.Context) -> int | float:
+    def convert(self, value: typing.Any, param: click.Parameter, ctx: click.Context) -> int | float:
         if ((isinstance(value, float) and math.isinf(value)) or
                 (isinstance(value, str) and value.lower() == 'inf')):
             return math.inf
@@ -87,13 +88,36 @@ class CallGraphPathType(click.Path):
         super().__init__(exists=True, file_okay=True, dir_okay=False, readable=True,
                          resolve_path=True, path_type=self.path_type)
 
-    def convert(self, value: str | float, param: click.Option, ctx: click.Context) -> path_type:
-        if (ext := value.rsplit('.', maxsplit=1)[-1]) not in ('gml', 'npy'):
-            self.fail(f"Call graph format: {ext} is not in the supported format: {self.supported}!", param, ctx)
+    def convert(self, value: typing.Any, param: click.Parameter, ctx: click.Context) -> path_type:
+        if (file_ext := value.rsplit('.', maxsplit=1)[-1]) not in ('gml', 'npy'):
+            self.fail(f"Call graph format: {file_ext} is not in the supported format: {self.supported}!", param, ctx)
         return self.path_type(super().convert(value, param, ctx))
 
 
 CallGraphFile = CallGraphPathType()
+
+
+class SlambucFlavorType(click.ParamType):
+    """Flavor type"""
+    name: str = 'Flavor'
+    _format = 'mem[int>0],ncore[int>0],cfactor[float>0.0]'
+
+    def convert(self, value: typing.Any, param: click.Parameter, ctx: click.Context) -> Flavor:
+        """Parse and convert flavors from CLI inf format <mem[int]>,<ncore[int]>,<cfactor[float]>"""
+        try:
+            mem, ncore, cfactor = value.split(',', maxsplit=2)
+            _flavor = Flavor(math.inf if mem == 'inf' else int(mem), int(ncore), float(cfactor))
+            if not all(metric > 0 for metric in _flavor):
+                self.fail(f"Flavor {_flavor} is out of range! Correct format: {self._format}", param, ctx)
+            return _flavor
+        except ValueError as e:
+            self.fail(f"{e}! Correct format: {self._format}", param, ctx)
+
+    def __repr__(self) -> str:
+        return self._format
+
+
+FlavorType = SlambucFlavorType()
 
 
 def algorithm(enum_type: enum.EnumType, *options) -> typing.Callable:
@@ -136,6 +160,9 @@ Epsilon = click.option('--Epsilon', type=click.FloatRange(min=0.0, max=1.0, min_
                        metavar='FLOAT', required=False, show_default='ignore', help="Weight factor for trimming")
 Lambda = click.option('--Lambda', type=click.FloatRange(min=0.0, min_open=False),
                       metavar='FLOAT', required=False, default=0.0, help="Latency factor for trimming")
+flavor = click.option('--flavor', 'flavors', type=FlavorType, multiple=True, required=False,
+                      default=(Flavor(),), metavar='<FLAVOR>', show_default=True,
+                      help=f"Resource flavor as {FlavorType}")
 
 
 ########################################################################################################################
@@ -257,8 +284,17 @@ def tree__layout():
     pass
 
 
+class TreeLayoutILPType(enum.Enum):
+    """Partitioning algorithms in `slambuc.alg.tree.layout.ilp`."""
+    hybrid = "tree_gen_hybrid_partitioning"
+    mtx = "tree_gen_mtx_partitioning"
+    all = "all_gen_tree_mtx_partitioning"
+    DEF = mtx
+
+
 @tree__layout.command("ilp")
-def tree__layout__ilp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
+@algorithm(TreeLayoutILPType, root, flavor, L, cp_end, subchains, delay, timeout)
+def tree__layout__ilp(filename: pathlib.Path, alg: TreeLayoutILPType, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
@@ -278,7 +314,7 @@ class TreeParallelGreedyType(enum.Enum):
 
 @tree__parallel.command("greedy")
 @algorithm(TreeParallelGreedyType, root, M, L, N, cp_end, delay)
-def tree__parallel__greedy(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
+def tree__parallel__greedy(filename: pathlib.Path, alg: TreeParallelGreedyType, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
@@ -516,9 +552,9 @@ def invoke_algorithm(filename: pathlib.Path, alg: str, parameters: dict[str, ...
         results = alg_method(**parameters)
         _elapsed = (time.perf_counter() - _start) * 1e3
         log_info(f"  -> Algorithm finished successfully in {_elapsed:.6f} ms!")
-        feasible = all(map(bool, results)
-                       if isinstance(results, tuple)
-                       else itertools.chain(map(bool, r) for r in results))
+        evaluated_results_metrics = list(map(bool, results) if isinstance(results, tuple)
+                                         else itertools.chain(map(bool, r) for r in results))
+        feasible = all(evaluated_results_metrics if parameters.get('cp_end') else evaluated_results_metrics[:-1])
         log_info(f"Received {'FEASIBLE' if feasible else 'INFEASIBLE'} solution:")
         dumper = functools.partial(json.dumps, indent=None, default=str) if ctx.obj.get('FORMAT_JSON') else repr
         for res in (results if ctx.obj.get('FORMAT_SPLIT') else (results,)):
