@@ -25,7 +25,7 @@ from slambuc.alg.util import (par_inst_count, ibacktrack_chain, verify_limits, p
 
 def build_greedy_dag_mtx_model(dag: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
                                N: int = 1, cpath: set[int] = frozenset(), delay: int = 1,
-                               path_tree: bool = False) -> tuple[lp.LpProblem, dict[int, dict[int, lp.LpVariable]]]:
+                               subchains: bool = False) -> tuple[lp.LpProblem, dict[int, dict[int, lp.LpVariable]]]:
     """
     Generate the matrix ILP model using greedy subcase building and parallel metric calculation.
 
@@ -51,23 +51,24 @@ def build_greedy_dag_mtx_model(dag: nx.DiGraph, root: int = 1, M: int = math.inf
     for i in X:
         model += lp.lpSum(X[i]) == 1, f"Cf_{i:02d}"
     # Knapsack constraints
-    for j in X:
-        # Cumulative memory demand of prefetched models
-        model += lp.lpSum(dag.nodes[i][MEMORY] * X[i][j] for i in X if j in X[i]) <= M, f"Ck_{j:02d}"
-        R_j = sum(dag[p][j][RATE] for p in dag.predecessors(j))
-        # Operative memory demand of instances running in parallel
-        for v in iclosed_subgraph(dag, source=j):
-            vj_sat = min(math.ceil(sum(dag[p][v][RATE] for p in dag.predecessors(v)) / R_j), N)
-            # Add only non-trivial memory constraint
-            if vj_sat > 1:
-                model += vj_sat * dag.nodes[v][MEMORY] * X[v][j] <= M, f"Ck_{j:02d}_{v:02d}"
+    if M < math.inf:
+        for j in X:
+            # Cumulative memory demand of prefetched models
+            model += lp.lpSum(dag.nodes[i][MEMORY] * X[i][j] for i in X if j in X[i]) <= M, f"Ck_{j:02d}"
+            R_j = sum(dag[p][j][RATE] for p in dag.predecessors(j))
+            # Operative memory demand of instances running in parallel
+            for v in iclosed_subgraph(dag, source=j):
+                vj_sat = min(math.ceil(sum(dag[p][v][RATE] for p in dag.predecessors(v)) / R_j), N)
+                # Add only non-trivial memory constraint
+                if vj_sat > 1:
+                    model += vj_sat * dag.nodes[v][MEMORY] * X[v][j] <= M, f"Ck_{j:02d}_{v:02d}"
     # Connectivity constraints
     for j in X:
         for v in iclosed_subgraph(dag, source=j, inclusive=False):
             for u in dag.predecessors(v):
                 model += X[u][j] - X[v][j] >= 0, f"Cc_{j:02d}_{u:02d}_{v:02d}"
     # Path-tree constraints
-    if path_tree:
+    if subchains:
         for j in X:
             for v in iclosed_subgraph(dag, source=j):
                 model += lp.lpSum(X[s][j] for s in dag.successors(v) if j in X[s]) <= 1, f"Cpp_{j:02d}_{v:02d}"
@@ -95,10 +96,10 @@ def build_greedy_dag_mtx_model(dag: nx.DiGraph, root: int = 1, M: int = math.inf
 
 
 def greedy_dag_partitioning(dag: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
-                            N: int = 1, cp_end: int = None, delay: int = 1, path_tree: bool = False,
+                            N: int = 1, cp_end: int = None, delay: int = 1, subchains: bool = False,
                             solver: lp.LpSolver = None, timeout: int = None, **lpargs) -> T_RESULTS:
     """
-    Calculate minimal-cost partitioning of a tree based on matrix LP formulation.
+    Calculate minimal-cost partitioning of a DAG based on matrix LP formulation.
 
     Block metrics are calculated based on a parallelized execution platform model.
 
@@ -109,7 +110,7 @@ def greedy_dag_partitioning(dag: nx.DiGraph, root: int = 1, M: int = math.inf, L
     :param N:           available CPU  core count
     :param cp_end:      tail node of the critical path in the form of subchain[root -> c_pend]
     :param delay:       invocation delay between blocks
-    :param path_tree:   only subchain blocks are considered (path-tree)
+    :param subchains:   only subchain blocks are considered (path-tree)
     :param solver:      specific solver class (default: COIN-OR CBC)
     :param timeout:     time limit in sec
     :param lpargs:      additional LP solver parameters
@@ -121,7 +122,7 @@ def greedy_dag_partitioning(dag: nx.DiGraph, root: int = 1, M: int = math.inf, L
     if not all(verify_limits(dag, cpath, M, L)):
         # No feasible solution due to too strict limits
         return INFEASIBLE
-    model, X = build_greedy_dag_mtx_model(dag, root, M, L, N, cpath, delay, path_tree)
+    model, X = build_greedy_dag_mtx_model(dag, root, M, L, N, cpath, delay, subchains)
     status = model.solve(solver=solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False, timeLimit=timeout, **lpargs))
     if status == lp.LpStatusOptimal:
         opt_cost, opt_lat = round(lp.value(model.objective), 0), round(lp.value(model.constraints[LP_LAT]), 0)
@@ -134,7 +135,7 @@ def greedy_dag_partitioning(dag: nx.DiGraph, root: int = 1, M: int = math.inf, L
 
 def build_dag_mtx_model(dag: dict[str | int, dict[str | int, dict[str, int]]] | nx.DiGraph, root: int = 1,
                         M: int = math.inf, L: int = math.inf, N: int = 1, cpath: set[int] = frozenset(), delay: int = 1,
-                        path_tree: bool = False) -> tuple[lp.LpProblem, dict[int, dict[int, lp.LpVariable]]]:
+                        subchains: bool = False) -> tuple[lp.LpProblem, dict[int, dict[int, lp.LpVariable]]]:
     """
     Generate the matrix ILP model based on parallel metric calculations.
 
@@ -194,17 +195,17 @@ def build_dag_mtx_model(dag: dict[str | int, dict[str | int, dict[str, int]]] | 
             # Add knapsack constraint for operative memory demand
             vj_sat = min(math.ceil(R_v / R_j), N)
             # Add only non-trivial memory constraint
-            if vj_sat > 1:
+            if vj_sat > 1 and M < math.inf:
                 model += vj_sat * dag.nodes[v][MEMORY] * X[v][j] <= M, f"Ck2_{j:02d}_{v:02d}"
             # Connectivity constraint
             for u in dag.predecessors(v):
                 if j in X[u]:
                     model += X[u][j] - X[v][j] >= 0, f"Cc_{j:02d}_{u:02d}_{v:02d}"
         # Knapsack constraint, X[l][l] <= M for each leaf node l can be omitted
-        if len(blk_mem) > 1:
+        if len(blk_mem) > 1 and M < math.inf:
             model += blk_mem <= M, f"Ck_{j:02d}"
     # Path-tree constraints
-    if path_tree:
+    if subchains:
         for j in X:
             for v in iclosed_subgraph(dag, source=j):
                 model += lp.lpSum(X[s][j] for s in dag.successors(v) if j in X[s]) <= 1, f"Cpp_{j:02d}_{v:02d}"
@@ -223,10 +224,10 @@ def build_dag_mtx_model(dag: dict[str | int, dict[str | int, dict[str, int]]] | 
 
 
 def dag_partitioning(dag: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
-                     N: int = 1, cp_end: int = None, delay: int = 1, path_tree: bool = False,
+                     N: int = 1, cp_end: int = None, delay: int = 1, subchains: bool = False,
                      solver: lp.LpSolver = None, timeout: int = None, **lpargs) -> T_RESULTS:
     """
-    Calculate minimal-cost partitioning of a tree based on matrix LP formulation.
+    Calculate minimal-cost partitioning of a DAG based on matrix LP formulation.
 
     Block metrics are calculated based on a parallelized execution platform model.
 
@@ -237,7 +238,7 @@ def dag_partitioning(dag: nx.DiGraph, root: int = 1, M: int = math.inf, L: int =
     :param N:           available CPU  core count
     :param cp_end:      tail node of the critical path in the form of subchain[root -> c_pend]
     :param delay:       invocation delay between blocks
-    :param path_tree:   only subchain blocks are considered (path-tree)
+    :param subchains:   only subchain blocks are considered (path-tree)
     :param solver:      specific solver class (default: COIN-OR CBC)
     :param timeout:     time limit in sec
     :param lpargs:      additional LP solver parameters
@@ -249,7 +250,7 @@ def dag_partitioning(dag: nx.DiGraph, root: int = 1, M: int = math.inf, L: int =
     if not all(verify_limits(dag, cpath, M, L)):
         # No feasible solution due to too strict limits
         return INFEASIBLE
-    model, X = build_dag_mtx_model(dag, root, M, L, N, cpath, delay, path_tree)
+    model, X = build_dag_mtx_model(dag, root, M, L, N, cpath, delay, subchains)
     status = model.solve(solver=solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False, timeLimit=timeout, **lpargs))
     if status == lp.LpStatusOptimal:
         opt_cost, opt_lat = round(lp.value(model.objective), 0), round(lp.value(model.constraints[LP_LAT]), 0)

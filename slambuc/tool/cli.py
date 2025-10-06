@@ -247,10 +247,18 @@ def chain__serial__ilp(filename: pathlib.Path, alg, **parameters: dict[str, ...]
 @main.group("dag")
 def dag():
     """DAG partitioning algorithms"""
-    pass
+    click.get_current_context().obj['INPUT_ARG_REF'] = 'dag'
+
+
+class DagILPType(enum.Enum):
+    """Partitioning algorithms in `slambuc.alg.dag.ilp`."""
+    greedy = "greedy_dag_partitioning"
+    dag = "dag_partitioning"
+    DEF = dag
 
 
 @dag.command("ilp")
+@algorithm(DagILPType, root, M, L, N, cp_end, delay, subchains, timeout)
 def dag__ilp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
@@ -265,7 +273,7 @@ def ext():
 
 
 class ExtBaselineType(enum.Enum):
-    """Partitioning algorithms in `slambuc.alg.tree.layout.ilp`."""
+    """Partitioning algorithms in `slambuc.alg.tree.ext.baseline`."""
     singleton = "baseline_singleton_partitioning"
     no = "baseline_no_partitioning"
     DEF = singleton
@@ -279,7 +287,7 @@ def ext__baseline(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
 
 
 class ExtCSPType(enum.Enum):
-    """Partitioning algorithms in `slambuc.alg.tree.layout.ilp`."""
+    """Partitioning algorithms in `slambuc.alg.tree.ext.csp`."""
     csp = "csp_tree_partitioning"
     gen = "csp_gen_tree_partitioning"
     DEF = csp
@@ -293,7 +301,7 @@ def ext__csp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
 
 
 class ExtGreedyType(enum.Enum):
-    """Partitioning algorithms in `slambuc.alg.tree.layout.ilp`."""
+    """Partitioning algorithms in `slambuc.alg.ext.greedy`."""
     greedy = "min_weight_greedy_partitioning"
     min_weight = "min_weight_partition_heuristic"
     min_lat = "min_lat_partition_heuristic"
@@ -308,7 +316,7 @@ def ext__greedy(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
 
 
 class ExtMinCutType(enum.Enum):
-    """Partitioning algorithms in `slambuc.alg.tree.layout.ilp`."""
+    """Partitioning algorithms in `slambuc.alg.ext.min_cut`."""
     chain = "min_weight_chain_decomposition"
     ksplit = "min_weight_ksplit_clustering"
     tree = "min_weight_tree_clustering"
