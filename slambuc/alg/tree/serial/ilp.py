@@ -234,9 +234,10 @@ def build_greedy_tree_mtx_model(tree: nx.DiGraph, root: int = 1, M: int = math.i
     for i in X:
         model += lp.lpSum(X[i]) == 1, f"Cf_{i:02d}"
     # Knapsack constraints
-    for j in X:
-        model += lp.lpSum(tree.nodes[i][MEMORY] * X[i][j]
-                          for i in nx.dfs_preorder_nodes(tree, source=j)) <= M, f"Ck_{j:02d}"
+    if M < math.inf:
+        for j in X:
+            model += lp.lpSum(tree.nodes[i][MEMORY] * X[i][j]
+                              for i in nx.dfs_preorder_nodes(tree, source=j)) <= M, f"Ck_{j:02d}"
     # Connectivity constraints
     for j in X:
         for u, v in nx.dfs_edges(tree, source=j):
@@ -318,7 +319,7 @@ def build_tree_mtx_model(tree: dict[str | int, dict[str | int, dict[str, int]]] 
             # Connectivity constraint
             model += X[u][j] - X[v][j] >= 0, f"Cc_{j:02d}_{u:02d}_{v:02d}"
         # Knapsack constraint, X[l][l] <= M for each leaf node l can be omitted
-        if len(blk_mem) > 1:
+        if len(blk_mem) > 1 and M < math.inf:
             model += blk_mem <= M, f"Ck_{j:02d}"
     # Objective
     model += sum_cost

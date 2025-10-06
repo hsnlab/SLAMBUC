@@ -160,9 +160,10 @@ def build_greedy_tree_cplex_model(tree: nx.DiGraph, root: int = 1, M: int = math
     for i in X:
         model.add_constraint(model.sum(X[i].values()) == 1, ctname=f"Cf_{i:02d}")
     # Knapsack constraints
-    for j in X:
-        model.add_constraint(model.sum(tree.nodes[i][MEMORY] * X[i][j]
-                                       for i in nx.dfs_preorder_nodes(tree, source=j)) <= M, f"Ck_{j:02d}")
+    if M < math.inf:
+        for j in X:
+            model.add_constraint(model.sum(tree.nodes[i][MEMORY] * X[i][j]
+                                           for i in nx.dfs_preorder_nodes(tree, source=j)) <= M, f"Ck_{j:02d}")
     # Connectivity constraints
     for j in X:
         for u, v in nx.dfs_edges(tree, source=j):
@@ -235,7 +236,7 @@ def build_tree_cplex_model(tree: dict[str | int, dict[str | int, dict[str, int]]
             # Connectivity constraint
             model.add_constraint(X[u][j] - X[v][j] >= 0, ctname=f"Cc_{j:02d}_{u:02d}_{v:02d}")
         # Knapsack constraint, X[l][l] <= M for each leaf node l can be omitted
-        if blk_mem.size > 1:
+        if blk_mem.size > 1 and M < math.inf:
             model.add_constraint(blk_mem <= M, ctname=f"Ck_{j:02d}")
     # Objective
     model.minimize(sum_cost)

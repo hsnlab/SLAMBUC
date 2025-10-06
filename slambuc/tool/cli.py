@@ -104,6 +104,9 @@ class SlambucFlavorType(click.ParamType):
 
     def convert(self, value: typing.Any, param: click.Parameter, ctx: click.Context) -> Flavor:
         """Parse and convert flavors from CLI inf format <mem[int]>,<ncore[int]>,<cfactor[float]>"""
+        print(value, param, ctx)
+        if isinstance(value, Flavor):
+            return value
         try:
             mem, ncore, cfactor = value.split(',', maxsplit=2)
             _flavor = Flavor(math.inf if mem == 'inf' else int(mem), int(ncore), float(cfactor))
@@ -138,7 +141,7 @@ def algorithm(enum_type: enum.EnumType, *options) -> typing.Callable:
 
 ########################################################################################################################
 
-root = click.option('--root', metavar='<NODE>', type=click.INT, required=False, default=1,
+root = click.option('--root', metavar='<NODE_ID>', type=click.INT, required=False, default=1,
                     help="Root node ID of the call graph")
 M = click.option('--M', type=HalfOpenRange, required=False, default=math.inf,
                  help="Upper memory bound for blocks")
@@ -146,7 +149,7 @@ L = click.option('--L', type=HalfOpenRange, required=False, default=math.inf,
                  help="Latency limit for critical path")
 N = click.option('--N', type=HalfOpenRange, required=False, default=1,
                  help="Available vCPU cores for blocks")
-cp_end = click.option('--cp_end', metavar='<NODE>', type=click.INT, required=False, show_default='ignore',
+cp_end = click.option('--cp_end', metavar='<NODE_ID>', type=click.INT, required=False, show_default='ignore',
                       help="Tail node ID of the critical path")
 delay = click.option('--delay', type=HalfOpenRange, required=False, default=1,
                      help="Invocation delay between blocks")
@@ -161,8 +164,24 @@ Epsilon = click.option('--Epsilon', type=click.FloatRange(min=0.0, max=1.0, min_
 Lambda = click.option('--Lambda', type=click.FloatRange(min=0.0, min_open=False),
                       metavar='FLOAT', required=False, default=0.0, help="Latency factor for trimming")
 flavor = click.option('--flavor', 'flavors', type=FlavorType, multiple=True, required=False,
-                      default=(Flavor(),), metavar='<FLAVOR>', show_default=True,
-                      help=f"Resource flavor as {FlavorType}")
+                      default=(Flavor(),), metavar='<mem,ncore,cfactor>', show_default=True,
+                      help=f"Resource flavor as a comma-separated tuple")
+unit = click.option('--unit', type=HalfOpenRange, required=False, default=1, show_default=True,
+                    help="Rounding unit for cost calculation")
+only_cuts = click.option('--only_cuts', metavar='BOOL', type=click.BOOL, required=False,
+                         show_default=True, default=False, help="Return cuts size instead of latency")
+only_barr = click.option('--only_barr', metavar='BOOL', type=click.BOOL, required=False,
+                         show_default=True, default=False, help="Return barrier nodes instead of blocks")
+full = click.option('--full', metavar='BOOL', type=click.BOOL, required=False,
+                    show_default=True, default=True, help="Return full blocks instead of tail nodes")
+valid = click.option('--valid', metavar='BOOL', type=click.BOOL, required=False,
+                     show_default=True, default=True, help="Return only latency-feasible solution")
+exhaustive = click.option('--exhaustive', metavar='BOOL', type=click.BOOL, required=False,
+                          show_default=True, default=True, help="Iterate over all topological orderings")
+metrics = click.option('--metrics', metavar='BOOL', type=click.BOOL, required=False,
+                       show_default=True, default=True, help="Calculate cost/latency metrics explicitly")
+k = click.option('--k', type=HalfOpenRange, required=False, default=None, show_default='auto',
+                 help="Predefined number of clusters")
 
 
 ########################################################################################################################
@@ -242,28 +261,62 @@ def dag__ilp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
 @main.group("ext")
 def ext():
     """External partitioning algorithms and heuristics"""
-    pass
+    click.get_current_context().obj['INPUT_ARG_REF'] = 'tree'
+
+
+class ExtBaselineType(enum.Enum):
+    """Partitioning algorithms in `slambuc.alg.tree.layout.ilp`."""
+    singleton = "baseline_singleton_partitioning"
+    no = "baseline_no_partitioning"
+    DEF = singleton
 
 
 @ext.command("baseline")
+@algorithm(ExtBaselineType, root, N, cp_end, delay)
 def ext__baseline(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
+class ExtCSPType(enum.Enum):
+    """Partitioning algorithms in `slambuc.alg.tree.layout.ilp`."""
+    csp = "csp_tree_partitioning"
+    gen = "csp_gen_tree_partitioning"
+    DEF = csp
+
+
 @ext.command("csp")
+@algorithm(ExtCSPType, root, flavor, M, L, N, cp_end, delay, exhaustive, timeout)
 def ext__csp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
+class ExtGreedyType(enum.Enum):
+    """Partitioning algorithms in `slambuc.alg.tree.layout.ilp`."""
+    greedy = "min_weight_greedy_partitioning"
+    min_weight = "min_weight_partition_heuristic"
+    min_lat = "min_lat_partition_heuristic"
+    DEF = greedy
+
+
 @ext.command("greedy")
+@algorithm(ExtGreedyType, root, M, L, N, cp_end, delay, metrics)
 def ext__greedy(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
+class ExtMinCutType(enum.Enum):
+    """Partitioning algorithms in `slambuc.alg.tree.layout.ilp`."""
+    chain = "min_weight_chain_decomposition"
+    ksplit = "min_weight_ksplit_clustering"
+    tree = "min_weight_tree_clustering"
+    DEF = tree
+
+
 @ext.command("min_cut")
+@algorithm(ExtMinCutType, root, k, L, N, cp_end, delay, metrics)
 def ext__min_cut(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
@@ -272,11 +325,9 @@ def ext__min_cut(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
 ########################################################################################################################
 
 @main.group("tree")
-@click.pass_context
-def tree(ctx: click.Context):
+def tree():
     """Tree partitioning algorithms"""
-    ctx.ensure_object(dict)
-    ctx.obj['INPUT_ARG_REF'] = 'tree'
+    click.get_current_context().obj['INPUT_ARG_REF'] = 'tree'
 
 
 @tree.group("layout")
@@ -369,31 +420,67 @@ def tree__path():
     pass
 
 
+class TreePathGreedyType(enum.Enum):
+    """Partitioning algorithms in `slambuc.alg.tree.path.greedy`."""
+    greedy = "greedy_tree_partitioning"
+    DEF = greedy
+
+
 @tree__path.command("greedy")
-def tree__path__greedy(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
+@algorithm(TreePathGreedyType, root, M, N, L, cp_end, delay, unit, only_cuts)
+def tree__path__greedy(filename: pathlib.Path, alg: TreePathGreedyType, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
+class TreePathMetaType(enum.Enum):
+    """Partitioning algorithms in `slambuc.alg.tree.path.greedy`."""
+    meta = "meta_tree_partitioning"
+    DEF = meta
+
+
 @tree__path.command("meta")
+@algorithm(TreePathMetaType, root, M, N, L, cp_end, delay, unit, only_barr)
 def tree__path__meta(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
+class TreePathMinType(enum.Enum):
+    """Partitioning algorithms in `slambuc.alg.tree.path.greedy`."""
+    min = "min_tree_partitioning"
+    DEF = min
+
+
 @tree__path.command("min")
+@algorithm(TreePathMinType, root, M, N, L, cp_end, delay, unit, full)
 def tree__path__min(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
+class TreePathSeqType(enum.Enum):
+    """Partitioning algorithms in `slambuc.alg.tree.path.greedy`."""
+    seq = "seq_tree_partitioning"
+    DEF = seq
+
+
 @tree__path.command("seq")
+@algorithm(TreePathSeqType, root, M, N, L, cp_end, delay, unit, full)
 def tree__path__seq(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
+class TreePathSeqStateType(enum.Enum):
+    """Partitioning algorithms in `slambuc.alg.tree.path.greedy`."""
+    cacheless = "cacheless_path_tree_partitioning"
+    stateful = "stateful_path_tree_partitioning"
+    DEF = stateful
+
+
 @tree__path.command("seq_state")
+@algorithm(TreePathSeqStateType, root, M, N, L, cp_end, delay, valid)
 def tree__path__seq_state(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
@@ -524,7 +611,7 @@ def invoke_algorithm(filename: pathlib.Path, alg: str, parameters: dict[str, ...
     ctx = click.get_current_context()
     ##################################
     module_name = f"slambuc.alg.{inspect.currentframe().f_back.f_code.co_name.replace('__', '.')}"
-    log_info(f"Importing algorithm: {alg} from module: {module_name}")
+    log_info(f"Importing algorithm: <{alg}> from module: <{module_name}>")
     try:
         module = importlib.import_module(module_name)
         alg_method = getattr(module, alg)
@@ -552,15 +639,16 @@ def invoke_algorithm(filename: pathlib.Path, alg: str, parameters: dict[str, ...
         results = alg_method(**parameters)
         _elapsed = (time.perf_counter() - _start) * 1e3
         log_info(f"  -> Algorithm finished successfully in {_elapsed:.6f} ms!")
-        evaluated_results_metrics = list(map(bool, results) if isinstance(results, tuple)
-                                         else itertools.chain(map(bool, r) for r in results))
-        feasible = all(evaluated_results_metrics if parameters.get('cp_end') else evaluated_results_metrics[:-1])
+        metr = list(map(bool, results) if isinstance(results, tuple)
+                    else itertools.chain(map(bool, r) for r in results))
+        feasible = all(metr if parameters.get('cp_end') else metr[:-1]) if parameters.get('metrics', True) else metr[0]
         log_info(f"Received {'FEASIBLE' if feasible else 'INFEASIBLE'} solution:")
         dumper = functools.partial(json.dumps, indent=None, default=str) if ctx.obj.get('FORMAT_JSON') else repr
         for res in (results if ctx.obj.get('FORMAT_SPLIT') else (results,)):
             click.secho(dumper(res), fg='green' if feasible else 'yellow', bold=True)
     except Exception as e:
         log_err(f"Got unexpected error during execution: {e}")
+        raise
     except KeyboardInterrupt:
         log_info("Execution interrupted. Exiting...")
         sys.exit(os.EX_OK)

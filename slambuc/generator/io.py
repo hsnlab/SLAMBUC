@@ -88,7 +88,7 @@ def save_trees_to_file(trees: list[nx.DiGraph], file_name: str | pathlib.Path = 
 
 def get_tree_from_file(file_name: str | pathlib.Path, tree_num: int) -> nx.DiGraph:
     """
-    Load and decode a app tree from the given *file_name* with specific ID *tree_num*.
+    Load and decode an app tree from the given *file_name* with specific ID *tree_num*.
 
     :param file_name:   file name
     :param tree_num:    tree ID

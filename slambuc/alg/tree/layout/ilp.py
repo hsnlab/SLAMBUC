@@ -166,7 +166,7 @@ def build_gen_tree_mtx_model(tree: dict[str | int, dict[str | int, dict[str, int
         # noinspection PyTypeChecker
         model += lp.lpSum(X[f][v] for f in flavors) == 1, f"Cf_{v:02d}"
     # Knapsack constraints
-    for fi, f in enumerate(X):
+    for fi, f in enumerate(filter(lambda _f: _f.mem < math.inf, X)):
         for j in X[f]:
             # Cumulative memory demand of prefetched models
             model += lp.lpSum(tree.nodes[i][MEMORY] * X[f][i][j]

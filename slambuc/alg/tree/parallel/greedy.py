@@ -43,7 +43,7 @@ def isubtrees_exhaustive(tree: nx.DiGraph, root: int, M: int, N: int = 1) -> T_B
 def greedy_par_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L: int = math.inf,
                                  N: int = 1, cp_end: int = None, delay: int = 1) -> list[T_RESULTS]:
     """
-    Calculate minimal-cost partitioning of a app graph(tree) by greedily iterating over all possible cuttings.
+    Calculate minimal-cost partitioning of an app graph(tree) by greedily iterating over all possible cuttings.
 
     Block metrics are calculated based on parallelized execution platform model.
 

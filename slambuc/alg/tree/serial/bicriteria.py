@@ -233,7 +233,7 @@ def bifptas_ltree_partitioning(tree: dict[str | int, dict[str | int, dict[str, i
                                M: int = math.inf, L: int = math.inf, cp_end: int = None, delay: int = 1,
                                Epsilon: float = 0.0, Lambda: float = 0.0, bidirectional: bool = True) -> T_RESULTS:
     """
-    Calculates minimal-cost partitioning of a app graph(tree) with respect to an upper bound **M** on the total
+    Calculates minimal-cost partitioning of an app graph(tree) with respect to an upper bound **M** on the total
     memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes, while
     applying the left-right tree traversal approach.
 

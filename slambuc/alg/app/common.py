@@ -51,4 +51,4 @@ class Flavor(typing.NamedTuple):
     @property
     def name(self) -> str:
         """String representation of the given flavor."""
-        return f"F[{self.mem},{self.ncore},{self.cfactor}]"
+        return f"F{{{self.mem}|{self.ncore}|{self.cfactor}}}"

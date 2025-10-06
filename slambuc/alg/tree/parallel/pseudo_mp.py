@@ -168,7 +168,7 @@ def pseudo_par_mp_ltree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = m
                                      N: int = 1, cp_end: int = None, delay: int = 1,
                                      bidirectional: bool = True) -> T_RESULTS:
     """
-    Calculates minimal-cost partitioning of a app graph(tree) with respect to an upper bound **M** on the total
+    Calculates minimal-cost partitioning of an app graph(tree) with respect to an upper bound **M** on the total
     memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes.
 
     Partitioning is calculated using the left-right tree traversal approach.

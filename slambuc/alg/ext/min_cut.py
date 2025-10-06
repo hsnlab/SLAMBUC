@@ -123,7 +123,7 @@ def min_weight_ksplit_clustering(tree: nx.DiGraph, root: int, k: int = None, N: 
 def min_weight_tree_clustering(tree: nx.DiGraph, root: int, L: int = math.inf, N: int = 1, cp_end: int = None,
                                delay: int = 1, metrics: bool = True, **kwargs) -> T_RESULTS:
     """
-    Minimal data-transfer tree clustering into without memory constraints.
+    Minimal data-transfer tree clustering without memory constraints.
 
     Iteratively calculates *k-1* different ksplit clustering in reverse order until an L-feasible solution is found.
 

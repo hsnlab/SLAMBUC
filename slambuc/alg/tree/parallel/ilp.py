@@ -209,17 +209,18 @@ def build_greedy_par_tree_mtx_model(tree: dict[str | int, dict[str | int, dict[s
     for i in X:
         model += lp.lpSum(X[i]) == 1, f"Cf_{i:02d}"
     # Knapsack constraints
-    for j in X:
-        # Cumulative memory demand of prefetched models
-        model += lp.lpSum(tree.nodes[i][MEMORY] * X[i][j]
-                          for i in nx.dfs_preorder_nodes(tree, source=j)) <= M, f"Ck_{j:02d}"
-        r_j = tree[next(tree.predecessors(j))][j][RATE]
-        # Operative memory demand of instances running in parallel
-        for u, v in nx.dfs_edges(tree, source=j):
-            vj_sat = min(math.ceil(tree[u][v][RATE] / r_j), N)
-            # Add only non-trivial memory constraint
-            if vj_sat > 1:
-                model += vj_sat * tree.nodes[v][MEMORY] * X[v][j] <= M, f"Ck_{j:02d}_{v:02d}"
+    if M < math.inf:
+        for j in X:
+            # Cumulative memory demand of prefetched models
+            model += lp.lpSum(tree.nodes[i][MEMORY] * X[i][j]
+                              for i in nx.dfs_preorder_nodes(tree, source=j)) <= M, f"Ck_{j:02d}"
+            r_j = tree[next(tree.predecessors(j))][j][RATE]
+            # Operative memory demand of instances running in parallel
+            for u, v in nx.dfs_edges(tree, source=j):
+                vj_sat = min(math.ceil(tree[u][v][RATE] / r_j), N)
+                # Add only non-trivial memory constraint
+                if vj_sat > 1:
+                    model += vj_sat * tree.nodes[v][MEMORY] * X[v][j] <= M, f"Ck_{j:02d}_{v:02d}"
     # Connectivity constraints
     for j in X:
         for u, v in nx.dfs_edges(tree, source=j):
@@ -304,12 +305,12 @@ def build_par_tree_mtx_model(tree: dict[str | int, dict[str | int, dict[str, int
             # Add knapsack constraint for operative memory demand
             vj_sat = min(math.ceil(tree[u][v][RATE] / r_j), N)
             # Add only non-trivial memory constraint
-            if vj_sat > 1:
+            if vj_sat > 1 and M < math.inf:
                 model += vj_sat * tree.nodes[v][MEMORY] * X[v][j] <= M, f"Ck2_{j:02d}_{v:02d}"
             # Connectivity constraint
             model += X[u][j] - X[v][j] >= 0, f"Cc_{j:02d}_{u:02d}_{v:02d}"
         # Knapsack constraint, X[l][l] <= M for each leaf node l can be omitted
-        if len(blk_mem) > 1:
+        if len(blk_mem) > 1 and M < math.inf:
             model += blk_mem <= M, f"Ck_{j:02d}"
     # Objective
     model += sum_cost

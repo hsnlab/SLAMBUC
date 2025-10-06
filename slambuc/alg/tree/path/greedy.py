@@ -83,7 +83,7 @@ def greedy_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf,
                              L: int = math.inf, cp_end: int = None, delay: int = 1, unit: int = 1,
                              ichains=ifeasible_chains, only_cuts: bool = False) -> list[T_RESULTS]:
     """
-    Calculates minimal-cost partitioning of a app graph(tree) by iterating over all possible cuttings.
+    Calculates minimal-cost partitioning of an app graph(tree) by iterating over all possible cuttings.
 
     :param tree:        app graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
     :param root:        root node of the graph

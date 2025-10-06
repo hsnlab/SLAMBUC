@@ -42,7 +42,7 @@ def encode_state(grp: T_BLOCK, flavor: Flavor) -> str:
     return f"{SEP.join(map(str, grp))}{ASSIGN}{SEP.join(map(str, flavor))}"
 
 
-def decode_state(name: str) -> tuple[T_BLOCK, str]:
+def decode_state(name: str) -> tuple[T_BLOCK, Flavor]:
     """
     Decode DAG node name from encoded str into partition block (list of int) and flavor's memory (mem).
 
@@ -50,7 +50,8 @@ def decode_state(name: str) -> tuple[T_BLOCK, str]:
     :return:        decoded block and assigned flavor
     """
     parts = name.rsplit(ASSIGN, maxsplit=1)
-    return list(map(int, parts[0].split(SEP))), Flavor(*parts[1].split(SEP)).name
+    mem, ncore, cf = parts[1].split(SEP, maxsplit=2)
+    return list(map(int, parts[0].split(SEP))), Flavor(math.inf if mem == 'inf' else int(mem), int(ncore), float(cf))
 
 
 def ibuild_gen_csp_dag(tree: nx.DiGraph, root: int = 1, flavors: list[Flavor] = (Flavor(),),
@@ -148,7 +149,9 @@ def csp_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L:
             model = solver(dag, max_res=[len(dag.edges), L], min_res=[1, 0], time_limit=timeout, **cspargs)
             model.run()
             if model.path is not None and model.total_cost < best_res[1]:
-                best_res = extract_grp_from_path(model.path, False), model.total_cost, model.consumed_resources[-1]
+                best_res = (extract_grp_from_path(model.path, False),
+                            model.total_cost,
+                            float(model.consumed_resources[-1]))
                 if not exhaustive:
                     # Stop at first feasible solution
                     break
@@ -197,14 +200,14 @@ def csp_gen_tree_partitioning(tree: nx.DiGraph, root: int = 1, flavors: list[Fla
         try:
             model.run()
             if model.path is not None and model.total_cost < best_res[1]:
-                best_res = extract_grp_from_path(model.path), model.total_cost, model.consumed_resources[-1]
+                best_res = extract_grp_from_path(model.path), model.total_cost, float(model.consumed_resources[-1])
         except Exception:
             # No feasible solution
             continue
     return best_res
 
 
-def extract_grp_from_path(path: list[str], flavors: bool = True) -> list[tuple[T_BLOCK, str]] | list[tuple[T_BLOCK]]:
+def extract_grp_from_path(path: list[str], flavors: bool = True) -> list[tuple[T_BLOCK, Flavor]] | list[tuple[T_BLOCK]]:
     """
     Extract partitioning from *path* and recreate partition blocks.
 
