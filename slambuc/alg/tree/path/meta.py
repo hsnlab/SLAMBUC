@@ -21,7 +21,7 @@ import networkx as nx
 from slambuc.alg import COST, INFEASIBLE, T_BRESULTS
 from slambuc.alg.app import *
 from slambuc.alg.app.common import LABEL
-from slambuc.alg.chain.path.dp import chain_partitioning, extract_barr
+from slambuc.alg.chain.path.dp import chain_partitioning, extract_blocks
 from slambuc.alg.util import ipostorder_dfs, isubchains, ibacktrack_chain, leaf_label_nodes, recreate_subchain_blocks
 
 
@@ -36,7 +36,7 @@ class TPart(typing.NamedTuple):
 
 def meta_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N: int = math.inf, L: int = math.inf,
                            cp_end: int = None, delay: int = 1, unit: int = 1, only_barr: bool = False,
-                           partition=chain_partitioning, barriers=extract_barr) -> T_BRESULTS:
+                           partition=chain_partitioning, barriers=extract_blocks) -> T_BRESULTS:
     """
     Calculates minimal-cost partitioning of an app graph(tree) with respect to an upper bound **M** on the total
     memory of blocks and a latency constraint **L** defined on the subchain between *root* and *cp_end* nodes using

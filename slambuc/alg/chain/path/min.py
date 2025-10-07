@@ -20,7 +20,7 @@ from slambuc.alg.chain.path.dp import State
 
 def min_chain_partitioning(runtime: list[int], memory: list[int], rate: list[int], M: int = math.inf,
                            N: int = math.inf, L: int = math.inf, start: int = 0, end: int = None,
-                           delay: int = 1, unit: int = 1) -> T_BRESULTS:
+                           delay: int = 1, unit: int = 1, unfold: bool = False) -> T_BRESULTS:
     """
     Calculates minimal-cost partitioning of a chain based on the node properties of *running time*, *memory usage* and
     *invocation rate* with respect to an upper bound **M** on the total memory of blocks and a latency constraint **L**
@@ -44,6 +44,7 @@ def min_chain_partitioning(runtime: list[int], memory: list[int], rate: list[int
     :param start:   head node of the latency-limited subchain
     :param end:     tail node of the latency-limited subchain
     :param unit:    rounding unit for the cost calculation (default: 100 ms)
+    :param unfold:  return full blocks instead of barrier nodes
     :return:        tuple of barrier nodes, sum cost of the partitioning, and the calculated latency on the subchain
     """
     n = len(runtime)
@@ -108,18 +109,19 @@ def min_chain_partitioning(runtime: list[int], memory: list[int], rate: list[int
                 # Store and overwrite subcases with equal costs (<=) to consider larger blocks for lower latency
                 if (cost := DP[b - 1].cost + block_cost(b, _cache)) <= DP[w].cost:
                     DP[w] = State(b, cost, lat)
-    return (extract_min_barr(DP), DP[n - 1].cost, DP[n - 1].lat) if DP[n - 1].cost < math.inf else DP[n - 1]
+    return (extract_min_barr(DP, unfold), DP[n - 1].cost, DP[n - 1].lat) if DP[n - 1].cost < math.inf else DP[n - 1]
 
 
-def extract_min_barr(DP: list[State]) -> T_BARRS:
+def extract_min_barr(DP: list[State], unfold: bool = False) -> T_BARRS:
     """
     Extract barrier nodes form DP list by iteratively backtracking minimal cost subcases.
 
-    :param DP:  dynamic programming structure storing intermediate *States*
-    :return:    list of barrier nodes
+    :param DP:      dynamic programming structure storing intermediate *States*
+    :param unfold:  return full blocks instead of barrier nodes
+    :return:        list of barrier nodes
     """
     barr = [DP[-2].barr]
     while barr[-1]:
         barr.append(DP[barr[-1] - 1].barr)
     barr.reverse()
-    return barr
+    return list(list(range(b, w)) for b, w in itertools.pairwise(barr + [len(DP) - 1])) if unfold else barr

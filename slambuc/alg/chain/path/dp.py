@@ -33,7 +33,8 @@ class State(typing.NamedTuple):
 
 def chain_partitioning(runtime: list, memory: list, rate: list, M: int = math.inf, N: int = math.inf,
                        L: int = math.inf, start: int = 0, end: int = None, delay: int = 1,
-                       unit: int = 1, ret_dp: bool = False) -> tuple[T_BARRS | list[list[State]], int, int]:
+                       unit: int = 1, ret_dp: bool = False, unfold: bool = False) -> tuple[
+    T_BARRS | list[list[State]], int, int]:
     """
     Calculates minimal-cost partitioning of a chain based on the node properties of *running time*, *memory usage* and
     *invocation rate* with respect to an upper bound **M** on the total memory of blocks and a latency constraint **L**
@@ -57,6 +58,7 @@ def chain_partitioning(runtime: list, memory: list, rate: list, M: int = math.in
     :param end:     tail node of the latency-limited subchain
     :param unit:    rounding unit for the cost calculation (default: 100 ms)
     :param ret_dp:  return the calculated DP matrix instead of barrier nodes
+    :param unfold:  return full blocks instead of barrier nodes
     :return:        tuple of barrier nodes, sum cost of the partitioning, and the calculated latency on the subchain
     """
     n = len(runtime)
@@ -129,18 +131,19 @@ def chain_partitioning(runtime: list, memory: list, rate: list, M: int = math.in
     k_opt = min(range(n), key=lambda x: DP[-1][x].cost)
     _, opt_cost, opt_lat = DP[-1][k_opt]
     if opt_cost < math.inf:
-        return DP if ret_dp else extract_barr(DP, k_opt), opt_cost, opt_lat
+        return DP if ret_dp else extract_blocks(DP, k_opt, unfold), opt_cost, opt_lat
     else:
         return INFEASIBLE
 
 
-def extract_barr(DP: list[list[State]], k: int) -> T_BARRS:
+def extract_blocks(DP: list[list[State]], k: int, unfold: bool = False) -> T_BARRS:
     """
     Extract barrier nodes form DP matrix by iteratively backtracking the minimal cost subcases started from *k*.
 
-    :param DP:  DP matrix containing subcase *States*
-    :param k:   number of optimal cuts
-    :return:    list of barrier nodes
+    :param DP:      DP matrix containing subcase *States*
+    :param k:       number of optimal cuts
+    :param unfold:  return full blocks instead of barrier nodes
+    :return:        list of barrier nodes
     """
     barr = []
     w = len(DP) - 1
@@ -150,7 +153,7 @@ def extract_barr(DP: list[list[State]], k: int) -> T_BARRS:
         w = b - 1
         barr.append(b)
     barr.reverse()
-    return barr
+    return list(list(range(b, w)) for b, w in itertools.pairwise(barr + [len(DP)])) if unfold else barr
 
 
 ########################################################################################################################
@@ -158,7 +161,7 @@ def extract_barr(DP: list[list[State]], k: int) -> T_BARRS:
 
 def vec_chain_partitioning(runtime: list, memory: list, rate: list, M: int = np.inf, N: int = np.inf, L: int = np.inf,
                            start: int = 0, end: int = None, delay: int = 1, unit: int = 1,
-                           ret_dp: bool = False) -> tuple[T_BARRS | np.ndarray, int, int]:
+                           ret_dp: bool = False, unfold: bool = False) -> tuple[T_BARRS | np.ndarray, int, int]:
     """
     Calculates minimal-cost partitioning of a chain based on the node properties of *runtime*, *memory* and *rate* with
     respect to an upper bound **M** on the total memory of blocks and a latency constraint **L** defined on the subchain
@@ -182,6 +185,7 @@ def vec_chain_partitioning(runtime: list, memory: list, rate: list, M: int = np.
     :param end:     tail node of the latency-limited subchain
     :param unit:    rounding unit for the cost calculation (default: 100 ms)
     :param ret_dp:  return the calculated DP matrix instead of the barrier nodes
+    :param unfold:  return full blocks instead of barrier nodes
     :return:        tuple of barrier nodes, sum cost of the partitioning, and the calculated latency on the subchain
     """
     n = len(runtime)
@@ -270,18 +274,19 @@ def vec_chain_partitioning(runtime: list, memory: list, rate: list, M: int = np.
     k_opt = int(np.argmin(DP[n - 1, :, COST]))
     _, opt_cost, opt_lat = DP[n - 1, k_opt]
     if opt_cost < np.inf:
-        return DP if ret_dp else extract_vec_barr(DP, k_opt), int(opt_cost), int(opt_lat)
+        return DP if ret_dp else extract_vec_blocks(DP, k_opt, unfold), int(opt_cost), int(opt_lat)
     else:
         return INFEASIBLE
 
 
-def extract_vec_barr(DP: np.ndarray, k: int) -> T_BARRS:
+def extract_vec_blocks(DP: np.ndarray, k: int, unfold: bool = False) -> T_BARRS:
     """
     Extract barrier nodes from vectorized DP matrix by iteratively backtracking the minimal cost subcases from *k*.
 
-    :param DP:  DP matrix containing subcase *States*
-    :param k:   number of optimal cuts
-    :return:    list of barrier nodes
+    :param DP:      DP matrix containing subcase *States*
+    :param k:       number of optimal cuts
+    :param unfold:  return full blocks instead of barrier nodes
+    :return:        list of barrier nodes
     """
     barr = []
     B = DP[..., BARR]
@@ -292,4 +297,4 @@ def extract_vec_barr(DP: np.ndarray, k: int) -> T_BARRS:
         w = b - 1
         barr.append(b)
     barr.reverse()
-    return barr
+    return list(list(range(b, w)) for b, w in itertools.pairwise(barr + [len(B)])) if unfold else barr
