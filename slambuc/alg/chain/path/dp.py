@@ -270,7 +270,7 @@ def vec_chain_partitioning(runtime: list, memory: list, rate: list, M: int = np.
     k_opt = int(np.argmin(DP[n - 1, :, COST]))
     _, opt_cost, opt_lat = DP[n - 1, k_opt]
     if opt_cost < np.inf:
-        return DP if ret_dp else extract_vec_barr(DP, k_opt), opt_cost, opt_lat
+        return DP if ret_dp else extract_vec_barr(DP, k_opt), int(opt_cost), int(opt_lat)
     else:
         return INFEASIBLE
 
