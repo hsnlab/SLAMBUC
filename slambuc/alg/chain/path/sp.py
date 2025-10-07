@@ -35,14 +35,16 @@ def encode_blk(b: int | str, w: int | str) -> str:
     return f"{b}|{w}"
 
 
-def decode_blk(s: str) -> list[str]:
+def decode_blk(s: str, unfold: bool = False) -> list[int] | int:
     """
     Decode encoded block str.
 
     :param s:   encoded str
+    :param unfold:  return full blocks instead of barrier nodes
     :return:    tuple of block barrier and ending nodes
     """
-    return s.split('|', maxsplit=1)
+    b, w = s.split('|', maxsplit=1)
+    return list(range(int(b), int(w) + 1)) if unfold else int(b)
 
 
 def _build_sp_dag(runtime: list, memory: list, rate: list, M: int = math.inf, N: int = math.inf,
@@ -122,8 +124,9 @@ def hop_limited_shortest_path(dag: dict[str | int, dict[str | int, dict[str, int
     return min_weight, hcount, path
 
 
-def sp_chain_partitioning(runtime: list, memory: list, rate: list, M: int = math.inf, N: int = math.inf,
-                          L: int = math.inf, delay: int = 1, unit: int = 1, **kwargs) -> tuple[list[int], int, int]:
+def sp_chain_partitioning(runtime: list, memory: list, rate: list, M: int = math.inf,
+                          N: int = math.inf, L: int = math.inf, delay: int = 1, unit: int = 1,
+                          unfold: bool = False, **kwargs) -> tuple[list[int], int, int]:
     """
     Calculates minimal-cost partitioning of a chain based on the node properties of *running time*, *memory usage* and
     *invocation rate* with respect to an upper bound **M** on the total memory of blocks and a latency constraint **L**
@@ -139,9 +142,10 @@ def sp_chain_partitioning(runtime: list, memory: list, rate: list, M: int = math
     :param L:       latency limit defined on the critical path in the form of subchain[start -> end] (in ms)
     :param delay:   invocation delay between blocks
     :param unit:    rounding unit for the cost calculation (default: 100 ms)
+    :param unfold:  return full blocks instead of barrier nodes
     :return:        tuple of barrier nodes, sum cost of the partitioning, and the calculated edge cuts
     """
     dag = _build_sp_dag(runtime, memory, rate, M, N, unit)
     h_max = math.floor(min((L - sum(runtime)) / delay, len(runtime) - 1))
     min_cost, hops, sp = hop_limited_shortest_path(dag, source=START, target=END, max_hops=h_max + 2)
-    return ([int(decode_blk(v)[0]) for v in sp[1:-1]], min_cost, hops - 2) if sp else INFEASIBLE
+    return ([decode_blk(v, unfold) for v in sp[1:-1]], min_cost, hops - 2) if sp else INFEASIBLE

@@ -23,6 +23,7 @@ import os
 import pathlib
 import sys
 import time
+import traceback
 import typing
 
 import click
@@ -58,7 +59,7 @@ def main(ctx: click.Context, format_json: bool, format_split: bool, output_quiet
 
 
 class HalfOpenIntRangeType(click.IntRange):
-    """Custom Integer range type that supports positive half-open intervals to infinity"""
+    """Custom Integer range type that supports positive half-open intervals to infinity."""
     name = "INT"
 
     def __init__(self):
@@ -78,27 +79,43 @@ class HalfOpenIntRangeType(click.IntRange):
 HalfOpenRange = HalfOpenIntRangeType()
 
 
+class IndexRangeType(click.IntRange):
+    """Custom Integer range type that supports custom/abstract array size depicted as 'n'."""
+    name = "IDX"
+
+    class IndexMaxSize(float):
+
+        def __str__(self):
+            return 'n'
+
+    def __init__(self, max_value: str | int = None):
+        super().__init__(min=0, min_open=False, max_open=True, clamp=False)
+        self.max = self.IndexMaxSize(max_value if isinstance(max_value, int) else math.inf)
+
+
+IndexRange = IndexRangeType()
+
+
 class CallGraphPathType(click.Path):
-    """Custom Integer range type that supports positive half-open intervals to infinity"""
+    """Custom Path type that explicitly checks for supported data file extensions."""
     name: str = "CALL_GRAPH_FILE"
-    supported: tuple[str] = ('gml', 'npy')
-    path_type = pathlib.Path
+    ext: set[str] = {'gml', 'npy', 'npz'}
 
     def __init__(self):
         super().__init__(exists=True, file_okay=True, dir_okay=False, readable=True,
-                         resolve_path=True, path_type=self.path_type)
+                         resolve_path=True, path_type=pathlib.Path)
 
-    def convert(self, value: typing.Any, param: click.Parameter, ctx: click.Context) -> path_type:
-        if (file_ext := value.rsplit('.', maxsplit=1)[-1]) not in ('gml', 'npy'):
-            self.fail(f"Call graph format: {file_ext} is not in the supported format: {self.supported}!", param, ctx)
-        return self.path_type(super().convert(value, param, ctx))
+    def convert(self, value: typing.Any, param: click.Parameter, ctx: click.Context) -> pathlib.Path:
+        if (file_ext := value.rsplit('.', maxsplit=1)[-1]) not in self.ext:
+            self.fail(f"Call graph format: {file_ext} is not in the supported formats: {self.ext}!", param, ctx)
+        return pathlib.Path(super().convert(value, param, ctx))
 
 
 CallGraphFile = CallGraphPathType()
 
 
 class SlambucFlavorType(click.ParamType):
-    """Flavor type"""
+    """Custom resource type matching SLAMBUC's own Flavor type."""
     name: str = 'Flavor'
     _format = 'mem[int>0],ncore[int>0],cfactor[float>0.0]'
 
@@ -141,7 +158,7 @@ def algorithm(enum_type: enum.EnumType, *options) -> typing.Callable:
 
 ########################################################################################################################
 
-root = click.option('--root', metavar='<NODE_ID>', type=click.INT, required=False, default=1,
+root = click.option('--root', metavar='<NODE>', type=click.INT, required=False, default=1,
                     help="Root node ID of the call graph")
 M = click.option('--M', type=HalfOpenRange, required=False, default=math.inf,
                  help="Upper memory bound for blocks")
@@ -149,39 +166,47 @@ L = click.option('--L', type=HalfOpenRange, required=False, default=math.inf,
                  help="Latency limit for critical path")
 N = click.option('--N', type=HalfOpenRange, required=False, default=1,
                  help="Available vCPU cores for blocks")
-cp_end = click.option('--cp_end', metavar='<NODE_ID>', type=click.INT, required=False, show_default='ignore',
-                      help="Tail node ID of the critical path")
+cp_end = click.option('--cp_end', metavar='<NODE>', type=click.INT, required=False,
+                      show_default='ignore', help="Tail node ID of the critical path")
 delay = click.option('--delay', type=HalfOpenRange, required=False, default=1,
                      help="Invocation delay between blocks")
-bidirectional = click.option('--bidirectional', metavar='BOOL', type=click.BOOL, required=False,
-                             show_default=True, default=True, help="Use bidirectional subcase elimination")
+bidirectional = click.option('--bidirectional/--one-off', metavar='BOOL', type=click.BOOL, required=False,
+                             show_default=True, default=True, help="Use bidirectional/single subcase elimination")
 timeout = click.option('--timeout', type=HalfOpenRange, required=False, show_default='ignore',
                        help="ILP solver timeout in seconds")
-subchains = click.option('--subchains', metavar='BOOL', type=click.BOOL, required=False,
-                         show_default=True, default=False, help="Calculate only subchain blocks (path-tree)")
-Epsilon = click.option('--Epsilon', type=click.FloatRange(min=0.0, max=1.0, min_open=True, max_open=False),
+subchains = click.option('--subchains/--subtrees', metavar='BOOL', type=click.BOOL, required=False, is_flag=True,
+                         show_default=True, default=False, help="Consider blocks as single chains or trees")
+Epsilon = click.option('--epsilon', 'Epsilon', type=click.FloatRange(min=0.0, max=1.0, min_open=True, max_open=False),
                        metavar='FLOAT', required=False, show_default='ignore', help="Weight factor for trimming")
-Lambda = click.option('--Lambda', type=click.FloatRange(min=0.0, min_open=False),
+Lambda = click.option('--lambda', 'Lambda', type=click.FloatRange(min=0.0, min_open=False),
                       metavar='FLOAT', required=False, default=0.0, help="Latency factor for trimming")
 flavor = click.option('--flavor', 'flavors', type=FlavorType, multiple=True, required=False,
                       default=(Flavor(),), metavar='<mem,ncore,cfactor>', show_default=True,
                       help=f"Resource flavor as a comma-separated tuple")
 unit = click.option('--unit', type=HalfOpenRange, required=False, default=1, show_default=True,
                     help="Rounding unit for cost calculation")
-only_cuts = click.option('--only_cuts', metavar='BOOL', type=click.BOOL, required=False,
-                         show_default=True, default=False, help="Return cuts size instead of latency")
-only_barr = click.option('--only_barr', metavar='BOOL', type=click.BOOL, required=False,
-                         show_default=True, default=False, help="Return barrier nodes instead of blocks")
-full = click.option('--full', metavar='BOOL', type=click.BOOL, required=False,
-                    show_default=True, default=True, help="Return full blocks instead of tail nodes")
-valid = click.option('--valid', metavar='BOOL', type=click.BOOL, required=False,
-                     show_default=True, default=True, help="Return only latency-feasible solution")
-exhaustive = click.option('--exhaustive', metavar='BOOL', type=click.BOOL, required=False,
-                          show_default=True, default=True, help="Iterate over all topological orderings")
-metrics = click.option('--metrics', metavar='BOOL', type=click.BOOL, required=False,
+only_cuts = click.option('--cuts/--latency', 'only_cuts', metavar='BOOL', type=click.BOOL, required=False,
+                         is_flag=True, show_default=True, default=False, help="Return only cut size or latency")
+only_barr = click.option('--barriers/--unfold', 'only_barr', metavar='BOOL', type=click.BOOL,
+                         required=False, is_flag=True, show_default=True, default=False,
+                         help="Return only barrier nodes or full blocks")
+full = click.option('--full/--tails', metavar='BOOL', type=click.BOOL, required=False, is_flag=True,
+                    show_default=True, default=True, help="Return full blocks or tail nodes only")
+validate = click.option('--validate', metavar='BOOL', type=click.BOOL, required=False,
+                        show_default=True, default=True, help="Validate result for latency feasibility")
+exhaustive = click.option('--exhaustive/--greedy', metavar='BOOL', type=click.BOOL,
+                          required=False, is_flag=True, show_default=True, default=True,
+                          help="Iterate over all orderings or stop greedily")
+metrics = click.option('--metrics/--no-metrics', metavar='BOOL', type=click.BOOL, required=False, is_flag=True,
                        show_default=True, default=True, help="Calculate cost/latency metrics explicitly")
 k = click.option('--k', type=HalfOpenRange, required=False, default=None, show_default='auto',
                  help="Predefined number of clusters")
+start = click.option('--start', metavar='<IDX>', type=IndexRange, required=False, default=0,
+                     help="Head node index of the critical path")
+end = click.option('--end', metavar='<IDX>', type=IndexRange, required=False, default=None,
+                   show_default='n-1', help="Tail node index of the critical path")
+unfold = click.option('--unfold/--barriers', metavar='BOOL', type=click.BOOL, required=False, is_flag=True,
+                      show_default=True, default=False, help="Return full blocks or barrier nodes only")
 
 
 ########################################################################################################################
@@ -195,28 +220,57 @@ def chain():
 @chain.group("path")
 def chain__path():
     """"""
-    pass
+    click.get_current_context().obj['INPUT_ARG_REF'] = ('runtime', 'memory', 'rate')
+
+
+class ChainPathDPType(enum.Enum):
+    """Partitioning algorithms in `slambuc.alg.chain.path.dp`."""
+    chain = "chain_partitioning"
+    vector = "vec_chain_partitioning"
+    DEF = vector
 
 
 @chain__path.command("dp")
+@algorithm(ChainPathDPType, M, N, L, start, end, delay, unit, unfold)
 def chain__path__dp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
+class ChainPathGreedyType(enum.Enum):
+    """Partitioning algorithms in `slambuc.alg.chain.path.greedy`."""
+    greedy = "greedy_chain_partitioning"
+    DEF = greedy
+
+
 @chain__path.command("greedy")
+@algorithm(ChainPathGreedyType, M, N, L, start, end, delay, unit)
 def chain__path__greedy(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
+class ChainPathMinType(enum.Enum):
+    """Partitioning algorithms in `slambuc.alg.chain.path.min`."""
+    min = "min_chain_partitioning"
+    DEF = min
+
+
 @chain__path.command("min")
+@algorithm(ChainPathMinType, M, N, L, start, end, delay, unit, unfold)
 def chain__path__min(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
+class ChainPathSPType(enum.Enum):
+    """Partitioning algorithms in `slambuc.alg.chain.path.sp`."""
+    sp = "sp_chain_partitioning"
+    DEF = sp
+
+
 @chain__path.command("sp")
+@algorithm(ChainPathSPType, M, N, L, delay, unit, unfold)
 def chain__path__sp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
@@ -227,16 +281,31 @@ def chain__path__sp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
 @chain.group("serial")
 def chain__serial():
     """"""
-    pass
+    click.get_current_context().obj['INPUT_ARG_REF'] = ('runtime', 'memory', 'rate', 'data')
+
+
+class ChainSerialGreedyType(enum.Enum):
+    """Partitioning algorithms in `slambuc.alg.chain.serial.greedy`."""
+    greedy = "greedy_ser_chain_partitioning"
+    DEF = greedy
 
 
 @chain__serial.command("greedy")
+@algorithm(ChainSerialGreedyType, M, L, start, end, delay)
 def chain__serial__greedy(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
+class ChainSerialILPType(enum.Enum):
+    """Partitioning algorithms in `slambuc.alg.chain.serial.greedy`."""
+    cfg = "chain_cfg_partitioning"
+    mtx = "chain_mtx_partitioning"
+    DEF = mtx
+
+
 @chain__serial.command("ilp")
+@algorithm(ChainSerialILPType, M, L, start, end, delay)
 def chain__serial__ilp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
@@ -488,7 +557,7 @@ class TreePathSeqStateType(enum.Enum):
 
 
 @tree__path.command("seq_state")
-@algorithm(TreePathSeqStateType, root, M, N, L, cp_end, delay, valid)
+@algorithm(TreePathSeqStateType, root, M, N, L, cp_end, delay, validate)
 def tree__path__seq_state(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """"""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
@@ -601,17 +670,30 @@ def log_err(msg: str):
         click.secho(msg, err=True, fg='red')
 
 
-def read_input_file(filename: pathlib.Path, arg_name: str):
+def read_input_file(filename: pathlib.Path, arg_names: tuple[str] | list[str]):
     """Read input data structure(s) from file."""
-    data = None
-    match filename.suffix:
-        case '.gml':
-            data = nx.read_gml(filename, destringizer=int)
-        case '.npy':
-            data = np.load(filename)
-        case _:
-            raise click.BadParameter("Unsupported extension! Parameter <filename> must end with .gml or .npy")
-    return dict(zip(arg_name, data)) if isinstance(arg_name, (list, tuple)) else {arg_name: data}
+    data: list[nx.DiGraph | list] | None = None
+    try:
+        match filename.suffix:
+            case '.gml':
+                data = nx.read_gml(filename, destringizer=int)
+            case '.npy':
+                data = np.load(filename, mmap_mode='r', allow_pickle=False).tolist()
+                if len(data) < len(arg_names):
+                    raise click.BadParameter(f"Ambiguous data size: {len(data)}! '.npy' file must contain "
+                                             f"{len(arg_names)} lists for {arg_names!r}.")
+            case '.npz':
+                npz_file = np.load(filename, mmap_mode='r', allow_pickle=False)
+                if not set(arg_names) <= set(npz_file.keys()):
+                    raise click.BadParameter(f"Ambiguous data size: {len(data)}! '.npy' file must contain "
+                                             f"{len(arg_names)} lists for {arg_names!r}.")
+                data = list(npz_file[arg].tolist() for arg in arg_names)
+            case _:
+                raise click.BadParameter("Unsupported extension! "
+                                         "Parameter <filename> must end with 'gml', 'npy', or 'npz'.")
+    except (ValueError, OSError, nx.NetworkXError) as e:
+        log_err(f"Failed to parse {filename}: {e}")
+    return dict(zip(arg_names, data)) if isinstance(arg_names, (list, tuple)) else {arg_names: data}
 
 
 def invoke_algorithm(filename: pathlib.Path, alg: str, parameters: dict[str, ...]):
@@ -619,7 +701,7 @@ def invoke_algorithm(filename: pathlib.Path, alg: str, parameters: dict[str, ...
     ctx = click.get_current_context()
     ##################################
     module_name = f"slambuc.alg.{inspect.currentframe().f_back.f_code.co_name.replace('__', '.')}"
-    log_info(f"Importing algorithm: <{alg}> from module: <{module_name}>")
+    log_info(f"Importing algorithm function: <{alg}> from SLAMBUC module: <{module_name}>")
     try:
         module = importlib.import_module(module_name)
         alg_method = getattr(module, alg)
@@ -628,7 +710,7 @@ def invoke_algorithm(filename: pathlib.Path, alg: str, parameters: dict[str, ...
         raise click.ClickException from e
     ##################################
     log_info(f"Loading input data from file: {filename}")
-    data = read_input_file(filename=filename, arg_name=ctx.obj['INPUT_ARG_REF'])
+    data = read_input_file(filename=filename, arg_names=ctx.obj['INPUT_ARG_REF'])
     if not data:
         raise click.ClickException(f"Missing input data!")
     log_info(f"Parsed input:")
@@ -638,7 +720,7 @@ def invoke_algorithm(filename: pathlib.Path, alg: str, parameters: dict[str, ...
     spec = inspect.getfullargspec(alg_method)
     parameters = {arg: parameters[aa] for arg in spec.args
                   if (aa := arg.lower()) in set(s.lower() for s in parameters) and parameters[aa] is not None}
-    log_info(f"Collected explicit algorithm parameters: {parameters}")
+    log_info(f"Collected algorithmic parameters: {parameters}")
     parameters.update(data)
     ##################################
     try:
@@ -654,9 +736,10 @@ def invoke_algorithm(filename: pathlib.Path, alg: str, parameters: dict[str, ...
         dumper = functools.partial(json.dumps, indent=None, default=str) if ctx.obj.get('FORMAT_JSON') else repr
         for res in (results if ctx.obj.get('FORMAT_SPLIT') else (results,)):
             click.secho(dumper(res), fg='green' if feasible else 'yellow', bold=True)
-    except Exception as e:
-        log_err(f"Got unexpected error during execution: {e}")
-        raise
+    except Exception:
+        log_err(traceback.format_exc())
+        log_err(f"Got unexpected error during algorithm execution!")
+        sys.exit(os.EX_SOFTWARE)
     except KeyboardInterrupt:
         log_info("Execution interrupted. Exiting...")
         sys.exit(os.EX_OK)

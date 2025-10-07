@@ -22,25 +22,25 @@ from slambuc.generator.transform import transform_autonomous_caching
 
 
 def cacheless_path_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N: int = 1, L: int = math.inf,
-                                     cp_end: int = None, delay: int = 1, valid: bool = True) -> T_RESULTS:
+                                     cp_end: int = None, delay: int = 1, validate: bool = True) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning using *seq_tree_partitioning* without considering data externalization.
 
-    :param tree:    app graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
-    :param root:    root node of the graph
-    :param M:       upper memory bound of the partition blocks (in MB)
-    :param N:       upper CPU core bound of the partition blocks
-    :param L:       latency limit defined on the critical path (in ms)
-    :param cp_end:  tail node of the critical path in the form of subchain[root -> cp_end]
-    :param delay:   invocation delay between blocks
-    :param valid:   return only L-feasible solutions
-    :return:        tuple of optimal partition, sum cost of the partitioning, and optimal number of cuts
+    :param tree:        app graph annotated with node runtime(ms), memory(MB) and edge rates and data overheads(ms)
+    :param root:        root node of the graph
+    :param M:           upper memory bound of the partition blocks (in MB)
+    :param N:           upper CPU core bound of the partition blocks
+    :param L:           latency limit defined on the critical path (in ms)
+    :param cp_end:      tail node of the critical path in the form of subchain[root -> cp_end]
+    :param delay:       invocation delay between blocks
+    :param validate:    return only L-feasible solutions
+    :return:            tuple of optimal partition, sum cost of the partitioning, and optimal number of cuts
     """
     partition, *_ = seq_tree_partitioning(tree, root, M, N, L, cp_end, delay, unit=1)
     if not partition:
         return INFEASIBLE
     sum_cost, sum_lat = recalculate_partitioning(tree, partition, root, N, cp_end, delay)
-    return INFEASIBLE if valid and sum_lat > L else (partition, sum_cost, sum_lat)
+    return INFEASIBLE if validate and sum_lat > L else (partition, sum_cost, sum_lat)
 
 
 def stateful_path_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N: int = 1, L: int = math.inf,
