@@ -17,6 +17,7 @@ import pathlib
 import pickle
 import warnings
 from collections.abc import Generator
+from functools import partial
 
 import networkx as nx
 import numpy as np
@@ -71,6 +72,25 @@ def decode_service_tree(tdata: np.ndarray) -> nx.DiGraph:
     nx.relabel_nodes(tree, {0: PLATFORM}, copy=False)
     tree.graph[NAME] = "tree_" + "".join(map(str, tdata[0]))
     return tree
+
+
+def save_tree(tree: nx.DiGraph, file_name: str | pathlib.Path, padding: int = 0, raw: bool = True):
+    """
+    Convert trees into a compact format and save them in a single file.
+    """
+    saver = partial(np.save, allow_pickle=False) if raw else partial(np.savetxt, fmt='%i', delimiter=',')
+    saver(file_name, encode_service_tree(tree, pad_size=padding))
+
+
+def load_tree(file_name: str | pathlib.Path, raw: bool = True) -> nx.DiGraph:
+    """
+    Convert trees into a compact format and save them in a single file.
+    """
+    if raw:
+        loader = partial(np.load, mmap_mode="r", allow_pickle=False)
+    else:
+        loader = partial(np.loadtxt, dtype=int, delimiter=',')
+    return decode_service_tree(loader(file_name))
 
 
 def save_trees_to_file(trees: list[nx.DiGraph], file_name: str | pathlib.Path = "test_trees.npy", padding: int = 0):

@@ -32,6 +32,7 @@ import numpy as np
 
 import slambuc
 from slambuc.alg import Flavor
+from slambuc.generator.io import load_tree
 
 GLOBAL_CTX_SETTINGS = dict(
     help_option_names=['-h', '--help'],
@@ -99,7 +100,7 @@ IndexRange = IndexRangeType()
 class CallGraphPathType(click.Path):
     """Custom Path type that explicitly checks for supported data file extensions."""
     name: str = "CALL_GRAPH_FILE"
-    ext: set[str] = {'gml', 'npy', 'npz'}
+    ext: set[str] = {'gml', 'npy', 'npz', 'csv', 'svt'}
 
     def __init__(self):
         super().__init__(exists=True, file_okay=True, dir_okay=False, readable=True,
@@ -211,10 +212,16 @@ unfold = click.option('--unfold/--barriers', metavar='BOOL', type=click.BOOL, re
 
 ########################################################################################################################
 
+class InputDataType(enum.StrEnum):
+    CHAIN = enum.auto()
+    TREE = enum.auto()
+    DAG = enum.auto()
+
+
 @main.group("chain")
 def chain():
     """Sequence partitioning algorithms"""
-    pass
+    click.get_current_context().obj['INPUT_DATA_TYPE'] = InputDataType.CHAIN
 
 
 @chain.group("path")
@@ -316,7 +323,8 @@ def chain__serial__ilp(filename: pathlib.Path, alg, **parameters: dict[str, ...]
 @main.group("dag")
 def dag():
     """DAG partitioning algorithms"""
-    click.get_current_context().obj['INPUT_ARG_REF'] = 'dag'
+    click.get_current_context().obj.update({'INPUT_DATA_TYPE': InputDataType.DAG,
+                                            'INPUT_ARG_REF': 'dag'})
 
 
 class DagILPType(enum.Enum):
@@ -338,7 +346,8 @@ def dag__ilp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
 @main.group("ext")
 def ext():
     """External partitioning algorithms and heuristics"""
-    click.get_current_context().obj['INPUT_ARG_REF'] = 'tree'
+    click.get_current_context().obj.update({'INPUT_DATA_TYPE': InputDataType.TREE,
+                                            'INPUT_ARG_REF': 'tree'})
 
 
 class ExtBaselineType(enum.Enum):
@@ -404,7 +413,8 @@ def ext__min_cut(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
 @main.group("tree")
 def tree():
     """Tree partitioning algorithms"""
-    click.get_current_context().obj['INPUT_ARG_REF'] = 'tree'
+    click.get_current_context().obj.update({'INPUT_DATA_TYPE': InputDataType.TREE,
+                                            'INPUT_ARG_REF': 'tree'})
 
 
 @tree.group("layout")
@@ -670,27 +680,45 @@ def log_err(msg: str):
         click.secho(msg, err=True, fg='red')
 
 
-def read_input_file(filename: pathlib.Path, arg_names: tuple[str] | list[str]):
+def read_input_file(filename: pathlib.Path, data_type: str, arg_names: tuple[str] | list[str]):
     """Read input data structure(s) from file."""
-    data: list[nx.DiGraph | list] | None = None
+    data: nx.DiGraph | list[nx.DiGraph | list] | None = None
+    suffix = filename.suffix
     try:
-        match filename.suffix:
-            case '.gml':
+        if suffix == '.gml':
+            if data_type in (InputDataType.TREE, InputDataType.DAG):
                 data = nx.read_gml(filename, destringizer=int)
-            case '.npy':
+            else:
+                raise click.BadParameter(f"Unsupported format: {suffix!r} for data type: {data_type}.")
+        elif suffix == '.npy':
+            if data_type == InputDataType.CHAIN:
                 data = np.load(filename, mmap_mode='r', allow_pickle=False).tolist()
                 if len(data) < len(arg_names):
                     raise click.BadParameter(f"Ambiguous data size: {len(data)}! '.npy' file must contain "
                                              f"{len(arg_names)} lists for {arg_names!r}.")
-            case '.npz':
+            elif data_type == InputDataType.TREE:
+                data = load_tree(filename, raw=True)
+            else:
+                raise click.BadParameter(f"Unsupported format: {suffix!r} for data type: {data_type}.")
+        elif suffix == '.npz':
+            if data_type == InputDataType.CHAIN:
                 npz_file = np.load(filename, mmap_mode='r', allow_pickle=False)
                 if not set(arg_names) <= set(npz_file.keys()):
-                    raise click.BadParameter(f"Ambiguous data size: {len(data)}! '.npy' file must contain "
+                    raise click.BadParameter(f"Ambiguous data size: {len(data)}! Input file must contain "
                                              f"{len(arg_names)} lists for {arg_names!r}.")
                 data = list(npz_file[arg].tolist() for arg in arg_names)
-            case _:
-                raise click.BadParameter("Unsupported extension! "
-                                         "Parameter <filename> must end with 'gml', 'npy', or 'npz'.")
+            else:
+                raise click.BadParameter(f"Unsupported format: {suffix!r} for data type: {data_type}.")
+        elif suffix == '.csv':
+            if data_type == InputDataType.CHAIN:
+                data = np.loadtxt(filename, dtype=int, delimiter=',').tolist()
+                if len(data) < len(arg_names):
+                    raise click.BadParameter(f"Ambiguous data size: {len(data)}! Input file must contain "
+                                             f"{len(arg_names)} lists for {arg_names!r}.")
+            elif data_type == InputDataType.TREE:
+                data = load_tree(filename, raw=False)
+            else:
+                raise click.BadParameter(f"Unsupported format: {suffix!r} for data type: {data_type}.")
     except (ValueError, OSError, nx.NetworkXError) as e:
         log_err(f"Failed to parse {filename}: {e}")
     return dict(zip(arg_names, data)) if isinstance(arg_names, (list, tuple)) else {arg_names: data}
@@ -710,7 +738,7 @@ def invoke_algorithm(filename: pathlib.Path, alg: str, parameters: dict[str, ...
         raise click.ClickException from e
     ##################################
     log_info(f"Loading input data from file: {filename}")
-    data = read_input_file(filename=filename, arg_names=ctx.obj['INPUT_ARG_REF'])
+    data = read_input_file(filename=filename, data_type=ctx.obj['INPUT_DATA_TYPE'], arg_names=ctx.obj['INPUT_ARG_REF'])
     if not data:
         raise click.ClickException(f"Missing input data!")
     log_info(f"Parsed input:")
