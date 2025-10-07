@@ -30,7 +30,7 @@ def ichain_blocks(memory: list[int], rate: list[int], N: int, M: int) -> T_PART_
     :return:        Generator over M-feasible cuts.
     """
     n = len(memory)
-    for cut in ipowerset(range(1, n), start=math.ceil(sum(memory) / M) - 1):
+    for cut in ipowerset(range(1, n), start=(math.ceil(sum(memory) / M) - 1) if 0 < M < math.inf else 0):
         barr = sorted({0}.union(cut))
         # Consider only block with the appropriate size
         valid = [blk for blk in split_chain(barr, n)
@@ -60,6 +60,8 @@ def greedy_chain_partitioning(runtime: list[int], memory: list[int], rate: list[
     :param unit:    rounding unit for the cost calculation (default: 100 ms)
     :return:        list if min-cost partitions, related optimal cost and latency
     """
+    n = len(runtime)
+    end = end if end is not None else n - 1
     best_res, best_cost = [INFEASIBLE], math.inf
     for partition in ichain_blocks(memory, rate, N, M):
         if (sum_lat := sum(chain_latency(runtime, blk[0], blk[-1], delay, start, end) for blk in partition)) > L:
