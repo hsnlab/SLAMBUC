@@ -163,8 +163,9 @@ def build_greedy_chain_mtx_model(runtime: list[int], memory: list[int], rate: li
     for i in range(n):
         model += lp.lpSum(X[i]) == 1, f"C_f{i:02d}"
     # Knapsack constraints
-    for j in range(n):
-        model += lp.lpSum(memory[i] * X[i][j] for i in range(j, n)) <= M, f"C_k{j:02d}"
+    if M < math.inf:
+        for j in range(n):
+            model += lp.lpSum(memory[i] * X[i][j] for i in range(j, n)) <= M, f"C_k{j:02d}"
     # Connectivity constraints
     for j in range(n):
         for i in range(j + 1, n):
@@ -210,8 +211,9 @@ def build_chain_mtx_model(runtime: list[int], memory: list[int], rate: list[int]
     for i in range(n):
         model += lp.lpSum(X[i]) == 1, f"C_f{i:02d}"
     # Knapsack constraints
-    for j in range(n):
-        model += lp.lpSum(memory[i] * X[i][j] for i in range(j, n)) <= M, f"C_k{j:02d}"
+    if M < math.inf:
+        for j in range(n):
+            model += lp.lpSum(memory[i] * X[i][j] for i in range(j, n)) <= M, f"C_k{j:02d}"
     # Connectivity constraints
     for j in range(n):
         for i in range(j + 1, n):
