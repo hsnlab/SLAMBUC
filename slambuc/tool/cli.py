@@ -44,12 +44,12 @@ GLOBAL_CTX_SETTINGS = dict(
 @click.group('slambuc', context_settings=GLOBAL_CTX_SETTINGS,
              epilog="See https://github.com/hsnlab/SLAMBUC for more details.")
 @click.option('-j', '--json', 'format_json', is_flag=True, default=False, help="Output as valid JSON")
-@click.option('-s', '--split', 'format_split', is_flag=True, default=False, help="Split results into separate lines")
+@click.option('-s', '--split', 'format_split', is_flag=True, default=False, help="Split result into separate lines")
 @click.option('-q', '--quiet', 'output_quiet', is_flag=True, default=False, help="Suppress logging messages")
 @click.version_option(slambuc.__version__, "-v", "--version", package_name="slambuc")
 @click.pass_context
 def main(ctx: click.Context, format_json: bool, format_split: bool, output_quiet: bool):
-    """Serverless Layout Adaptation with Memory-Bounds and User Constraints"""
+    """Serverless Layout Adaptation with Memory-Bounds and User Constraints (SLAMBUC)."""
     ctx.ensure_object(dict)
     ctx.obj['FORMAT_JSON'] = format_json
     ctx.obj['FORMAT_SPLIT'] = format_split
@@ -142,7 +142,7 @@ FlavorType = SlambucFlavorType()
 
 
 def algorithm(enum_type: enum.EnumType, *options) -> typing.Callable:
-    """Decorator for common Click arguments and options for algorithm invocation"""
+    """Decorator for common Click arguments and options for algorithm invocations."""
 
     def wrapped(func):
         func = click.argument('filename', required=True, nargs=1, type=CallGraphFile)(func)
@@ -213,6 +213,7 @@ unfold = click.option('--unfold/--barriers', metavar='BOOL', type=click.BOOL, re
 ########################################################################################################################
 
 class InputDataType(enum.StrEnum):
+    """Specific input data type corresponding to SLAMBUC's algorithms and package structure."""
     CHAIN = enum.auto()
     TREE = enum.auto()
     DAG = enum.auto()
@@ -220,13 +221,26 @@ class InputDataType(enum.StrEnum):
 
 @main.group("chain")
 def chain():
-    """Sequence partitioning algorithms"""
+    """Sequence partitioning algorithms.
+
+    Calculates cost-optimal partitioning of a chain based on the node properties of 'running time', 'memory usage'
+    and 'invocation rate' with respect to an upper bound 'M' on the total memory of blocks and a latency constraint
+    'L' defined on the restricted subchain between 'start' and 'end' nodes.
+
+    Cost calculation relies on the rounding 'unit' and number of vCPU cores 'N', whereas platform invocation 'delay'
+    is used for latency calculations.
+    """
     click.get_current_context().obj['INPUT_DATA_TYPE'] = InputDataType.CHAIN
 
 
 @chain.group("path")
 def chain__path():
-    """"""
+    """Chain partitioning algorithms without data R/W overheads.
+
+    For detailed information, see in J. Cz., I. P. and B. S., "Cost-optimal Operation of Latency Constrained Serverless
+    Applications: From Theory to Practice," NOMS 2023-2023 IEEE/IFIP Network Operations and Management Symposium,
+    Miami, FL, USA, 2023, pp. 1-10, doi: 10.1109/NOMS56928.2023.10154412.
+    """
     click.get_current_context().obj['INPUT_ARG_REF'] = ('runtime', 'memory', 'rate')
 
 
@@ -240,7 +254,7 @@ class ChainPathDPType(enum.Enum):
 @chain__path.command("dp")
 @algorithm(ChainPathDPType, M, N, L, start, end, delay, unit, unfold)
 def chain__path__dp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
-    """"""
+    """Cost-optimal partitioning based on (vectorized) dynamic programming."""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
@@ -253,7 +267,7 @@ class ChainPathGreedyType(enum.Enum):
 @chain__path.command("greedy")
 @algorithm(ChainPathGreedyType, M, N, L, start, end, delay, unit)
 def chain__path__greedy(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
-    """"""
+    """Cost-optimal partitioning using exhaustive search of edge cuts."""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
@@ -266,7 +280,11 @@ class ChainPathMinType(enum.Enum):
 @chain__path.command("min")
 @algorithm(ChainPathMinType, M, N, L, start, end, delay, unit, unfold)
 def chain__path__min(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
-    """"""
+    """Cost-minimal partitioning assuming subadditive costs function.
+
+    It gives an optimal result only in case the cost function regarding the chain attributes is subadditive,
+    that is k_opt = k_min is guaranteed for each case.
+    """
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
@@ -279,7 +297,11 @@ class ChainPathSPType(enum.Enum):
 @chain__path.command("sp")
 @algorithm(ChainPathSPType, M, N, L, delay, unit, unfold)
 def chain__path__sp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
-    """"""
+    """Cost-optimal partitioning using shortest-path search in a state graph.
+
+    Build configuration state graph of the given function chain.
+    Partitioning is based on the shortest path calculation of the state graph of feasible blocks.
+    """
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
@@ -287,7 +309,7 @@ def chain__path__sp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
 
 @chain.group("serial")
 def chain__serial():
-    """"""
+    """Chain partitioning algorithms using serialized platform execution model."""
     click.get_current_context().obj['INPUT_ARG_REF'] = ('runtime', 'memory', 'rate', 'data')
 
 
@@ -300,7 +322,11 @@ class ChainSerialGreedyType(enum.Enum):
 @chain__serial.command("greedy")
 @algorithm(ChainSerialGreedyType, M, L, start, end, delay)
 def chain__serial__greedy(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
-    """"""
+    """Cost-optimal partitioning using exhaustive search of edge cuts.
+
+    Calculates all combinations of chain cuts with respect to the 'memory' values and constraint 'M'.
+    The calculation is improved compared to brute force to only start calculating cuts from minimal cut size 'c_min'.
+    """
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
@@ -314,7 +340,10 @@ class ChainSerialILPType(enum.Enum):
 @chain__serial.command("ilp")
 @algorithm(ChainSerialILPType, M, L, start, end, delay)
 def chain__serial__ilp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
-    """"""
+    """Chain partitioning based on ILP formalization.
+
+    Generate all feasible (connected) blocks that meet the memory constraint 'M' assuming serialized executions.
+    """
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
@@ -322,7 +351,10 @@ def chain__serial__ilp(filename: pathlib.Path, alg, **parameters: dict[str, ...]
 
 @main.group("dag")
 def dag():
-    """DAG partitioning algorithms"""
+    """DAG partitioning algorithms.
+
+    Block metrics are calculated based on a parallelized execution platform model.
+    """
     click.get_current_context().obj.update({'INPUT_DATA_TYPE': InputDataType.DAG,
                                             'INPUT_ARG_REF': 'dag'})
 
@@ -337,7 +369,10 @@ class DagILPType(enum.Enum):
 @dag.command("ilp")
 @algorithm(DagILPType, root, M, L, N, cp_end, delay, subchains, timeout)
 def dag__ilp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
-    """"""
+    """DAG partitioning based on matrix ILP formalization.
+
+    Block metrics are calculated based on a parallelized execution platform model.
+    """
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
@@ -345,7 +380,7 @@ def dag__ilp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
 
 @main.group("ext")
 def ext():
-    """External partitioning algorithms and heuristics"""
+    """External partitioning algorithms and heuristics."""
     click.get_current_context().obj.update({'INPUT_DATA_TYPE': InputDataType.TREE,
                                             'INPUT_ARG_REF': 'tree'})
 
@@ -360,7 +395,11 @@ class ExtBaselineType(enum.Enum):
 @ext.command("baseline")
 @algorithm(ExtBaselineType, root, N, cp_end, delay)
 def ext__baseline(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
-    """"""
+    """Derive trivial partitioning of graph nodes.
+
+    Derive the trivial partitioning of grouping all nodes into one single block.
+    Derive the trivial solution of not merging any of the given tree nodes.
+    """
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
@@ -374,7 +413,16 @@ class ExtCSPType(enum.Enum):
 @ext.command("csp")
 @algorithm(ExtCSPType, root, flavor, M, L, N, cp_end, delay, exhaustive, timeout)
 def ext__csp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
-    """"""
+    """Cost-minimal tree partitioning heuristics based on CSP formalization.
+
+    Calculate all state-space DAGs of the given 'tree' based on the alternative chain decompositions and constrained
+    shortest path (CSP) formalization with or without considering flavor assignment.
+    The given flavors as list of (memory, CPU, cost_factor) tuples define the available memory (and group upper limit),
+    available relative vCPU cores and relative cost multiplier.
+
+    For detailed information, see in T. E. at al.: “Costless: Optimizing Cost of Serverless Computing through Function
+    Fusion and Placement,” in 2018 IEEE/ACM Symposium on Edge Computing (SEC), 2018, pp. 300–312.
+    doi: 10.1109/SEC.2018.00029."""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
@@ -389,7 +437,20 @@ class ExtGreedyType(enum.Enum):
 @ext.command("greedy")
 @algorithm(ExtGreedyType, root, M, L, N, cp_end, delay, metrics)
 def ext__greedy(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
-    """"""
+    """Cost-minimal tree partitioning using greedy edge merging/splitting.
+
+    Greedy: Calculates memory-bounded tree partitioning in a greedy manner without any latency limit.
+
+    Min weight: Greedy heuristic algorithm to calculate partitioning of the given *tree* regarding the given memory
+    'M' and latency 'L' limits.
+    It uses a greedy approach to calculate a low-cost critical path cut (might miss feasible solutions).
+    It may conclude the partitioning problem infeasible despite there exist one with large costs.
+
+    Min latency: Greedy heuristic algorithm to calculate partitioning of the given 'tree' regarding the given
+    memory 'M' and latency 'L' limits.
+    It uses Dijkstra's algorithm to calculate the critical path cut with the lowest latency (might be expensive).
+    It always returns a latency-feasible solution if it exists.
+    """
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
@@ -404,7 +465,22 @@ class ExtMinCutType(enum.Enum):
 @ext.command("min_cut")
 @algorithm(ExtMinCutType, root, k, L, N, cp_end, delay, metrics)
 def ext__min_cut(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
-    """"""
+    """Weight-minimal tree partitioning using rank-based clustering.
+
+    Min chain: Minimal edge-weight chain-based tree partitioning (O(n)) without memory and latency constraints.
+    Although latency is not considered on the critical path the algorithm reports it with the sum cost.
+
+    K-split: Minimal data-transfer tree clustering into 'k' clusters (with k-1 cuts) without memory and latency
+    constraints. Although latency is not considered on the critical path the algorithm reports it along with
+    the sum cost.
+
+    Min tree: Minimal data-transfer tree clustering without memory constraints.
+    Iteratively calculates 'k-1' different ksplit clustering in reverse order until an L-feasible solution is found.
+    Although latency is not considered on the critical path the algorithm reports it with the sum cost.
+
+    For detailed information, see in  M. M. et al.: “Clustering on trees,” Computational Statistics & Data Analysis,
+    vol. 24, no. 2, pp. 217–234, Apr. 1997, doi: 10.1016/S0167-9473(96)00062-X.
+    """
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
@@ -412,13 +488,14 @@ def ext__min_cut(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
 
 @main.group("tree")
 def tree():
-    """Tree partitioning algorithms"""
+    """Tree partitioning algorithms."""
     click.get_current_context().obj.update({'INPUT_DATA_TYPE': InputDataType.TREE,
                                             'INPUT_ARG_REF': 'tree'})
 
 
 @tree.group("layout")
 def tree__layout():
+    """Cost-optimal partitioning based on predefined resource flavors."""
     pass
 
 
@@ -433,7 +510,7 @@ class TreeLayoutILPType(enum.Enum):
 @tree__layout.command("ilp")
 @algorithm(TreeLayoutILPType, root, flavor, L, cp_end, subchains, delay, timeout)
 def tree__layout__ilp(filename: pathlib.Path, alg: TreeLayoutILPType, **parameters: dict[str, ...]):
-    """"""
+    """Cost-optimal partitioning based on ILP formalization."""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
@@ -441,6 +518,7 @@ def tree__layout__ilp(filename: pathlib.Path, alg: TreeLayoutILPType, **paramete
 
 @tree.group("parallel")
 def tree__parallel():
+    """Cost-minimal partitioning based on parallelized platform execution model."""
     pass
 
 
@@ -453,7 +531,10 @@ class TreeParallelGreedyType(enum.Enum):
 @tree__parallel.command("greedy")
 @algorithm(TreeParallelGreedyType, root, M, L, N, cp_end, delay)
 def tree__parallel__greedy(filename: pathlib.Path, alg: TreeParallelGreedyType, **parameters: dict[str, ...]):
-    """"""
+    """Cost-optimal partitioning using greedy edge cuts.
+
+    Calculate minimal-cost partitioning of an app graph(tree) by greedily iterating over all possible cuttings.
+    """
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
@@ -469,7 +550,7 @@ class TreeParallelILPType(enum.Enum):
 @tree__parallel.command("ilp")
 @algorithm(TreeParallelILPType, root, M, L, N, cp_end, delay, timeout, subchains)
 def tree__parallel__ilp(filename: pathlib.Path, alg: TreeParallelILPType, **parameters: dict[str, ...]):
-    """"""
+    """Cost-optimal partitioning based on ILP formalization."""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
@@ -483,7 +564,15 @@ class TreeParallelPseudoType(enum.Enum):
 @tree__parallel.command("pseudo")
 @algorithm(TreeParallelPseudoType, root, M, L, N, cp_end, delay, bidirectional)
 def tree__parallel__pseudo(filename: pathlib.Path, alg: TreeParallelPseudoType, **parameters: dict[str, ...]):
-    """"""
+    """Cost-minimal partitioning based on specific tree traversals.
+
+    Calculates minimal-cost partitioning of an app graph(tree) with respect to an upper bound 'M' on the total
+    memory of blocks and a latency constraint 'L' defined on the subchain between 'root' and 'cp_end' nodes, while
+    applying a bottom-up/left-right tree traversal approach.
+
+    Btree: Provide suboptimal partitioning due to the inaccurate latency calculation that directly comes from the
+    bottom-up tree traversal approach and parallelized platform execution model.
+    """
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
@@ -496,7 +585,14 @@ class TreeParallelPseudoMPType(enum.Enum):
 @tree__parallel.command("pseudo_mp")
 @algorithm(TreeParallelPseudoMPType, root, M, L, N, cp_end, delay, bidirectional)
 def tree__parallel__pseudo_mp(filename: pathlib.Path, alg: TreeParallelPseudoMPType, **parameters: dict[str, ...]):
-    """"""
+    """Cost-minimal partitioning using parallelized multiprocessing.
+
+    Calculates minimal-cost partitioning of an app graph(tree) with respect to an upper bound 'M' on the total
+    memory of blocks and a latency constraint 'L' defined on the subchain between 'root' and 'cp_end' nodes.
+
+    Partitioning is calculated using the left-right tree traversal approach.
+    Arbitrary disjoint subtrees are partitioned in separate subprocesses.
+    """
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
@@ -504,6 +600,12 @@ def tree__parallel__pseudo_mp(filename: pathlib.Path, alg: TreeParallelPseudoMPT
 
 @tree.group("path")
 def tree__path():
+    """Cost-optimal path-tree partitioning based on single-chain blocks.
+
+    For detailed information, see in: J. Cz., I. P. and B. S., "Cost-optimal Operation of Latency Constrained
+    Serverless Applications: From Theory to Practice," NOMS 2023-2023 IEEE/IFIP Network Operations and Management
+    Symposium, Miami, FL, USA, 2023, pp. 1-10, doi: 10.1109/NOMS56928.2023.10154412.
+    """
     pass
 
 
@@ -516,7 +618,10 @@ class TreePathGreedyType(enum.Enum):
 @tree__path.command("greedy")
 @algorithm(TreePathGreedyType, root, M, N, L, cp_end, delay, unit, only_cuts)
 def tree__path__greedy(filename: pathlib.Path, alg: TreePathGreedyType, **parameters: dict[str, ...]):
-    """"""
+    """Cost-optimal partitioning using greedy edge cuts.
+
+    Calculates minimal-cost partitioning of an app graph(tree) by iterating over all possible cuttings.
+    """
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
@@ -529,7 +634,18 @@ class TreePathMetaType(enum.Enum):
 @tree__path.command("meta")
 @algorithm(TreePathMetaType, root, M, N, L, cp_end, delay, unit, only_barr)
 def tree__path__meta(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
-    """"""
+    """Cost-optimal partitioning based on a chain partition subroutine.
+
+    Calculates minimal-cost partitioning of an app graph(tree) with respect to an upper bound 'M' on the total
+    memory of blocks and a latency constraint 'L' defined on the subchain between 'root' and 'cp_end' nodes using
+    the 'partition' function to partition subchains independently.
+
+    Cost calculation relies on the rounding 'unit' and number of vCPU cores 'N', whereas platform invocation 'delay'
+    is used for latency calculations.
+
+    It gives an optimal result only in case the cost function regarding the chain attributes is subadditive,
+    that is k_opt = k_min is guaranteed for each case.
+    """
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
@@ -542,7 +658,17 @@ class TreePathMinType(enum.Enum):
 @tree__path.command("min")
 @algorithm(TreePathMinType, root, M, N, L, cp_end, delay, unit, full)
 def tree__path__min(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
-    """"""
+    """Cost-optimal partitioning based on a DP approach with subadditive cost.
+
+    Calculates minimal-cost partitioning of an app graph(tree) with respect to an upper bound 'M' on the total
+    memory of blocks and a latency constraint 'L' defined on the subchain between *root* and *cp_end* nodes.
+
+    Cost calculation relies on the rounding *unit* and number of vCPU cores 'N', whereas platform invocation 'delay'
+    is used for latency calculations.
+
+    It gives an optimal result only in case the cost function regarding the chain attributes is subadditive,
+    that is k_opt = k_min is guaranteed for each case.
+    """
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
@@ -555,7 +681,15 @@ class TreePathSeqType(enum.Enum):
 @tree__path.command("seq")
 @algorithm(TreePathSeqType, root, M, N, L, cp_end, delay, unit, full)
 def tree__path__seq(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
-    """"""
+    """Cost-optimal partitioning based on a direct dynamic programming approach.
+
+    Calculates minimal-cost partitioning of an app graph(tree) with respect to an upper bound 'M' on the total
+    memory of blocks and a latency constraint 'L' defined on the subchain between 'root' and 'cp_end' nodes leveraging
+    a bottom-up tree traversal approach.
+
+    Cost calculation relies on the rounding *unit* and number of vCPU cores 'N', whereas platform invocation 'delay'
+    is used for latency calculations.
+    """
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
@@ -569,7 +703,12 @@ class TreePathSeqStateType(enum.Enum):
 @tree__path.command("seq_state")
 @algorithm(TreePathSeqStateType, root, M, N, L, cp_end, delay, validate)
 def tree__path__seq_state(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
-    """"""
+    """Cost-optimal partitioning based on a DP approach without data externalization.
+
+    Calculates minimal-cost partitioning using <seq_tree_partitioning> while considering data implicit state
+    externalization.
+    Input tree is preprocessed and function runtimes are altered to incorporate data read/write overheads.
+    """
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
@@ -577,6 +716,7 @@ def tree__path__seq_state(filename: pathlib.Path, alg, **parameters: dict[str, .
 
 @tree.group("serial")
 def tree__serial():
+    """Cost-minimal partitioning based on serialized platform execution model."""
     pass
 
 
@@ -591,7 +731,22 @@ class TreeSerialBicriteriaType(enum.Enum):
 @tree__serial.command("bicriteria")
 @algorithm(TreeSerialBicriteriaType, root, M, L, cp_end, delay, Epsilon, Lambda, bidirectional)
 def tree__serial__bicriteria(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
-    """"""
+    """Cost-minimal partitioning based on approximation schemes.
+
+    Calculates minimal-cost partitioning of an app graph(tree) with respect to an upper bound 'M' on the total
+    memory of blocks and a latency constraint 'L' defined on the subchain between 'root' and 'cp_end' nodes, while
+    applying the bottom-up tree traversal approach.
+
+    Cost approximation ratio 'Epsilon' controls the maximum deviation from the cost-optimal partitioning
+    (Epsilon=0.0 enforces the algorithm to calculate exact solution) in exchange for reduces subcase calculations.
+    Latency approximation ratio ('Lambda') controls the maximum deviation with respect to the latency limit 'L'
+    (Lambda=0.0 enforces no rounding) in exchange for reduces subcase calculations.
+
+    Btree: Provide suboptimal partitioning due to the simplified and inaccurate latency rounding.
+
+    Dual: Instead of direct cost calculations, the cumulative overheads of externalized states are subject
+    to minimization as a different formalization of the same optimization problem.
+    """
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
@@ -604,7 +759,10 @@ class TreeSerialGreedyType(enum.Enum):
 @tree__serial.command("greedy")
 @algorithm(TreeSerialGreedyType, root, M, L, cp_end, delay)
 def tree__serial__greedy(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
-    """"""
+    """Cost-optimal partitioning using greedy edge cuts.
+
+    Calculate minimal-cost partitioning of an app graph(tree) by greedily iterating over all possible cuttings.
+    """
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
@@ -620,7 +778,7 @@ class TreeSerialILPType(enum.Enum):
 @tree__serial.command("ilp")
 @algorithm(TreeSerialILPType, root, M, L, cp_end, delay, subchains, timeout)
 def tree__serial__ilp(filename: pathlib.Path, alg: TreeSerialILPType, **parameters: dict[str, ...]):
-    """"""
+    """Cost-optimal partitioning based on ILP formalization."""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
@@ -634,7 +792,7 @@ class TreeSerialILPCplexType(enum.Enum):
 @tree__serial.command("ilp_cplex")
 @algorithm(TreeSerialILPCplexType, root, M, L, cp_end, delay, timeout)
 def tree__serial__ilp_cplex(filename: pathlib.Path, alg: TreeSerialILPCplexType, **parameters: dict[str, ...]):
-    """"""
+    """Cost-optimal partitioning based on CPLEX's own ILP model."""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
@@ -648,7 +806,12 @@ class TreeSerialPseudoType(enum.Enum):
 @tree__serial.command("pseudo")
 @algorithm(TreeSerialPseudoType, root, M, L, cp_end, delay, bidirectional)
 def tree__serial__pseudo(filename: pathlib.Path, alg: TreeSerialPseudoType, **parameters: dict[str, ...]):
-    """"""
+    """Cost-minimal partitioning based on specific tree traversals.
+
+    Calculates minimal-cost partitioning of an app graph(tree) with respect to an upper bound 'M' on the total
+    memory of blocks and a latency constraint 'L' defined on the subchain between 'root' and 'cp_end' nodes, while
+    applying a bottom-up/left-right tree traversal approach.
+    """
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
@@ -662,7 +825,14 @@ class TreeSerialPseudoMPType(enum.Enum):
 @tree__serial.command("pseudo_mp")
 @algorithm(TreeSerialPseudoMPType, root, M, L, cp_end, delay, bidirectional)
 def tree__serial__pseudo_mp(filename: pathlib.Path, alg: TreeSerialPseudoMPType, **parameters: dict[str, ...]):
-    """"""
+    """Cost-minimal partitioning using parallelized multiprocessing.
+
+    Calculates minimal-cost partitioning of an app graph(tree) with respect to an upper bound 'M' on the total
+    memory of blocks and a latency constraint 'L' defined on the subchain between 'root' and 'cp_end' nodes.
+
+    Partitioning is calculated using the left-right tree traversal approach.
+    Arbitrary disjoint subtrees are partitioned in separate subprocesses.
+    """
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
