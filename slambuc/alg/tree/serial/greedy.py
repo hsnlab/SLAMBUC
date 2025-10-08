@@ -16,6 +16,7 @@ import math
 import networkx as nx
 
 from slambuc.alg import INFEASIBLE, T_BARRS_GEN, T_RESULTS
+from slambuc.alg.app import PLATFORM
 from slambuc.alg.util import (isubtrees, ipowerset, ibacktrack_chain, ser_subtree_memory, ser_subtree_cost,
                               ser_subchain_latency)
 
@@ -54,7 +55,7 @@ def greedy_ser_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.
     :param delay:   invocation delay between blocks
     :return:        tuple of list of best partitions, sum cost of the partitioning, and resulted latency
     """
-    cp_end = cp_end if cp_end is not None else max(tree)
+    cp_end = cp_end if cp_end is not None else max(n for n in tree if n != PLATFORM)
     best_res, best_cost = [INFEASIBLE], math.inf
     cpath = set(ibacktrack_chain(tree, root, cp_end))
     # Iterates over all possible cuttings

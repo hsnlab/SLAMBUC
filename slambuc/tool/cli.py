@@ -122,7 +122,6 @@ class SlambucFlavorType(click.ParamType):
 
     def convert(self, value: typing.Any, param: click.Parameter, ctx: click.Context) -> Flavor:
         """Parse and convert flavors from CLI inf format <mem[int]>,<ncore[int]>,<cfactor[float]>"""
-        print(value, param, ctx)
         if isinstance(value, Flavor):
             return value
         try:
