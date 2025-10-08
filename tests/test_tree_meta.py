@@ -19,8 +19,8 @@ import networkx as nx
 from slambuc.alg.app import NAME, RUNTIME
 from slambuc.alg.tree.path.meta import leaf_label_nodes, isubchains, meta_tree_partitioning
 from slambuc.alg.util import ichain
-from slambuc.misc.random import get_random_tree
 from slambuc.misc.plot import draw_tree
+from slambuc.misc.random import get_random_tree
 from slambuc.misc.util import print_tree_summary, evaluate_tree_partitioning
 
 

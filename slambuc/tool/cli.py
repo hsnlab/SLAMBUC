@@ -32,7 +32,7 @@ import numpy as np
 
 import slambuc
 from slambuc.alg import Flavor
-from slambuc.generator.io import load_tree
+from slambuc.misc.io import load_tree
 
 GLOBAL_CTX_SETTINGS = dict(
     help_option_names=['-h', '--help'],
@@ -100,7 +100,7 @@ IndexRange = IndexRangeType()
 class CallGraphPathType(click.Path):
     """Custom Path type that explicitly checks for supported data file extensions."""
     name: str = "CALL_GRAPH_FILE"
-    ext: set[str] = {'gml', 'npy', 'npz', 'csv', 'svt'}
+    ext: set[str] = {'gml', 'npy', 'npz', 'csv'}
 
     def __init__(self):
         super().__init__(exists=True, file_okay=True, dir_okay=False, readable=True,
@@ -685,38 +685,30 @@ def read_input_file(filename: pathlib.Path, data_type: str, arg_names: tuple[str
     data: nx.DiGraph | list[nx.DiGraph | list] | None = None
     suffix = filename.suffix
     try:
-        if suffix == '.gml':
-            if data_type in (InputDataType.TREE, InputDataType.DAG):
+        if data_type == InputDataType.DAG:
+            if suffix == '.gml':
                 data = nx.read_gml(filename, destringizer=int)
             else:
                 raise click.BadParameter(f"Unsupported format: {suffix!r} for data type: {data_type}.")
-        elif suffix == '.npy':
-            if data_type == InputDataType.CHAIN:
-                data = np.load(filename, mmap_mode='r', allow_pickle=False).tolist()
-                if len(data) < len(arg_names):
-                    raise click.BadParameter(f"Ambiguous data size: {len(data)}! '.npy' file must contain "
-                                             f"{len(arg_names)} lists for {arg_names!r}.")
-            elif data_type == InputDataType.TREE:
-                data = load_tree(filename, raw=True)
+        elif data_type == InputDataType.TREE:
+            if suffix == '.gml':
+                data = nx.read_gml(filename, destringizer=int)
+            elif suffix in ('.npy', '.svt', '.csv'):
+                data = load_tree(filename, raw=False if suffix == '.csv' else True)
             else:
                 raise click.BadParameter(f"Unsupported format: {suffix!r} for data type: {data_type}.")
-        elif suffix == '.npz':
-            if data_type == InputDataType.CHAIN:
+        elif data_type == InputDataType.CHAIN:
+            if suffix == '.npy':
+                data = np.load(filename, mmap_mode='r', allow_pickle=False).tolist()
+                if len(data) != len(arg_names):
+                    raise click.BadParameter(f"Ambiguous data size: {len(data)}! Input file must contain "
+                                             f"{len(arg_names)} lists for {arg_names!r}.")
+            elif suffix == '.npz':
                 npz_file = np.load(filename, mmap_mode='r', allow_pickle=False)
                 if not set(arg_names) <= set(npz_file.keys()):
-                    raise click.BadParameter(f"Ambiguous data size: {len(data)}! Input file must contain "
+                    raise click.BadParameter(f"Missing input data! Input file must contain "
                                              f"{len(arg_names)} lists for {arg_names!r}.")
                 data = list(npz_file[arg].tolist() for arg in arg_names)
-            else:
-                raise click.BadParameter(f"Unsupported format: {suffix!r} for data type: {data_type}.")
-        elif suffix == '.csv':
-            if data_type == InputDataType.CHAIN:
-                data = np.loadtxt(filename, dtype=int, delimiter=',').tolist()
-                if len(data) < len(arg_names):
-                    raise click.BadParameter(f"Ambiguous data size: {len(data)}! Input file must contain "
-                                             f"{len(arg_names)} lists for {arg_names!r}.")
-            elif data_type == InputDataType.TREE:
-                data = load_tree(filename, raw=False)
             else:
                 raise click.BadParameter(f"Unsupported format: {suffix!r} for data type: {data_type}.")
     except (ValueError, OSError, nx.NetworkXError) as e:

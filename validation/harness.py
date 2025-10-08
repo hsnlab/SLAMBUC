@@ -30,7 +30,7 @@ from governor import TestGovernor
 from slambuc.alg import INFEASIBLE
 from slambuc.alg.app import *
 from slambuc.alg.util import ibacktrack_chain, ipowerset, par_subchain_latency
-from slambuc.generator.io import iload_trees_from_file, get_tree_from_file
+from slambuc.misc.io import iload_trees_from_file, get_tree_from_file
 
 # Default params
 DEF_PARAMS = dict(root=1, delay=10)

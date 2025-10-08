@@ -21,8 +21,6 @@ import pathlib
 import random
 import time
 
-import matplotlib
-import matplotlib.pyplot as plt
 import networkx as nx
 import pandas as pd
 import pulp
@@ -31,14 +29,13 @@ from docplex.cp.utils import CpoException
 from docplex.mp.utils import DOcplexException
 from pulp import PulpSolverError
 
-from slambuc.alg.ext import *
 from slambuc.alg.app import *
+from slambuc.alg.ext import *
 from slambuc.alg.tree.parallel import *
 from slambuc.alg.tree.parallel.pseudo import pseudo_par_btree_partitioning
 from slambuc.alg.tree.serial import *
 from slambuc.alg.tree.serial.ilp_cplex import tree_cplex_partitioning, tree_cpo_partitioning
 from slambuc.alg.util import ibacktrack_chain, ser_subchain_latency
-from slambuc.misc.plot import draw_tree
 from slambuc.misc.random import get_random_tree
 from slambuc.misc.util import get_cplex_path
 
@@ -99,7 +96,7 @@ def run_all_tests(params: dict) -> list:
         t_start = time.perf_counter()
         try:
             result = tree_alg(**params)
-        except (PulpSolverError, DOcplexException, CpoException) as e :
+        except (PulpSolverError, DOcplexException, CpoException) as e:
             print(f"Pulp solver failed for {name} with message: {e}")
             stats.append([name, [], None, None, None])
             continue

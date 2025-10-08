@@ -15,7 +15,8 @@ import networkx as nx
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from slambuc.generator.cluster.job_tree import (DEF_TASK_CSV, DEF_TASK_CSV_COLS, DEF_TASK_CSV_HEADER, convert_tasks_to_dag,
+from slambuc.generator.cluster.job_tree import (DEF_TASK_CSV, DEF_TASK_CSV_COLS, DEF_TASK_CSV_HEADER,
+                                                convert_tasks_to_dag,
                                                 igenerate_job_tree, DEF_BATCH_CSV)
 from slambuc.generator.transform import faasify_dag_by_duplication
 from slambuc.misc.plot import draw_tree

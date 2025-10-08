@@ -20,8 +20,8 @@ import tabulate
 from slambuc.alg.app import NAME
 from slambuc.alg.tree.serial.pseudo import pseudo_btree_partitioning, pseudo_ltree_partitioning
 from slambuc.alg.util import ipostorder_dfs, ileft_right_dfs
-from slambuc.misc.random import get_random_tree
 from slambuc.misc.plot import draw_tree
+from slambuc.misc.random import get_random_tree
 from slambuc.misc.util import evaluate_ser_tree_partitioning
 
 

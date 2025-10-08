@@ -23,7 +23,7 @@ from matplotlib import ticker as mticker
 from matplotlib.backends.backend_pgf import FigureCanvasPgf
 
 from slambuc.alg.util import isubtrees, ser_subtree_memory
-from slambuc.generator.io import get_tree_from_file
+from slambuc.misc.io import get_tree_from_file
 
 matplotlib.backend_bases.register_backend('pdf', FigureCanvasPgf)
 matplotlib.rcParams.update({"pgf.texsystem": "pdflatex",

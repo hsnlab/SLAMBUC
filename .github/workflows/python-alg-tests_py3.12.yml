@@ -13,26 +13,26 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python 3.12
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.12"
-    - uses: actions/cache@v4
-      id: cache
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements_py3.12.txt') }}
-        restore-keys: | 
-          ${{ runner.os }}-pip-
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update && sudo apt-get install -y graphviz libgraphviz-dev pkg-config glpk-utils
-    - name: Install Python dependencies
-      run: |
-        python3.12 -m pip install -v --upgrade pip
-        python3.12 -m pip install -v -U -r requirements_py3.12.txt
-        python3.12 -m pip install -vv -e .
-    - name: Test with pytest
-      run: |
-        python3.12 -m pytest -vv tests/
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+      - uses: actions/cache@v4
+        id: cache
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements_py3.12.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y graphviz libgraphviz-dev pkg-config glpk-utils
+      - name: Install Python dependencies
+        run: |
+          python3.12 -m pip install -v --upgrade pip
+          python3.12 -m pip install -v -U -r requirements_py3.12.txt
+          python3.12 -m pip install -vv -e .
+      - name: Test with pytest
+        run: |
+          python3.12 -m pytest -vv tests/

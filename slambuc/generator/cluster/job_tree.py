@@ -24,8 +24,8 @@ import scipy
 
 from slambuc.alg.app.common import *
 from slambuc.generator.cluster.syn_job import random_job
-from slambuc.generator.io import save_trees_to_file
 from slambuc.generator.transform import faasify_dag_by_duplication
+from slambuc.misc.io import save_trees_to_file
 
 # Default sample job/task file of the installed spar package
 SAMPLES_DIR = importlib.resources.files("slambuc.generator.cluster").joinpath("samples")

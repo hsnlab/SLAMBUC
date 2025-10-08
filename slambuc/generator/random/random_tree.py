@@ -15,7 +15,7 @@ import itertools
 import pathlib
 import random
 
-from slambuc.generator.io import save_trees_to_file
+from slambuc.misc.io import save_trees_to_file
 from slambuc.misc.random import get_random_tree
 
 # Attribute intervals

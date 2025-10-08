@@ -20,8 +20,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from slambuc.generator.io import load_hist_params
 from slambuc.generator.microservice.faas_tree import DATA_HIST_NAME, RATE_HIST_NAME
+from slambuc.misc.io import load_hist_params
 
 MS_CALL_GRAPH_COLS = ("traceid", "rpcid", "um", "rpctype", "dm", "interface", "rt")
 NA_VALS = ("NAN", "(?)")

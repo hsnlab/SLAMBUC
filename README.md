@@ -19,7 +19,7 @@ of stateless, ephemeral functions. This is achieved by grouping, encompassing, a
 FaaS functions into separate composite components representing the deployable software artifacts that
 are provisioned by the serverless frameworks in the same way as other single functions.
 In addition, different user-defined Quality of Service (QoS) constraints should be also taken into
-account, e.g., overall response time of the application or an end-to-end latency constraint on the critical 
+account, e.g., overall response time of the application or an end-to-end latency constraint on the critical
 path in the application's call graph.
 
 Under the hood, this problem can be formalized as the partitioning of the application call graph (DAG)
@@ -28,7 +28,7 @@ the user and the platform (flavors) itself need to be satisfied.
 
 In this package, we designed, implemented, and collected various partitioning algorithms tailored to
 tree-shape serverless applications with different runtime complexity, considering communication
-parameters and requirements. Our main goal is to find the cost-optimal grouping of functions 
+parameters and requirements. Our main goal is to find the cost-optimal grouping of functions
 concerning node and edge-weighted trees and cost/memory/latency models based on public cloud frameworks,
 whereas each flavor imposes an upper limit on the available operative memory.
 Moreover, a user-given latency constraint has to be fulfilled on the tree's critical path, which is
@@ -38,7 +38,7 @@ defined as the subchain between the first/front-end function and a predefined le
 
 ### Environment
 
-Our implementations require Python3.10 or above. The following code snippet can be used to set up the 
+Our implementations require Python3.10 or above. The following code snippet can be used to set up the
 latest Python environment on Ubuntu.
 
 ```bash
@@ -93,8 +93,8 @@ For solving constrained shortest path problems (CSP), we apply solution methods 
 
 ### Test harness and performance validation
 
-Our repository contains separate test scripts under the [tests](tests) folder for validating the 
-input/output formats and call parameters. These codes also serve as examples for using the different 
+Our repository contains separate test scripts under the [tests](tests) folder for validating the
+input/output formats and call parameters. These codes also serve as examples for using the different
 implementations of our package.
 
 For comparative analyses, we also implemented a test harness under [validation](validation)
@@ -110,7 +110,8 @@ python3.13 -m pip install slambuc[validation] # For using our test harness frame
 
 ## Usage
 
-Refer to the wiki for [formats, execution parameters, examples, and API documentation](https://github.com/hsnlab/SLAMBUC/wiki).
+Refer to the wiki
+for [formats, execution parameters, examples, and API documentation](https://github.com/hsnlab/SLAMBUC/wiki).
 
 ## Example
 
@@ -137,40 +138,41 @@ print(f"Part: {res[0]}, opt. cost: {params['M'] * (res[1] / 1000)} GBs, latency:
 ## Example
 
 Validation results of a subset of our algorithms with a fully serialized block execution model,
-which are executed with our [validation script](tests/validate_algs.py) using different configurations 
+which are executed with our [validation script](tests/validate_algs.py) using different configurations
 and a [random-generated input call graph](tests/data/graph_test_tree_ser.gml) of size 10.
 
 Used algorithmic parameters (if applicable):
-  * Root node ID (root): 1
-  * Memory limit (M): 6
-  * Available vCPU count (N): 1
-  * Critical path's end node ID (cp_end): 10 
-  * Latency limit: (L): **500**
-  * Platform delay: (delay): 10
-  * Bidirectional elimination (bidirectional): True
-  * Cost approximation ratio (Epsilon): 0.0
-  * Latency violation ratio (Lambda): 0.0
 
-One of the example tree with node/edge weights (execution time: **T**, memory: **M**, data R/W: **D**, 
+* Root node ID (root): 1
+* Memory limit (M): 6
+* Available vCPU count (N): 1
+* Critical path's end node ID (cp_end): 10
+* Latency limit: (L): **500**
+* Platform delay: (delay): 10
+* Bidirectional elimination (bidirectional): True
+* Cost approximation ratio (Epsilon): 0.0
+* Latency violation ratio (Lambda): 0.0
+
+One of the example tree with node/edge weights (execution time: **T**, memory: **M**, data R/W: **D**,
 invocation rate: **R**) is depicted below:
 ![example_Tree](tests/data/valitdate_example_tree.png)
-Exact algorithms are configured to yield all optimal solutions (if exists) with the numerating 
+Exact algorithms are configured to yield all optimal solutions (if exists) with the numerating
 format `{alg}_{num}`.
 
 Execution results:
 
-| Algorithm          | Partitioning                                        |   Cost | Latency                            |   Time (s) |
-|--------------------|-----------------------------------------------------|--------|------------------------------------|------------|
-| GREEDY_0           | [[1, 2, 3], [4, 5, 6, 8, 9, 10], [7]]               |    858 | 443                                | 0.0235749  |
-| GREEDY_1           | [[1, 3, 4, 5], [2], [6, 8, 9, 10], [7]]             |    858 | 474                                | 0.0235749  |
-| GREEDY_2           | [[1, 3, 4, 5], [2], [6, 7, 8, 9], [10]]             |    858 | 471                                | 0.0235749  |
-| ILP_CFG_HYBRID     | [[1, 3, 4, 5], [2], [6, 8, 9, 10], [7]]             |    858 | 474                                | 0.0167496  |
-| ILP_MTX            | [[1, 3, 4, 5], [2], [6, 8, 9, 10], [7]]             |    858 | 474                                | 0.0197985  |
-| PSEUDO_B           | [[1, 2, 3], [4, 5, 6, 8, 9, 10], [7]]               |    858 | 443                                | 0.00047041 |
-| PSEUDO_L           | [[1, 3, 4, 5], [2], [6, 7, 8, 9], [10]]             |    858 | 471                                | 0.00083811 |
-| BIFPTAS_L          | [[1, 3, 4, 5], [2], [6, 7, 8, 9], [10]]             |    858 | 471                                | 0.00082326 |
-| _BASELINE_NO_PART_ | [[1], [2], [3], [4], [5], [6], [7], [8], [9], [10]] |   1090 | 472                                | 9.38e-05   |
-| _BASELINE_SINGLE_  | [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]                   |    822 | 686                                | 6.718e-05  |
+| Algorithm          | Partitioning                                        | Cost | Latency | Time (s)   |
+|--------------------|-----------------------------------------------------|------|---------|------------|
+| GREEDY_0           | [[1, 2, 3], [4, 5, 6, 8, 9, 10], [7]]               | 858  | 443     | 0.0235749  |
+| GREEDY_1           | [[1, 3, 4, 5], [2], [6, 8, 9, 10], [7]]             | 858  | 474     | 0.0235749  |
+| GREEDY_2           | [[1, 3, 4, 5], [2], [6, 7, 8, 9], [10]]             | 858  | 471     | 0.0235749  |
+| ILP_CFG_HYBRID     | [[1, 3, 4, 5], [2], [6, 8, 9, 10], [7]]             | 858  | 474     | 0.0167496  |
+| ILP_MTX            | [[1, 3, 4, 5], [2], [6, 8, 9, 10], [7]]             | 858  | 474     | 0.0197985  |
+| PSEUDO_B           | [[1, 2, 3], [4, 5, 6, 8, 9, 10], [7]]               | 858  | 443     | 0.00047041 |
+| PSEUDO_L           | [[1, 3, 4, 5], [2], [6, 7, 8, 9], [10]]             | 858  | 471     | 0.00083811 |
+| BIFPTAS_L          | [[1, 3, 4, 5], [2], [6, 7, 8, 9], [10]]             | 858  | 471     | 0.00082326 |
+| _BASELINE_NO_PART_ | [[1], [2], [3], [4], [5], [6], [7], [8], [9], [10]] | 1090 | 472     | 9.38e-05   |
+| _BASELINE_SINGLE_  | [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]                   | 822  | 686     | 6.718e-05  |
 
 ## Development and contribution
 
@@ -192,7 +194,7 @@ make uninstall
 
 ## Publications
 
-If you use one of our algorithms published in this package or our test harness, please consider citing 
+If you use one of our algorithms published in this package or our test harness, please consider citing
 one of our related works.
 
 #### [Tree partitioning algorithms with explicit state externalization:](https://doi.org/10.1016/j.future.2023.12.010)

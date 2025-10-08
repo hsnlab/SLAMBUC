@@ -58,7 +58,7 @@ def run_all_tree_ser_tests(params: dict) -> list:
         t_start = time.perf_counter()
         try:
             result = tree_alg(**params)
-        except (PulpSolverError, DOcplexException, CpoException) as e :
+        except (PulpSolverError, DOcplexException, CpoException) as e:
             print(f"Pulp solver failed for {name} with message: {e}")
             stats.append([name, [], None, None, None])
             continue

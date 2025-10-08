@@ -20,11 +20,11 @@ import cspy
 import networkx as nx
 
 from slambuc.alg import INFEASIBLE
-from slambuc.alg.ext import *
 from slambuc.alg.app.common import NAME, Flavor
+from slambuc.alg.ext import *
 from slambuc.alg.util import ibacktrack_chain
-from slambuc.misc.random import get_random_tree
 from slambuc.misc.plot import draw_state_dag
+from slambuc.misc.random import get_random_tree
 from slambuc.misc.util import evaluate_gen_tree_partitioning
 
 

@@ -13,6 +13,5 @@
 # limitations under the License.
 from slambuc.tool.cli import main
 
-
 if __name__ == "__main__":
     main()

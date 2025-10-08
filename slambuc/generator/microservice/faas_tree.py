@@ -23,8 +23,8 @@ import numpy as np
 import scipy
 
 from slambuc.alg.app import *
-from slambuc.generator.io import load_hist_params, save_trees_to_file
 from slambuc.generator.microservice.power_ba_graph import generate_power_ba_graph
+from slambuc.misc.io import load_hist_params, save_trees_to_file
 from slambuc.misc.plot import draw_tree
 
 # Distribution parameters of Serverless functions
