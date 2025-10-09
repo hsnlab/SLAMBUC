@@ -142,6 +142,6 @@ def min_weight_tree_clustering(tree: nx.DiGraph, root: int, L: int = math.inf, N
     for k in reversed(range(1, len(tree) + 1)):
         partition = recreate_subtree_blocks(tree, barr=min_weight_ksplit(tree, root, k))
         cost, lat = recalculate_partitioning(tree, partition, root, N, cp_end, delay) if metrics else (math.inf,) * 2
-        if cost <= best_result[1] and lat <= L:
+        if cost <= best_result[1] and (lat is None or lat <= L):
             best_result = partition, cost, lat
     return best_result
