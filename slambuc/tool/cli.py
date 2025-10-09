@@ -461,7 +461,7 @@ class ExtMinCutType(enum.Enum):
     DEF = tree
 
 
-@ext.command("min_cut")
+@ext.command("mincut")
 @algorithm(ExtMinCutType, root, k, L, N, cp_end, delay, metrics)
 def ext__min_cut(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """Weight-minimal tree partitioning using rank-based clustering.
@@ -699,9 +699,9 @@ class TreePathSeqStateType(enum.Enum):
     DEF = stateful
 
 
-@tree__path.command("seq_state")
+@tree__path.command("state")
 @algorithm(TreePathSeqStateType, root, M, N, L, cp_end, delay, validate)
-def tree__path__seq_state(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
+def tree__path__state(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """Cost-optimal partitioning based on a DP approach without data externalization.
 
     Calculates minimal-cost partitioning using <seq_tree_partitioning> while considering data implicit state
@@ -907,8 +907,7 @@ def invoke_algorithm(filename: pathlib.Path, alg: str, parameters: dict[str, ...
         log_info(f"  - {name}: {obj}")
     ##################################
     spec = inspect.getfullargspec(alg_method)
-    parameters = {arg: parameters[aa] for arg in spec.args
-                  if (aa := arg.lower()) in set(s.lower() for s in parameters) and parameters[aa] is not None}
+    parameters = {arg: parameters[arg] for arg in spec.args if arg in parameters and parameters[arg] is not None}
     log_info(f"Collected algorithmic parameters: {parameters}")
     parameters.update(data)
     ##################################
@@ -918,9 +917,9 @@ def invoke_algorithm(filename: pathlib.Path, alg: str, parameters: dict[str, ...
         results = alg_method(**parameters)
         _elapsed = (time.perf_counter() - _start) * 1e3
         log_info(f"  -> Algorithm finished successfully in {_elapsed:.6f} ms!")
-        metr = list(map(bool, results) if isinstance(results, tuple)
-                    else itertools.chain(map(bool, r) for r in results))
-        feasible = all(metr if parameters.get('cp_end') else metr[:-1]) if parameters.get('metrics', True) else metr[0]
+        result_metrics = list(map(bool, results[:-1]) if isinstance(results, tuple)
+                              else itertools.chain(map(bool, r[:-1]) for r in results))
+        feasible = all(result_metrics) if parameters.get('metrics', True) else result_metrics[0]
         log_info(f"Received {'FEASIBLE' if feasible else 'INFEASIBLE'} solution:")
         dumper = functools.partial(json.dumps, indent=None, default=str) if ctx.obj.get('FORMAT_JSON') else repr
         for res in (results if ctx.obj.get('FORMAT_SPLIT') else (results,)):

@@ -28,7 +28,7 @@ from slambuc.alg.dag.ilp import greedy_dag_partitioning
 from slambuc.alg.ext import *
 from slambuc.alg.tree import *
 from slambuc.alg.tree.parallel.pseudo import pseudo_par_btree_partitioning
-from slambuc.alg.tree.path.seq_state import cacheless_path_tree_partitioning, stateful_path_tree_partitioning
+from slambuc.alg.tree.path.state import cacheless_path_tree_partitioning, stateful_path_tree_partitioning
 from slambuc.alg.util import ibacktrack_chain, split_chain
 from slambuc.misc.util import get_cplex_path
 

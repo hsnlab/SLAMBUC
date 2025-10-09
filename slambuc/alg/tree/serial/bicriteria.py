@@ -385,7 +385,7 @@ def bifptas_ltree_partitioning(tree: dict[str | int, dict[str | int, dict[str, i
         for lat_n, dp in DP[n, sn_last].items():
             TDP[n][lat_n] = max(dp.values(), key=operator.itemgetter(0))
     # Subcases under the root node contain the feasible partitioning
-    if opt_lat := max(TDP[root], key=lambda _l: TDP[root][_l].weight, default=None):
+    if (opt_lat := max(TDP[root], key=lambda _l: TDP[root][_l].weight, default=None)) is not None:
         opt = TDP[root][opt_lat]
         return recreate_subtree_blocks(tree, opt.barr), opt.weight, opt_lat
     else:

@@ -24,7 +24,7 @@ from generate_test_data import PERF_TEST_DATA_PARAMS, PERF_TREE_SIZE_RANGE, DATA
 from harness import execute_tests, log
 from slambuc.alg.ext import *
 from slambuc.alg.tree import *
-from slambuc.alg.tree.path.seq_state import cacheless_path_tree_partitioning, stateful_path_tree_partitioning
+from slambuc.alg.tree.path.state import cacheless_path_tree_partitioning, stateful_path_tree_partitioning
 from slambuc.generator import DEF_FAAS_TREE_PREFIX, DEF_RAND_TREE_PREFIX, DEF_JOB_TREE_PREFIX
 from slambuc.misc.util import get_cplex_path
 
