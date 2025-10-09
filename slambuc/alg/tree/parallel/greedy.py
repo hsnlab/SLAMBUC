@@ -56,7 +56,6 @@ def greedy_par_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.
     :param delay:   invocation delay between blocks
     :return:        tuple of list of best partitions, sum cost of the partitioning, and resulted latency
     """
-    cp_end = cp_end if cp_end is not None else max(tree)
     best_res, best_cost = [INFEASIBLE], math.inf
     cpath = set(ibacktrack_chain(tree, root, cp_end))
     # Iterates over all possible cuttings
