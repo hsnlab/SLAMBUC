@@ -110,32 +110,218 @@ python3.13 -m pip install slambuc[validation] # For using our test harness frame
 
 ## Usage
 
-Refer to the wiki
-for [formats, execution parameters, examples, and API documentation](https://github.com/hsnlab/SLAMBUC/wiki).
+Primarily, SLAMBUC is designed as a software package for a specific collection of graph
+partitioning algorithms.
 
-## Example
+Refer to the wiki
+for the
+related [formats, execution parameters, examples, and API documentation](https://github.com/hsnlab/SLAMBUC/wiki).
+
+### Example for direct import and invocation
 
 ```python
 from slambuc.alg.tree.serial.pseudo import pseudo_ltree_partitioning
 from slambuc.misc.random import get_random_tree
 
-# Get input parameters
+# Generate an example application call tree randomly
 tree = get_random_tree(nodes=10)  # Assuming random memory demands are in GB
+# Collect input parameters
 params = dict(tree=tree,
               root=1,  # Root node ID
               M=6,  # Memory upper limit
               L=450,  # Latency upper limit
               cp_end=10,  # Critical path: [root -> cp_end]
-              delay=10  # Platform delay in ms
-              )
+              delay=10)  # Platform delay in ms
 
-# Partitioning
+# Invoke a partitioning algorithm
 res = pseudo_ltree_partitioning(**params)
 print(f"Part: {res[0]}, opt. cost: {params['M'] * (res[1] / 1000)} GBs, latency: {res[2]} ms")
 "Part: [[1, 2], [3, 4], [5, 6, 7, 8], [9], [10]], opt. cost: 7.512 GBs, latency: 449 ms"
 ```
 
-## Example
+However, SLAMBUC also provide a full-featured [CLI](slambuc/tool/cli.py) for directly invoking
+partitioning algorithms with
+
+- an application call graph/chain serialized in a file, and
+- algorithmic parameters defined as console arguments.
+
+During installation a helper script, called `slambuc`, is installed for calling the command line interface.
+However, the CLI can be invoked directly with `python3 -m slambuc` or `python3 -m slambuc.tool.cli`. E.g.:
+
+```bash
+$ slambuc -h
+Usage: slambuc [OPTIONS] COMMAND [ARGS]...
+
+  Serverless Layout Adaptation with Memory-Bounds and User Constraints (SLAMBUC).
+
+Options:
+  -j, --json     Output as valid JSON
+  -s, --split    Split result into separate lines
+  -q, --quiet    Suppress logging messages
+  -v, --version  Show the version and exit.
+  -h, --help     Show this message and exit.
+
+Commands:
+  chain  Sequence partitioning algorithms.
+  dag    DAG partitioning algorithms.
+  ext    External partitioning algorithms and heuristics.
+  tree   Tree partitioning algorithms.
+
+  See https://github.com/hsnlab/SLAMBUC for more details.
+```
+
+For the proper argument names and types, on which the CLI validates the given command line options,
+check the internal help by calling any subcommand with the `-h` or `--help` flag. E.g.:
+
+```bash
+$ slambuc chain path dp --help
+Usage: slambuc chain path dp [OPTIONS] FILENAME
+
+  Cost-optimal partitioning based on (vectorized) dynamic programming.
+
+Options:
+  --alg [chain|vector]   Specific algorithm to be run  [default: vector]
+  --M INT                Upper memory bound for blocks  [default: inf; x>0]
+  --N INT                Available vCPU cores for blocks  [default: 1; x>0]
+  --L INT                Latency limit for critical path  [default: inf; x>0]
+  --start <IDX>          Head node index of the critical path  [default: 0; 0<=x<n]
+  --end <IDX>            Tail node index of the critical path  [default: (n-1); 0<=x<n]
+  --delay INT            Invocation delay between blocks  [default: 1; x>0]
+  --unit INT             Rounding unit for cost calculation  [default: 1; x>0]
+  --unfold / --barriers  Return full blocks or barrier nodes only  [default: barriers]
+  -h, --help             Show this message and exit.
+```
+
+### Example for tree partitioning from CLI
+
+```bash
+$ slambuc tree serial pseudo ./tests/data/graph_test_tree_random.gml  --root=1 --M=6 --L=450 --cp_end=10 --delay=10
+Importing algorithm function: <pseudo_ltree_partitioning> from SLAMBUC module: <slambuc.alg.tree.serial.pseudo>
+Loading input data from file: /home/czentye/projects/SLAMBUC/tests/data/graph_test_tree_random.gml
+Parsed input:
+  - tree: DiGraph named 'random_tree_1759849079.887418' with 11 nodes and 10 edges
+Collected algorithmic parameters: {'root': 1, 'M': 6, 'L': 450, 'cp_end': 10, 'delay': 10, 'bidirectional': True}
+Executing partitioning algorithm...
+  -> Algorithm finished successfully in 0.469579 ms!
+Received FEASIBLE solution:
+([[1, 3], [2, 4], [5], [6, 8, 9], [7], [10]], 953, 346)
+```
+
+### Input format
+
+The CLI supports the following formats:
+  - Graph as DAG:
+    - networkx's standard [GML format](https://networkx.org/documentation/stable/reference/readwrite/gml.html) (_*.gml_)
+  - Graph as tree:
+    - networkx's GML format (_*.gml_)
+    - SLAMBUC's [own concise format](slambuc/misc/io) (_*.svt_, _*.npy_, _*csv_)
+  - Sequence metrics as chain:
+    - numpy's own format (_*.npy_, _*.npz_)
+    - plain text format (_*.csv_)
+
+For graph formats, SLAMBUC has some prerequirements, such as metrics must be integers, 
+or graph has an entry node called `PLATFORM`.
+Refer to the wiki for the related
+[formats, execution parameters, examples, and API documentation](https://github.com/hsnlab/SLAMBUC/wiki).
+
+To serialize networkx-based graph objects, the following code snippets bring examples in Python:
+```python
+from slambuc.misc.random import get_random_tree
+from slambuc.misc.io import save_tree
+import networkx as nx
+
+tree = get_random_tree(10)
+# networkx format
+nx.write_gml(tree, 'example.gml')
+# SLAMBUC format
+save_tree(tree, 'example.svt')
+# or
+save_tree(tree, 'example.csv', raw=False)
+```
+The `.svt`, `.npy` extensions can be used for the `save_tree()` function as native formats, 
+while `.csv` is primarily supported for plain text encoding.
+fundamentally, this tree encoding format is based on the numpy vectors encompassing 
+  - the tree's structure as its unique Prüfer sequence, and
+  - node/edge metrics.
+
+For more information, see the related inline document of the `encode_service_tree()` function
+in `slambuc.misc.io`.
+
+For serializing chain metrics as arrays of equal sizes, the `numpy` package can be used to easily 
+store the metric arrays strictly following the order:
+1. runtime
+2. memory
+3. rate
+4. data (optional, depending on the called algorithm)
+
+The following code snippets bring examples in Python:
+```python
+import numpy as np
+
+# Define metrics
+runtime = [20, 40, 50, 20, 70, 40, 50, 60, 40, 10]
+memory = [3, 3, 2, 1, 2, 1, 2, 1, 2, 3]
+rate = [1, 1, 2, 2, 1, 3, 1, 2, 1, 3]
+
+# Save as native numpy arrays
+np.save('example_chain.npy', [runtime, memory, rate])
+# Save in numpy's container format with corresponding keys
+np.savez('example_chain.npz', runtime=runtime, memory=memory, rate=rate)
+# Save in plain text CSV
+np.savetxt('example_chain.csv', [runtime, memory, rate], delimiter=',', fmt='%i')
+```
+
+Example serialized inputs can be found under the [test folder](tests/data).
+
+### Output format
+
+The result is printed to the _standard output_ in the format: `<partitioning>`, `<cost>`, `<latency>`.
+Basically, logs are write out to _standard error_, thus result can be easily processed programmatically by
+parsing only the standard output. Nevertheless, `slambuc` can supress logs with the `-q` flag.
+
+For easier output processing, the `-j` flag can be used to automatically convert the printed result,
+that follows the Python's internal representation, into JSON format, while the flag `-s` splits the
+results, either the triplets of one partitioning, or the multiple partitioning, of into separate lines.
+For example,
+```bash
+$ slambuc -js tree layout ilp ./tests/data/graph_test_tree_ser.gml --cp_end=10 --flavor=3,2,1 --flavor=6,1,2 2>/dev/null
+[[[1, 2], [6, 1, 2.0]], [[3, 4, 5], [3, 2, 1.0]], [[6, 8, 9], [3, 2, 1.0]], [[7], [6, 1, 2.0]], [[10], [3, 2, 1.0]]]
+779.0
+398.0
+```
+or
+```bash
+$ slambuc -s -j -q  tree path greedy ./tests/data/graph_test_tree_random.gml --cp_end=10 --L=500 --cuts --unit=10
+[[[1, 3], [2], [4], [5], [6], [7], [8], [9, 10]], 890, 3]
+[[[1, 3], [2], [4], [5], [6], [7], [8], [9], [10]], 890, 4]
+[[[1, 2], [3], [4], [5], [6], [7], [8], [9, 10]], 890, 4]
+[[[1, 2], [3], [4], [5], [6], [7], [8], [9], [10]], 890, 5]
+[[[1], [2], [3], [4], [5], [6], [7], [8], [9, 10]], 890, 4]
+[[[1], [2], [3], [4], [5], [6], [7], [8], [9], [10]], 890, 5]
+```
+
+
+### Example for chain partitioning from CLI
+
+```bash
+$ slambuc chain path dp ./tests/data/chain_test_sequence_serial.npz --M=6 --N=2 --L=500 --unit=100 --unfold
+Importing algorithm function: <vec_chain_partitioning> from SLAMBUC module: <slambuc.alg.chain.path.dp>
+Loading input data from file: /home/czentye/projects/SLAMBUC/tests/data/chain_test_sequence_serial.npz
+Parsed input:
+  - runtime: [20, 40, 50, 20, 70, 40, 50, 60, 40, 10]
+  - memory: [3, 3, 2, 1, 2, 1, 2, 1, 2, 3]
+  - rate: [1, 1, 2, 2, 1, 3, 1, 2, 1, 3]
+Collected algorithmic parameters: {'M': 6, 'N': 2, 'L': 500, 'start': 0, 'delay': 1, 'unit': 100, 'unfold': True}
+Executing partitioning algorithm...
+  -> Algorithm finished successfully in 0.455515 ms!
+Received FEASIBLE solution:
+([[0], [1, 2], [3, 4], [5], [6, 7, 8], [9]], 1200, 405)
+```
+
+CLI positional parameters follow SLAMBUC's [package structure](slambuc/alg), while most of the algorithmic parameters
+that have default parameters adn can be defined via command line are exposed as optional parameters.
+
+## Performance experiments
 
 Validation results of a subset of our algorithms with a fully serialized block execution model,
 which are executed with our [validation script](tests/validate_algs.py) using different configurations
