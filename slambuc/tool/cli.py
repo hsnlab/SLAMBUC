@@ -428,8 +428,8 @@ def ext__csp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
 class ExtGreedyType(enum.Enum):
     """Partitioning algorithms in `slambuc.alg.ext.greedy`."""
     greedy = "min_weight_greedy_partitioning"
-    min_weight = "min_weight_partition_heuristic"
-    min_lat = "min_lat_partition_heuristic"
+    weight = "min_weight_partition_heuristic"
+    lat = "min_lat_partition_heuristic"
     DEF = greedy
 
 

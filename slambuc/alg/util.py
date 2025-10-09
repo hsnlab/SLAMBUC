@@ -975,8 +975,8 @@ def par_subtree_memory(tree: dict[str | int, dict[str | int, dict[str, int]]] | 
     """
     r_b = tree[next(tree.predecessors(barr))][barr][RATE]
     return max(sum(tree.nodes[v][MEMORY] for v in nodes),
-               max(min(math.ceil(tree[next(tree.predecessors(v))][v][RATE] / r_b), N) * tree.nodes[v][MEMORY]
-                   for v in nodes))
+               max((min(math.ceil(tree[next(tree.predecessors(v))][v][RATE] / r_b), N) * tree.nodes[v][MEMORY]
+                    for v in nodes), default=0))
 
 
 def par_subtree_cost(tree: dict[str | int, dict[str | int, dict[str, int]]] | nx.DiGraph,
