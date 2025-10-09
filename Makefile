@@ -12,9 +12,12 @@ check:
 
 release: build check
 	git tag -a `python3.13 -c "import slambuc;print(slambuc.__version__)"` -m  "New version release"
-	git pull origin main github
-	git push origin main github
-	git push --tags main github
+	git pull origin main
+	git pull github main
+	git push origin main
+	git push github main
+	git push --tags origin
+	git push --tags github
 
 publish: build check
 	@#cat token.txt | xargs -I {} twine upload --repository pypi -u __token__ -p {} dist/*
