@@ -102,6 +102,7 @@ def chain_cfg_partitioning(runtime: list[int], memory: list[int], rate: list[int
     :param solver:  specific solver class (default: COIN-OR CBC)
     :return:        tuple of partitioning blocks, optimal cost, and the calculated latency of the subchain
     """
+    end = end if end is not None else len(runtime) - 1
     model, X = build_chain_cfg_model(runtime, memory, rate, data, M, L, start, end, delay)
     status = model.solve(solver=solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False))
     if status == lp.LpStatusOptimal:

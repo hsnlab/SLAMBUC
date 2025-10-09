@@ -59,8 +59,7 @@ def greedy_ser_chain_partitioning(runtime: list[int], memory: list[int], rate: l
     :param end:     tail node of the latency-limited subchain
     :return:        list if min-cost partitions, related optimal cost and latency
     """
-    n = len(runtime)
-    end = end if end is not None else n - 1
+    end = end if end is not None else len(runtime) - 1
     best_res, best_cost = [INFEASIBLE], math.inf
     for partition in ichain_blocks(memory, M):
         if (sum_lat := sum(ser_chain_sublatency(runtime, rate, data, blk[0], blk[-1], delay, start, end)
