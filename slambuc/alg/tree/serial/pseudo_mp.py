@@ -463,7 +463,7 @@ def pseudo_mp_ltree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.
                 w.kill()
                 w.join()
     # Subcases under the root node contain the feasible partitioning
-    if opt_lat := min(TDP[root], key=lambda _l: TDP[root][_l].cost, default=None):
+    if (opt_lat := min(TDP[root], key=lambda _l: TDP[root][_l].cost, default=None)) is not None:
         opt = TDP[root][opt_lat]
         return recreate_subtree_blocks(tree, opt.barr), opt.cost, opt_lat
     else:

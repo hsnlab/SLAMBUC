@@ -262,7 +262,7 @@ def pseudo_ltree_partitioning(tree: dict[str | int, dict[str | int, dict[str, in
         for lat_n, dp in DP[n, n_w].items():
             TDP[n][lat_n] = min(dp.values(), key=operator.itemgetter(0))
     # Subcases under the root node contain the feasible partitioning
-    if opt_lat := min(TDP[root], key=lambda _l: TDP[root][_l].cost, default=None):
+    if (opt_lat := min(TDP[root], key=lambda _l: TDP[root][_l].cost, default=None)) is not None:
         opt = TDP[root][opt_lat]
         return recreate_subtree_blocks(tree, opt.barr), opt.cost, opt_lat
     else:
