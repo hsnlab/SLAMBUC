@@ -69,8 +69,12 @@ def meta_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N
     """
     tree = leaf_label_nodes(tree)
     cpath = set(ibacktrack_chain(tree, root, cp_end))
-    # c_max is the number of cuts allowed by L or at most the number of edges on cpath
-    c_max = math.floor(min((L - sum(tree.nodes[v][RUNTIME] for v in cpath)) / delay, len(cpath) - 1))
+    if cpath:
+        # c_max is the number of cuts allowed by L or at most the number of edges on cpath
+        c_max = math.floor(min((L - sum(tree.nodes[v][RUNTIME] for v in cpath)) / delay, len(cpath) - 1))
+    else:
+        # if cpath is undefined c_max = tree depth / number of possible edge cuts on the longest root-leaf chain
+        c_max = max(len(list(ibacktrack_chain(tree, root, l))) - 1 for l in tree.nodes[root][LABEL])
     # Check lower bound for latency limit
     if c_max < 0:
         return [], None, c_max

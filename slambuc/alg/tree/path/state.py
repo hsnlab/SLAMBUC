@@ -40,7 +40,7 @@ def cacheless_path_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = m
     if not partition:
         return INFEASIBLE
     sum_cost, sum_lat = recalculate_partitioning(tree, partition, root, N, cp_end, delay)
-    return INFEASIBLE if validate and sum_lat > L else (partition, sum_cost, sum_lat)
+    return INFEASIBLE if validate and (cp_end is not None and L and sum_lat > L) else (partition, sum_cost, sum_lat)
 
 
 def stateful_path_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N: int = 1, L: int = math.inf,

@@ -68,8 +68,12 @@ def seq_tree_partitioning(tree: dict[str | int, dict[str | int, dict[str, int]]]
     if not all(verify_limits(tree, cpath, M, L)):
         # No feasible solution due to too strict limits
         return INFEASIBLE
-    # c_max is the number of cuts allowed by L or at most the number of edges on cpath
-    c_max = math.floor(min((L - sum(tree.nodes[_v][RUNTIME] for _v in cpath)) / delay, len(cpath) - 1))
+    if cpath:
+        # c_max is the number of cuts allowed by L or at most the number of edges on cpath
+        c_max = math.floor(min((L - sum(tree.nodes[_v][RUNTIME] for _v in cpath)) / delay, len(cpath) - 1))
+    else:
+        # if cpath is undefined c_max = tree depth / number of possible edge cuts on the longest root-leaf chain
+        c_max = max(len(list(ibacktrack_chain(tree, root, v))) - 1 for v in tree if not tree.succ[v])
     # Check lower bound for latency limit
     if c_max < 0:
         return [], None, c_max
