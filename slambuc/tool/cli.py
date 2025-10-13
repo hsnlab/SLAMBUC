@@ -913,8 +913,8 @@ def invoke_algorithm(filename: pathlib.Path, alg: str, parameters: dict[str, ...
     ##################################
     spec = inspect.getfullargspec(alg_method)
     defaults = dict(reversed(list(kv for kv in zip(reversed(spec.args), reversed(spec.defaults)))))
-    params = {arg: parameters[arg] if arg.casefold() == p.casefold() else defaults[arg]
-              for arg in defaults for p in parameters if arg in parameters}
+    params = {arg: parameters[arg] if parameters[arg] is not None else defaults[arg]
+              for arg in defaults for p in parameters if arg.casefold() == p.casefold()}
     log_info(f"Collected parameters:")
     for param, v in params.items():
         log_info(f"  - {param}: {v}")

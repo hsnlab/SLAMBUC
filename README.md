@@ -105,7 +105,7 @@ To install additional dependencies, run the following commands.
 
 ```bash
 python3.14 -m pip install slambuc[tests]      # For executing tests
-python3.14 -m pip install slambuc[validation] # For using our test harness framework
+pathon3.14 -m pip install slambuc[validation] # For using our test harness framework
 ```
 
 ## Usage
@@ -200,9 +200,15 @@ Importing algorithm function: <pseudo_ltree_partitioning> from SLAMBUC module: <
 Loading input data from file: /home/czentye/projects/SLAMBUC/tests/data/graph_test_tree_random.gml
 Parsed input:
   - tree: DiGraph named 'random_tree_1759849079.887418' with 11 nodes and 10 edges
-Collected algorithmic parameters: {'root': 1, 'M': 6, 'L': 450, 'cp_end': 10, 'delay': 10, 'bidirectional': True}
+Collected parameters:
+  - root: 1
+  - M: 6
+  - L: 450
+  - cp_end: 10
+  - delay: 10
+  - bidirectional: True
 Executing partitioning algorithm...
-  -> Algorithm finished successfully in 0.469579 ms!
+  -> Algorithm finished successfully in 0.454337 ms!
 Received FEASIBLE solution:
 ([[1, 3], [2, 4], [5], [6, 8, 9], [7], [10]], 953, 346)
 ```
@@ -311,9 +317,17 @@ Parsed input:
   - runtime: [20, 40, 50, 20, 70, 40, 50, 60, 40, 10]
   - memory: [3, 3, 2, 1, 2, 1, 2, 1, 2, 3]
   - rate: [1, 1, 2, 2, 1, 3, 1, 2, 1, 3]
-Collected algorithmic parameters: {'M': 6, 'N': 2, 'L': 500, 'start': 0, 'delay': 1, 'unit': 100, 'unfold': True}
+Collected parameters:
+  - M: 6
+  - N: 2
+  - L: 500
+  - start: 0
+  - end: None
+  - delay: 1
+  - unit: 100
+  - unfold: True
 Executing partitioning algorithm...
-  -> Algorithm finished successfully in 0.455515 ms!
+  -> Algorithm finished successfully in 0.463431 ms!
 Received FEASIBLE solution:
 ([[0], [1, 2], [3, 4], [5], [6, 7, 8], [9]], 1200, 405)
 ```
@@ -367,13 +381,13 @@ environment can be set up with the following commands.
 
 ```bash
 git clone https://github.com/hsnlab/SLAMBUC.git
-python3.14 -m pip install -U -r SLAMBUC/requirements.txt
-python3.14 -m pip install --no-deps -e SLAMBUC/
+pathon3.14 -m pip install -U -r SLAMBUC/requirements.txt
+pathon3.14 -m pip install --no-deps -e SLAMBUC/
 # OR
 cd SLAMBUC && make install-req && make dev-install
 
 ## Remove editing-mode package outside of repo root
-python3.14 -m pip uninstall slambuc
+pathon3.14 -m pip uninstall slambuc
 # OR
 make uninstall
 ```
