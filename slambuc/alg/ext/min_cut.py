@@ -24,7 +24,7 @@ from slambuc.alg.util import recreate_subtree_blocks, recalculate_partitioning
 
 
 # noinspection PyUnresolvedReferences
-def min_weight_subchain_split(tree: nx.DiGraph, root: int) -> set[int]:
+def min_weight_subchain_split(tree: nx.DiGraph, root: int = 1) -> set[int]:
     """
     Return chain-based edge cuts with the minimal edge weight (amount of transferred data).
 
@@ -39,7 +39,7 @@ def min_weight_subchain_split(tree: nx.DiGraph, root: int) -> set[int]:
                           for v in tree if v is not PLATFORM and len(tree.succ[v]) > 1))
 
 
-def min_weight_chain_decomposition(tree: nx.DiGraph, root: int, N: int = 1, cp_end: int = None,
+def min_weight_chain_decomposition(tree: nx.DiGraph, root: int = 1, N: int = 1, cp_end: int = None,
                                    delay: int = 1, metrics: bool = True, **kwargs) -> T_RESULTS:
     """
     Minimal edge-weight chain-based tree partitioning (O(n)) without memory and latency constraints.
@@ -98,7 +98,7 @@ def min_weight_ksplit(tree: nx.DiGraph, root: int, k: int) -> set[int]:
     return {root}.union(b for _, b in labeled)
 
 
-def min_weight_ksplit_clustering(tree: nx.DiGraph, root: int, k: int = None, N: int = 1, cp_end: int = None,
+def min_weight_ksplit_clustering(tree: nx.DiGraph, root: int = 1, k: int = None, N: int = 1, cp_end: int = None,
                                  delay: int = 1, metrics: bool = True, **kwargs) -> T_RESULTS:
     """
     Minimal data-transfer tree clustering into *k* clusters (with k-1 cuts) without memory and latency constraints.
@@ -120,7 +120,7 @@ def min_weight_ksplit_clustering(tree: nx.DiGraph, root: int, k: int = None, N: 
     return partition, sum_cost, sum_lat
 
 
-def min_weight_tree_clustering(tree: nx.DiGraph, root: int, L: int = math.inf, N: int = 1, cp_end: int = None,
+def min_weight_tree_clustering(tree: nx.DiGraph, root: int = 1, L: int = math.inf, N: int = 1, cp_end: int = None,
                                delay: int = 1, metrics: bool = True, **kwargs) -> T_RESULTS:
     """
     Minimal data-transfer tree clustering without memory constraints.

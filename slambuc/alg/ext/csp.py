@@ -164,7 +164,7 @@ def csp_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, L:
     return best_res
 
 
-def csp_gen_tree_partitioning(tree: nx.DiGraph, root: int = 1, flavors: list[Flavor] = ((math.inf, 1),),
+def csp_gen_tree_partitioning(tree: nx.DiGraph, root: int = 1, flavors: list[Flavor] = (Flavor(),),
                               exec_calc: collections.abc.Callable[[int, int, int], int] = lambda i, t, n: t,
                               L: int = math.inf, cp_end: int = None, delay: int = 1, solver=cspy.BiDirectional,
                               timeout: int = None, **cspargs) -> T_RESULTS:

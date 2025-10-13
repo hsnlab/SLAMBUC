@@ -158,55 +158,60 @@ def algorithm(enum_type: enum.EnumType, *options) -> typing.Callable:
 
 ########################################################################################################################
 
-root = click.option('--root', metavar='<NODE>', type=click.INT, required=False, default=1,
-                    help="Root node ID of the call graph")
-M = click.option('--M', type=HalfOpenRange, required=False, default=math.inf,
+root = click.option('--root', 'root', metavar='<NODE>', type=click.INT, required=False,
+                    default=1, help="Root node ID of the call graph")
+M = click.option('--M', 'M', type=HalfOpenRange, required=False, default=math.inf,
                  help="Upper memory bound for blocks")
-L = click.option('--L', type=HalfOpenRange, required=False, default=math.inf,
+L = click.option('--L', 'L', type=HalfOpenRange, required=False, default=math.inf,
                  help="Latency limit for critical path")
-N = click.option('--N', type=HalfOpenRange, required=False, default=1,
+N = click.option('--N', 'N', type=HalfOpenRange, required=False, default=1,
                  help="Available vCPU cores for blocks")
-cp_end = click.option('--cp_end', metavar='<NODE>', type=click.INT, required=False,
+cp_end = click.option('--cp_end', 'cp_end', metavar='<NODE>', type=click.INT, required=False,
                       show_default='ignore', help="Tail node ID of the critical path")
-delay = click.option('--delay', type=HalfOpenRange, required=False, default=1,
+delay = click.option('--delay', 'delay', type=HalfOpenRange, required=False, default=1,
                      help="Invocation delay between blocks")
-bidirectional = click.option('--bidirectional/--one-off', metavar='BOOL', type=click.BOOL, required=False,
-                             show_default=True, default=True, help="Use bidirectional/single subcase elimination")
-timeout = click.option('--timeout', type=HalfOpenRange, required=False, show_default='ignore',
-                       help="ILP solver timeout in seconds")
-subchains = click.option('--subchains/--subtrees', metavar='BOOL', type=click.BOOL, required=False, is_flag=True,
-                         show_default=True, default=False, help="Consider blocks as single chains or trees")
-Epsilon = click.option('--epsilon', 'Epsilon', type=click.FloatRange(min=0.0, max=1.0, min_open=True, max_open=False),
-                       metavar='FLOAT', required=False, show_default='ignore', help="Weight factor for trimming")
-Lambda = click.option('--lambda', 'Lambda', type=click.FloatRange(min=0.0, min_open=False),
-                      metavar='FLOAT', required=False, default=0.0, help="Latency factor for trimming")
+bidirectional = click.option('--bidirectional/--one-off', 'bidirectional', metavar='BOOL',
+                             type=click.BOOL, required=False, show_default=True, default=True,
+                             help="Use bidirectional/single subcase elimination")
+timeout = click.option('--timeout', 'timeout', type=HalfOpenRange, required=False,
+                       show_default='ignore', help="ILP solver timeout in seconds")
+subchains = click.option('--subchains/--subtrees', 'subchains', metavar='BOOL', type=click.BOOL,
+                         required=False, is_flag=True, show_default=True, default=False,
+                         help="Consider blocks as single chains or trees")
+Epsilon = click.option('--epsilon', 'Epsilon', metavar='FLOAT', required=False, show_default='ignore',
+                       type=click.FloatRange(min=0.0, max=1.0, min_open=True, max_open=False),
+                       help="Weight factor for trimming")
+Lambda = click.option('--lambda', 'Lambda', metavar='FLOAT', required=False, default=0.0,
+                      type=click.FloatRange(min=0.0, min_open=False), help="Latency factor for trimming")
 flavor = click.option('--flavor', 'flavors', type=FlavorType, multiple=True, required=False,
                       default=(Flavor(),), metavar='<mem,ncore,cfactor>', show_default=True,
                       help=f"Resource flavor as a comma-separated tuple")
-unit = click.option('--unit', type=HalfOpenRange, required=False, default=1, show_default=True,
-                    help="Rounding unit for cost calculation")
+unit = click.option('--unit', 'unit', type=HalfOpenRange, required=False, default=1,
+                    show_default=True, help="Rounding unit for cost calculation")
 only_cuts = click.option('--cuts/--latency', 'only_cuts', metavar='BOOL', type=click.BOOL, required=False,
                          is_flag=True, show_default=True, default=False, help="Return only cut size or latency")
 only_barr = click.option('--barriers/--unfold', 'only_barr', metavar='BOOL', type=click.BOOL,
                          required=False, is_flag=True, show_default=True, default=False,
                          help="Return only barrier nodes or full blocks")
-full = click.option('--full/--tails', metavar='BOOL', type=click.BOOL, required=False, is_flag=True,
-                    show_default=True, default=True, help="Return full blocks or tail nodes only")
-validate = click.option('--validate', metavar='BOOL', type=click.BOOL, required=False,
+full = click.option('--full/--tails', 'full', metavar='BOOL', type=click.BOOL, required=False,
+                    is_flag=True, show_default=True, default=True, help="Return full blocks or tail nodes only")
+validate = click.option('--validate', 'validate', metavar='BOOL', type=click.BOOL, required=False,
                         show_default=True, default=True, help="Validate result for latency feasibility")
-exhaustive = click.option('--exhaustive/--greedy', metavar='BOOL', type=click.BOOL,
+exhaustive = click.option('--exhaustive/--greedy', 'exhaustive', metavar='BOOL', type=click.BOOL,
                           required=False, is_flag=True, show_default=True, default=True,
                           help="Iterate over all orderings or stop greedily")
-metrics = click.option('--metrics/--no-metrics', metavar='BOOL', type=click.BOOL, required=False, is_flag=True,
-                       show_default=True, default=True, help="Calculate cost/latency metrics explicitly")
+metrics = click.option('--metrics/--no-metrics', 'metrics', metavar='BOOL', type=click.BOOL,
+                       required=False, is_flag=True, show_default=True, default=True,
+                       help="Calculate cost/latency metrics explicitly")
 k = click.option('--k', type=HalfOpenRange, required=False, default=None, show_default='auto',
                  help="Predefined number of clusters")
-start = click.option('--start', metavar='<IDX>', type=IndexRange, required=False, default=0,
-                     help="Head node index of the critical path")
-end = click.option('--end', metavar='<IDX>', type=IndexRange, required=False, default=None,
+start = click.option('--start', 'start', metavar='<IDX>', type=IndexRange, required=False,
+                     default=0, help="Head node index of the critical path")
+end = click.option('--end', 'end', metavar='<IDX>', type=IndexRange, required=False, default=None,
                    show_default='n-1', help="Tail node index of the critical path")
-unfold = click.option('--unfold/--barriers', metavar='BOOL', type=click.BOOL, required=False, is_flag=True,
-                      show_default=True, default=False, help="Return full blocks or barrier nodes only")
+unfold = click.option('--unfold/--barriers', 'unfold', metavar='BOOL', type=click.BOOL,
+                      required=False, is_flag=True, show_default=True, default=False,
+                      help="Return full blocks or barrier nodes only")
 
 
 ########################################################################################################################
@@ -907,14 +912,18 @@ def invoke_algorithm(filename: pathlib.Path, alg: str, parameters: dict[str, ...
         log_info(f"  - {name}: {obj}")
     ##################################
     spec = inspect.getfullargspec(alg_method)
-    parameters = {arg: parameters[arg] for arg in spec.args if arg in parameters and parameters[arg] is not None}
-    log_info(f"Collected algorithmic parameters: {parameters}")
-    parameters.update(data)
+    defaults = dict(reversed(list(kv for kv in zip(reversed(spec.args), reversed(spec.defaults)))))
+    params = {arg: parameters[arg] if arg.casefold() == p.casefold() else defaults[arg]
+              for arg in defaults for p in parameters if arg in parameters}
+    log_info(f"Collected parameters:")
+    for param, v in params.items():
+        log_info(f"  - {param}: {v}")
+    data.update(params)
     ##################################
     try:
         log_info(f"Executing partitioning algorithm...")
         _start = time.perf_counter()
-        results = alg_method(**parameters)
+        results = alg_method(**data)
         _elapsed = (time.perf_counter() - _start) * 1e3
         log_info(f"  -> Algorithm finished successfully in {_elapsed:.6f} ms!")
         result_metrics = list(map(bool, results[:-1]) if isinstance(results, tuple)
