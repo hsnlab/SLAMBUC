@@ -4,8 +4,10 @@
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/SLAMBUC)](https://pypi.org/project/SLAMBUC/#history)
 [![Downloads](https://static.pepy.tech/badge/slambuc)](https://pepy.tech/project/slambuc)
 [![GitHub License](https://img.shields.io/github/license/hsnlab/SLAMBUC)]((https://img.shields.io/github/license/hsnlab/SLAMBUC))
+
 [![pytest-py3.12](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-tests_py3.12.yml/badge.svg)](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-tests_py3.12.yml)
 [![pytest-py3.13](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-tests_py3.13.yml/badge.svg)](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-tests_py3.13.yml)
+[![pytest-py3.14](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-tests_py3.14.yml/badge.svg)](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-tests_py3.14.yml)
 [![Algorithm validations](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-validation.yml/badge.svg?branch=main)](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-validation.yml)
 
 Collection of graph partitioning algorithms implemented in Python for composing cloud-native

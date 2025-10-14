@@ -45,6 +45,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
         "Topic :: Software Development :: Libraries :: Python Modules"
     ],
     python_requires='>=3.10',
@@ -74,7 +75,6 @@ setuptools.setup(
         ],
         'validation': [
             'tabulate',
-            'click',
             'psutil'
         ]},
     package_data={
