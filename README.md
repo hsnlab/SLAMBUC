@@ -9,6 +9,7 @@
 [![pytest-py3.13](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-tests_py3.13.yml/badge.svg)](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-tests_py3.13.yml)
 [![pytest-py3.14](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-tests_py3.14.yml/badge.svg)](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-tests_py3.14.yml)
 [![Algorithm validations](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-validation.yml/badge.svg?branch=main)](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-alg-validation.yml)
+[![CLI validations](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-cli-validation.yml/badge.svg?branch=main)](https://github.com/hsnlab/SLAMBUC/actions/workflows/python-cli-validation.yml)
 
 Collection of graph partitioning algorithms implemented in Python for composing cloud-native
 applications from standalone serverless functions in a cost-efficient and latency-constrained manner.

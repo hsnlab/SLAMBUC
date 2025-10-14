@@ -27,10 +27,7 @@ classifiers = [
 dependencies = [
     'numpy~=2.3.3',
     'networkx~=3.5',
-    'matplotlib~=3.10.6',
-    'pandas~=2.3.2',
     'pulp~=3.3.0',
-    'scipy~=1.16.2',
     'cspy>=0.1.2',
     'click~=8.3.0'
 ]
@@ -44,8 +41,14 @@ dependencies = [
 slambuc = 'slambuc.tool.cli:main'
 
 [project.optional-dependencies]
-tests = [
+extra = [
     'pygraphviz~=1.14',
+    'matplotlib~=3.10.6',
+    'pandas~=2.3.2',
+    'scipy~=1.16.2',
+    'docplex~=2.30.251'
+]
+tests = [
     'pytest~=8.4.2',
     'tabulate~=0.9.0',
     'twine>=6.1.0',

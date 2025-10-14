@@ -54,10 +54,7 @@ setuptools.setup(
     install_requires=[
         'numpy~=2.3.3',
         'networkx~=3.5',
-        'matplotlib~=3.10.6',
-        'PuLP~=3.3.0',
-        'pandas~=2.3.2',
-        'scipy~=1.16.2',
+        'pulp~=3.3.0',
         'cspy>=0.1.2',
         'click~=8.3.0'
     ],
@@ -67,11 +64,18 @@ setuptools.setup(
         ]
     },
     extras_require={
+        'extra': [
+            'pygraphviz~=1.14',
+            'matplotlib~=3.10.6',
+            'pandas~=2.3.2',
+            'scipy~=1.16.2',
+            'docplex~=2.30.251'
+        ],
         'tests': [
             'pytest',
-            'pygraphviz~=1.14',
-            'tabulate~=0.9.0',
-            'docplex~=2.30.251'
+            'tabulate',
+            'twine>=6.1.0',
+            'packaging>=24.2'
         ],
         'validation': [
             'tabulate',
