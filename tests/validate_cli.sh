@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 # Copyright 2025 Janos Czentye
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
