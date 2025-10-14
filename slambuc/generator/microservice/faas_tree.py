@@ -25,7 +25,6 @@ import scipy
 from slambuc.alg.app import *
 from slambuc.generator.microservice.power_ba_graph import generate_power_ba_graph
 from slambuc.misc.io import load_hist_params, save_trees_to_file
-from slambuc.misc.plot import draw_tree
 
 # Distribution parameters of Serverless functions
 # See also: https://dl.acm.org/doi/10.5555/3489146.3489160
@@ -92,16 +91,6 @@ def get_faas_tree(n: int, Alpha: float = 1.0, a: float = 0.0) -> nx.DiGraph:
     return tree
 
 
-def verify_faas_tree(n: int = 10):
-    """
-    Plot random generated serverless tree.
-
-    :param n:   tree size
-    """
-    t = get_faas_tree(n)
-    draw_tree(t, draw_weights=True)
-
-
 def generate_all_faas_trees(data_dir: str, Alpha: float = PREF_ATT_HIGH, a: float = LEAF_ATTR_HIGH,
                             iteration: int = 100, start: int = 10, end: int = 100, step: int = 10,
                             tree_name: str = DEF_FAAS_TREE_PREFIX):
@@ -124,8 +113,3 @@ def generate_all_faas_trees(data_dir: str, Alpha: float = PREF_ATT_HIGH, a: floa
         file_name = pathlib.Path(data_dir, f"{tree_name}_n{min_size}-{max_size}.npy").resolve()
         print(f"Saving trees into {file_name}...")
         save_trees_to_file(trees, file_name, padding=max_size)
-
-
-if __name__ == '__main__':
-    verify_faas_tree(n=20)
-    # generate_all_faas_trees("../../../validation/data")

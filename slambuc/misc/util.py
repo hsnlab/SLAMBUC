@@ -28,7 +28,6 @@ from slambuc.alg.util import (ichain, path_blocks, chain_memory, chain_cost, cha
                               ser_subchain_latency, par_subtree_cost, par_subchain_latency,
                               chain_memory_opt, ser_chain_submemory, par_subgraph_cost, par_subgraph_latency,
                               par_subgraph_memory, ibacktrack_chain)
-from slambuc.misc.plot import draw_tree, draw_dag
 
 
 def get_cplex_path() -> str:
@@ -369,7 +368,7 @@ def evaluate_tree_partitioning(tree: nx.DiGraph, partition: T_PART, opt_cost: in
     if partition:
         print_cpath_stat(tree, partition, list(ichain(tree, root, cp_end)), delay)
         print_tree_block_stat(tree, partition, unit)
-        draw_tree(tree, partition, draw_blocks=True, draw_weights=False)
+        # draw_tree(tree, partition, draw_blocks=True, draw_weights=False)
     print('#' * 80)
 
 
@@ -438,8 +437,8 @@ def evaluate_ser_tree_partitioning(tree: nx.DiGraph, partition: T_PART, opt_cost
         print_ser_cpath_stat(tree, partition, list(ichain(tree, root, cp_end)), delay)
         print(f"Recalculated partition cost: {sum(ser_subtree_cost(tree, blk[0], blk) for blk in partition)}")
         print_ser_tree_block_stat(tree, partition, set(ichain(tree, root, cp_end)))
-        if draw:
-            draw_tree(tree, partition, draw_blocks=True, draw_weights=False)
+        # if draw:
+        #     draw_tree(tree, partition, draw_blocks=True, draw_weights=False)
     print('#' * 80)
 
 
@@ -508,8 +507,8 @@ def evaluate_par_tree_partitioning(tree: nx.DiGraph, partition: T_PART, opt_cost
     if partition:
         print_par_cpath_stat(tree, partition, list(ichain(tree, root, cp_end)), delay, N)
         print_par_tree_block_stat(tree, partition, set(ichain(tree, root, cp_end)), N)
-        if draw:
-            draw_tree(tree, partition, draw_blocks=True, draw_weights=False)
+        # if draw:
+        #     draw_tree(tree, partition, draw_blocks=True, draw_weights=False)
     print('#' * 80)
 
 
@@ -539,11 +538,11 @@ def evaluate_gen_tree_partitioning(tree: nx.DiGraph, partition: T_FPART, opt_cos
     M, N, cfactor = zip(*flavors)
     print(f"Tree partitioning [{M=}, {L=}:{(root, cp_end)}, {N=}] => {partition} - opt_cost: {opt_cost},"
           f" opt_lat: {opt_lat}")
-    if partition:
-        # print_par_cpath_stat(tree, partition, list(ichain(tree, root, cp_end)), delay, N)
-        # print_par_tree_block_stat(tree, partition, set(ichain(tree, root, cp_end)), N)
-        if draw:
-            draw_tree(tree, partition, draw_blocks=True, draw_weights=False)
+    # if partition:
+    # print_par_cpath_stat(tree, partition, list(ichain(tree, root, cp_end)), delay, N)
+    # print_par_tree_block_stat(tree, partition, set(ichain(tree, root, cp_end)), N)
+    # if draw:
+    #     draw_tree(tree, partition, draw_blocks=True, draw_weights=False)
     print('#' * 80)
 
 
@@ -671,8 +670,8 @@ def evaluate_par_dag_partitioning(dag: nx.DiGraph, partition: T_PART, opt_cost: 
         cpath = set(ibacktrack_chain(dag, root, cp_end))
         print_dag_cpath_stat(dag, partition, cpath, delay, N)
         print_par_dag_block_stat(dag, partition, cpath, N)
-        if draw:
-            draw_dag(dag, partition, draw_weights=False)
+        # if draw:
+        #     draw_dag(dag, partition, draw_weights=False)
     print('#' * 80)
 
 
