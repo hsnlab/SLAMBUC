@@ -468,7 +468,7 @@ class ExtMinCutType(enum.Enum):
 
 @ext.command("mincut")
 @algorithm(ExtMinCutType, root, k, L, N, cp_end, delay, metrics)
-def ext__min_cut(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
+def ext__mincut(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """Weight-minimal tree partitioning using rank-based clustering.
 
     Min chain: Minimal edge-weight chain-based tree partitioning (O(n)) without memory and latency constraints.

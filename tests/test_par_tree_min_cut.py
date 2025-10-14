@@ -15,8 +15,8 @@ import pathlib
 
 import networkx as nx
 
-from slambuc.alg.ext.min_cut import (min_weight_subchain_split, min_weight_chain_decomposition, min_weight_ksplit,
-                                     min_weight_ksplit_clustering)
+from slambuc.alg.ext.mincut import (min_weight_subchain_split, min_weight_chain_decomposition, min_weight_ksplit,
+                                    min_weight_ksplit_clustering)
 from slambuc.alg.util import recreate_subchain_blocks
 from slambuc.misc.plot import draw_tree
 from slambuc.misc.util import evaluate_par_tree_partitioning

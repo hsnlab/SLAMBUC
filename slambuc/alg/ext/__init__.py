@@ -14,4 +14,4 @@
 from .baseline import baseline_singleton_partitioning, baseline_no_partitioning
 from .csp import ibuild_gen_csp_dag, csp_tree_partitioning, csp_gen_tree_partitioning, extract_grp_from_path
 from .greedy import min_weight_greedy_partitioning, min_weight_partition_heuristic
-from .min_cut import min_weight_chain_decomposition, min_weight_ksplit_clustering, min_weight_tree_clustering
+from .mincut import min_weight_chain_decomposition, min_weight_ksplit_clustering, min_weight_tree_clustering
