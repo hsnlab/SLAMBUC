@@ -14,10 +14,10 @@
 import itertools
 import operator
 import pathlib
-import pickle
 import warnings
 from collections.abc import Generator
 from functools import partial
+from importlib.resources.abc import Traversable
 
 import networkx as nx
 import numpy as np
@@ -130,8 +130,7 @@ def iload_trees_from_file(file_name: str | pathlib.Path) -> Generator[nx.DiGraph
         yield decode_service_tree(np_trees[idx, :])
 
 
-def load_hist_params(hist_dir: str | pathlib.Path,
-                     hist_name: str) -> tuple[list[int | float], list[int | float]]:
+def load_hist_params(hist_dir: str | pathlib.Path | Traversable, hist_name: str) -> tuple[..., ...]:
     """
     Load pickled attributes from given file.
 
@@ -139,5 +138,4 @@ def load_hist_params(hist_dir: str | pathlib.Path,
     :param hist_name:   name of the histogram
     :return:            loaded histogram attributes
     """
-    with open((pathlib.Path(hist_dir, hist_name).with_suffix('.pkl')).resolve(), 'rb') as f:
-        return pickle.load(f, fix_imports=True)
+    return tuple(np.load((pathlib.Path(hist_dir, hist_name).with_suffix('.npz')).resolve()).values())
