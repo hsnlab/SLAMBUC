@@ -27,8 +27,10 @@ import traceback
 import typing
 
 import click
+import cspy
 import networkx as nx
 import numpy as np
+import pulp
 
 import slambuc
 from slambuc.alg import Flavor
@@ -37,7 +39,8 @@ from slambuc.misc.io import load_tree
 GLOBAL_CTX_SETTINGS = dict(
     help_option_names=['-h', '--help'],
     show_default=True,
-    max_content_width=120
+    max_content_width=120,
+    auto_envvar_prefix="SLAMBUC"
 )
 
 
@@ -133,6 +136,12 @@ class SlambucFlavorType(click.ParamType):
         except ValueError as e:
             self.fail(f"{e}! Correct format: {self._format}", param, ctx)
 
+    def split_envvar_value(self, rv: str):
+        """Splitting multiple flavor definitions given as an envvars. Default is split on whitespace.
+        https://click.palletsprojects.com/en/stable/options/#multiple-options-from-environment-values
+        """
+        return super().split_envvar_value(rv)
+
     def __repr__(self) -> str:
         return self._format
 
@@ -142,8 +151,6 @@ FlavorType = SlambucFlavorType()
 
 class PulpSolverType(enum.Enum):
     """Specific param type corresponding to PulP's solver classes supported by SLAMBUC."""
-    import pulp
-
     cbc = pulp.PULP_CBC_CMD
     glpk = pulp.GLPK_CMD
     cplex = pulp.CPLEX_CMD
@@ -152,8 +159,6 @@ class PulpSolverType(enum.Enum):
 
 class CSPSolverType(enum.Enum):
     """Specific param type corresponding to CSP's solver classes supported by SLAMBUC."""
-    import cspy
-
     bidirect = cspy.BiDirectional
     tabu = cspy.Tabu
     greedy = cspy.GreedyElim
@@ -180,64 +185,68 @@ def algorithm(enum_type: enum.EnumType, *options) -> typing.Callable:
 ########################################################################################################################
 
 root = click.option('--root', 'root', metavar='<NODE>', type=click.INT, required=False,
-                    default=1, help="Root node ID of the call graph")
+                    envvar='SLAMBUC_ROOT', default=1, help="Root node ID of the call graph")
 M = click.option('--M', 'M', type=HalfOpenRange, required=False, default=math.inf,
-                 help="Upper memory bound for blocks")
+                 envvar='SLAMBUC_M', help="Upper memory bound for blocks")
 L = click.option('--L', 'L', type=HalfOpenRange, required=False, default=math.inf,
-                 help="Latency limit for critical path")
+                 envvar='SLAMBUC_L', help="Latency limit for critical path")
 N = click.option('--N', 'N', type=HalfOpenRange, required=False, default=1,
-                 help="Available vCPU cores for blocks")
+                 envvar='SLAMBUC_N', help="Available vCPU cores for blocks")
 cp_end = click.option('--cp_end', 'cp_end', metavar='<NODE>', type=click.INT, required=False,
-                      show_default='ignore', help="Tail node ID of the critical path")
+                      envvar='SLAMBUC_CP_END', show_default='ignore', help="Tail node ID of the critical path")
 delay = click.option('--delay', 'delay', type=HalfOpenRange, required=False, default=1,
-                     help="Invocation delay between blocks")
-bidirectional = click.option('--bidirectional/--one-off', 'bidirectional', metavar='BOOL',
-                             type=click.BOOL, required=False, show_default=True, default=True,
-                             help="Use bidirectional/single subcase elimination")
+                     envvar='SLAMBUC_DELAY', help="Invocation delay between blocks")
+bidirect = click.option('--bidirect/--one-off', 'bidirectional', metavar='BOOL',
+                        type=click.BOOL, required=False, show_default=True, default=True,
+                        envvar='SLAMBUC_BIDIRECT', help="Use bidirectional/single subcase elimination")
 pulp_solver = click.option('--solver', 'solver', type=click.Choice(PulpSolverType, case_sensitive=False),
-                           required=False, show_default=True, default=PulpSolverType.DEF,
+                           required=False, show_default=True, default=PulpSolverType.DEF, envvar='SLAMBUC_PULP_SOLVER',
                            callback=lambda c, p, v: v.value(mip=True, msg=False), help="Used linear programming solver")
 csp_solver = click.option('--solver', 'solver', type=click.Choice(CSPSolverType, case_sensitive=False),
-                          required=False, show_default=True, default=CSPSolverType.DEF,
+                          required=False, show_default=True, default=CSPSolverType.DEF, envvar='SLAMBUC_CSP_SOLVER',
                           callback=lambda c, p, v: v.value, help="Used linear programming solver")
 timeout = click.option('--timeout', 'timeout', type=HalfOpenRange, required=False,
-                       show_default='ignore', help="ILP solver timeout in seconds")
+                       envvar='SLAMBUC_TIMEOUT', show_default='ignore', help="ILP solver timeout in seconds")
 subchains = click.option('--subchains/--subtrees', 'subchains', metavar='BOOL', type=click.BOOL,
-                         required=False, is_flag=True, show_default=True, default=False,
+                         required=False, is_flag=True, show_default=True, default=False, envvar='SLAMBUC_SUBCHAINS',
                          help="Consider blocks as single chains or trees")
 Epsilon = click.option('--epsilon', 'Epsilon', metavar='FLOAT', required=False, show_default='ignore',
-                       type=click.FloatRange(min=0.0, max=1.0, min_open=True, max_open=False),
+                       type=click.FloatRange(min=0.0, max=1.0, min_open=True, max_open=False), envvar='SLAMBUC_EPSILON',
                        help="Weight factor for trimming")
 Lambda = click.option('--lambda', 'Lambda', metavar='FLOAT', required=False, default=0.0,
-                      type=click.FloatRange(min=0.0, min_open=False), help="Latency factor for trimming")
+                      envvar='SLAMBUC_LAMBDA', type=click.FloatRange(min=0.0, min_open=False),
+                      help="Latency factor for trimming")
 flavor = click.option('--flavor', 'flavors', type=FlavorType, multiple=True, required=False,
-                      default=(Flavor(),), metavar='<mem,ncore,cfactor>', show_default=True,
+                      default=(Flavor(),), metavar='<mem,ncore,cfactor>', show_default=True, envvar='SLAMBUC_FLAVOR',
                       help=f"Resource flavor as a comma-separated tuple")
-unit = click.option('--unit', 'unit', type=HalfOpenRange, required=False, default=1,
+unit = click.option('--unit', 'unit', type=HalfOpenRange, required=False, default=1, envvar='SLAMBUC_UNIT',
                     show_default=True, help="Rounding unit for cost calculation")
 only_cuts = click.option('--cuts/--latency', 'only_cuts', metavar='BOOL', type=click.BOOL, required=False,
-                         is_flag=True, show_default=True, default=False, help="Return only cut size or latency")
+                         is_flag=True, show_default=True, default=False, envvar='SLAMBUC_CUTS',
+                         help="Return only cut size or latency")
 only_barr = click.option('--barriers/--unfold', 'only_barr', metavar='BOOL', type=click.BOOL,
-                         required=False, is_flag=True, show_default=True, default=False,
+                         required=False, is_flag=True, show_default=True, default=False, envvar='SLAMBUC_BARRIERS',
                          help="Return only barrier nodes or full blocks")
 full = click.option('--full/--tails', 'full', metavar='BOOL', type=click.BOOL, required=False,
-                    is_flag=True, show_default=True, default=True, help="Return full blocks or tail nodes only")
+                    is_flag=True, show_default=True, default=True, envvar='SLAMBUC_FULL',
+                    help="Return full blocks or tail nodes only")
 validate = click.option('--validate', 'validate', metavar='BOOL', type=click.BOOL, required=False,
-                        show_default=True, default=True, help="Validate result for latency feasibility")
+                        show_default=True, default=True, envvar='SLAMBUC_VALIDATE',
+                        help="Validate result for latency feasibility")
 exhaustive = click.option('--exhaustive/--greedy', 'exhaustive', metavar='BOOL', type=click.BOOL,
-                          required=False, is_flag=True, show_default=True, default=True,
+                          required=False, is_flag=True, show_default=True, default=True, envvar='SLAMBUC_EXHAUSTIVE',
                           help="Iterate over all orderings or stop greedily")
 metrics = click.option('--metrics/--no-metrics', 'metrics', metavar='BOOL', type=click.BOOL,
-                       required=False, is_flag=True, show_default=True, default=True,
+                       required=False, is_flag=True, show_default=True, default=True, envvar='SLAMBUC_METRICS',
                        help="Calculate cost/latency metrics explicitly")
 k = click.option('--k', type=HalfOpenRange, required=False, default=None, show_default='auto',
-                 help="Predefined number of clusters")
+                 envvar='SLAMBUC_K', help="Predefined number of clusters")
 start = click.option('--start', 'start', metavar='<IDX>', type=IndexRange, required=False,
-                     default=0, help="Head node index of the critical path")
+                     envvar='SLAMBUC_START', default=0, help="Head node index of the critical path")
 end = click.option('--end', 'end', metavar='<IDX>', type=IndexRange, required=False, default=None,
-                   show_default='n-1', help="Tail node index of the critical path")
+                   show_default='n-1', envvar='SLAMBUC_END', help="Tail node index of the critical path")
 unfold = click.option('--unfold/--barriers', 'unfold', metavar='BOOL', type=click.BOOL,
-                      required=False, is_flag=True, show_default=True, default=False,
+                      required=False, is_flag=True, show_default=True, default=False, envvar='SLAMBUC_UNFOLD',
                       help="Return full blocks or barrier nodes only")
 
 
@@ -593,7 +602,7 @@ class TreeParallelPseudoType(enum.Enum):
 
 
 @tree__parallel.command("pseudo")
-@algorithm(TreeParallelPseudoType, root, M, L, N, cp_end, delay, bidirectional)
+@algorithm(TreeParallelPseudoType, root, M, L, N, cp_end, delay, bidirect)
 def tree__parallel__pseudo(filename: pathlib.Path, alg: TreeParallelPseudoType, **parameters: dict[str, ...]):
     """Cost-minimal partitioning based on specific tree traversals.
 
@@ -614,7 +623,7 @@ class TreeParallelPseudoMPType(enum.Enum):
 
 
 @tree__parallel.command("pseudo_mp")
-@algorithm(TreeParallelPseudoMPType, root, M, L, N, cp_end, delay, bidirectional)
+@algorithm(TreeParallelPseudoMPType, root, M, L, N, cp_end, delay, bidirect)
 def tree__parallel__pseudo_mp(filename: pathlib.Path, alg: TreeParallelPseudoMPType, **parameters: dict[str, ...]):
     """Cost-minimal partitioning using parallelized multiprocessing.
 
@@ -760,7 +769,7 @@ class TreeSerialBicriteriaType(enum.Enum):
 
 
 @tree__serial.command("bicriteria")
-@algorithm(TreeSerialBicriteriaType, root, M, L, cp_end, delay, Epsilon, Lambda, bidirectional)
+@algorithm(TreeSerialBicriteriaType, root, M, L, cp_end, delay, Epsilon, Lambda, bidirect)
 def tree__serial__bicriteria(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """Cost-minimal partitioning based on approximation schemes.
 
@@ -821,7 +830,7 @@ class TreeSerialPseudoType(enum.Enum):
 
 
 @tree__serial.command("pseudo")
-@algorithm(TreeSerialPseudoType, root, M, L, cp_end, delay, bidirectional)
+@algorithm(TreeSerialPseudoType, root, M, L, cp_end, delay, bidirect)
 def tree__serial__pseudo(filename: pathlib.Path, alg: TreeSerialPseudoType, **parameters: dict[str, ...]):
     """Cost-minimal partitioning based on specific tree traversals.
 
@@ -840,7 +849,7 @@ class TreeSerialPseudoMPType(enum.Enum):
 
 
 @tree__serial.command("pseudo_mp")
-@algorithm(TreeSerialPseudoMPType, root, M, L, cp_end, delay, bidirectional)
+@algorithm(TreeSerialPseudoMPType, root, M, L, cp_end, delay, bidirect)
 def tree__serial__pseudo_mp(filename: pathlib.Path, alg: TreeSerialPseudoMPType, **parameters: dict[str, ...]):
     """Cost-minimal partitioning using parallelized multiprocessing.
 

@@ -14,6 +14,8 @@
 # limitations under the License.
 set -ex
 
+export SLAMBUC_UNFOLD=true
+
 slambuc chain path dp ./data/chain_test_sequence_serial.npz --alg chain
 slambuc chain path dp ./data/chain_test_sequence_serial.npz --alg vector
 
