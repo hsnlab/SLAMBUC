@@ -25,11 +25,11 @@ docker run --rm -ti czentye/slambuc:0.5.0 chain path sp tests/data/chain_test_se
 
 docker run --rm -ti czentye/slambuc:0.5.0 chain serial greedy tests/data/chain_test_sequence_serial.npy
 
-docker run --rm -ti czentye/slambuc:0.5.0 chain serial ilp tests/data/chain_test_sequence_serial.npy --alg cfg --solver glpk
-docker run --rm -ti czentye/slambuc:0.5.0 chain serial ilp tests/data/chain_test_sequence_serial.npy --alg mtx --solver glpk
+docker run --rm -ti czentye/slambuc:0.5.0 chain serial ilp tests/data/chain_test_sequence_serial.npy --alg cfg #--solver glpk
+docker run --rm -ti czentye/slambuc:0.5.0 chain serial ilp tests/data/chain_test_sequence_serial.npy --alg mtx #--solver glpk
 
-docker run --rm -ti czentye/slambuc:0.5.0 dag ilp tests/data/graph_test_dag.gml --alg greedy --solver glpk
-docker run --rm -ti czentye/slambuc:0.5.0 dag ilp tests/data/graph_test_dag.gml --alg dag --solver glpk
+docker run --rm -ti czentye/slambuc:0.5.0 dag ilp tests/data/graph_test_dag.gml --alg greedy #--solver glpk
+docker run --rm -ti czentye/slambuc:0.5.0 dag ilp tests/data/graph_test_dag.gml --alg dag #--solver glpk
 
 docker run --rm -ti czentye/slambuc:0.5.0 ext baseline tests/data/graph_test_tree.gml --alg singleton
 docker run --rm -ti czentye/slambuc:0.5.0 ext baseline tests/data/graph_test_tree.gml --alg no
@@ -45,16 +45,16 @@ docker run --rm -ti czentye/slambuc:0.5.0 ext mincut tests/data/graph_test_tree.
 docker run --rm -ti czentye/slambuc:0.5.0 ext mincut tests/data/graph_test_tree.gml --alg ksplit
 docker run --rm -ti czentye/slambuc:0.5.0 ext mincut tests/data/graph_test_tree.gml --alg tree
 
-docker run --rm -ti czentye/slambuc:0.5.0 tree layout ilp tests/data/graph_test_tree.gml --alg hybrid --solver glpk
-docker run --rm -ti czentye/slambuc:0.5.0 tree layout ilp tests/data/graph_test_tree.gml --alg mtx --solver glpk
-docker run --rm -ti czentye/slambuc:0.5.0 tree layout ilp tests/data/graph_test_tree.gml --alg all --solver glpk
+docker run --rm -ti czentye/slambuc:0.5.0 tree layout ilp tests/data/graph_test_tree.gml --alg hybrid #--solver glpk
+docker run --rm -ti czentye/slambuc:0.5.0 tree layout ilp tests/data/graph_test_tree.gml --alg mtx #--solver glpk
+docker run --rm -ti czentye/slambuc:0.5.0 tree layout ilp tests/data/graph_test_tree.gml --alg all #--solver glpk
 
 docker run --rm -ti czentye/slambuc:0.5.0 tree parallel greedy tests/data/graph_test_tree_par.gml --alg greedy
 
-docker run --rm -ti czentye/slambuc:0.5.0 tree parallel ilp tests/data/graph_test_tree_par.gml --alg cfg --solver glpk
-docker run --rm -ti czentye/slambuc:0.5.0 tree parallel ilp tests/data/graph_test_tree_par.gml --alg hybrid --solver glpk
-docker run --rm -ti czentye/slambuc:0.5.0 tree parallel ilp tests/data/graph_test_tree_par.gml --alg mtx --solver glpk
-docker run --rm -ti czentye/slambuc:0.5.0 tree parallel ilp tests/data/graph_test_tree_par.gml --alg all --solver glpk
+docker run --rm -ti czentye/slambuc:0.5.0 tree parallel ilp tests/data/graph_test_tree_par.gml --alg cfg #--solver glpk
+docker run --rm -ti czentye/slambuc:0.5.0 tree parallel ilp tests/data/graph_test_tree_par.gml --alg hybrid #--solver glpk
+docker run --rm -ti czentye/slambuc:0.5.0 tree parallel ilp tests/data/graph_test_tree_par.gml --alg mtx #--solver glpk
+docker run --rm -ti czentye/slambuc:0.5.0 tree parallel ilp tests/data/graph_test_tree_par.gml --alg all #--solver glpk
 
 docker run --rm -ti czentye/slambuc:0.5.0 tree parallel pseudo tests/data/graph_test_tree_par.gml --alg btree
 docker run --rm -ti czentye/slambuc:0.5.0 tree parallel pseudo tests/data/graph_test_tree_par.gml --alg ltree
@@ -78,10 +78,10 @@ docker run --rm -ti czentye/slambuc:0.5.0 tree serial bicriteria tests/data/grap
 
 docker run --rm -ti czentye/slambuc:0.5.0 tree serial greedy tests/data/graph_test_tree_ser.gml --alg greedy
 
-docker run --rm -ti czentye/slambuc:0.5.0 tree serial ilp tests/data/graph_test_tree_ser.gml --alg cfg --solver glpk
-docker run --rm -ti czentye/slambuc:0.5.0 tree serial ilp tests/data/graph_test_tree_ser.gml --alg hybrid --solver glpk
-docker run --rm -ti czentye/slambuc:0.5.0 tree serial ilp tests/data/graph_test_tree_ser.gml --alg mtx --solver glpk
-docker run --rm -ti czentye/slambuc:0.5.0 tree serial ilp tests/data/graph_test_tree_ser.gml --alg all --solver glpk
+docker run --rm -ti czentye/slambuc:0.5.0 tree serial ilp tests/data/graph_test_tree_ser.gml --alg cfg #--solver glpk
+docker run --rm -ti czentye/slambuc:0.5.0 tree serial ilp tests/data/graph_test_tree_ser.gml --alg hybrid #--solver glpk
+docker run --rm -ti czentye/slambuc:0.5.0 tree serial ilp tests/data/graph_test_tree_ser.gml --alg mtx #--solver glpk
+docker run --rm -ti czentye/slambuc:0.5.0 tree serial ilp tests/data/graph_test_tree_ser.gml --alg all #--solver glpk
 
 docker run --rm -ti czentye/slambuc:0.5.0 tree serial pseudo tests/data/graph_test_tree_ser.gml --alg btree
 docker run --rm -ti czentye/slambuc:0.5.0 tree serial pseudo tests/data/graph_test_tree_ser.gml --alg ltree

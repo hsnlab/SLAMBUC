@@ -1,4 +1,4 @@
-name: pytest-py3.12
+name: pytest-3.12
 
 on:
   push:
