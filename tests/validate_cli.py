@@ -69,13 +69,7 @@ def generate_slambuc_cli_commands():
         cli_attr = cmd.split('__')
         alg_opt = [p for p in getattr(cli, cmd).params if p.name == 'alg'].pop()
         for alg in (o.name for o in alg_opt.type.choices):
-            filename = _get_input_data_filename(cli_attr)
-            if alg in ('cplex', 'cpo'):
-                yield pytest.param(cli_attr, (f"--alg={alg}",), str(filename),
-                                   marks=pytest.mark.skipif(get_cplex_path() is None,
-                                                            reason="CPLEX/CPO is not available!"))
-            else:
-                yield [cli_attr, (f"--alg={alg}",), str(filename)]
+            yield [cli_attr, (f"--alg={alg}",), str(_get_input_data_filename(cli_attr))]
 
 
 ########################################################################################################################

@@ -140,6 +140,27 @@ class SlambucFlavorType(click.ParamType):
 FlavorType = SlambucFlavorType()
 
 
+class PulpSolverType(enum.Enum):
+    """Specific param type corresponding to PulP's solver classes supported by SLAMBUC."""
+    import pulp
+
+    cbc = pulp.PULP_CBC_CMD
+    glpk = pulp.GLPK_CMD
+    cplex = pulp.CPLEX_CMD
+    DEF = cbc
+
+
+class CSPSolverType(enum.Enum):
+    """Specific param type corresponding to CSP's solver classes supported by SLAMBUC."""
+    import cspy
+
+    bidirect = cspy.BiDirectional
+    tabu = cspy.Tabu
+    greedy = cspy.GreedyElim
+    grasp = cspy.GRASP
+    DEF = bidirect
+
+
 def algorithm(enum_type: enum.EnumType, *options) -> typing.Callable:
     """Decorator for common Click arguments and options for algorithm invocations."""
 
@@ -173,6 +194,12 @@ delay = click.option('--delay', 'delay', type=HalfOpenRange, required=False, def
 bidirectional = click.option('--bidirectional/--one-off', 'bidirectional', metavar='BOOL',
                              type=click.BOOL, required=False, show_default=True, default=True,
                              help="Use bidirectional/single subcase elimination")
+pulp_solver = click.option('--solver', 'solver', type=click.Choice(PulpSolverType, case_sensitive=False),
+                           required=False, show_default=True, default=PulpSolverType.DEF,
+                           callback=lambda c, p, v: v.value(mip=True, msg=False), help="Used linear programming solver")
+csp_solver = click.option('--solver', 'solver', type=click.Choice(CSPSolverType, case_sensitive=False),
+                          required=False, show_default=True, default=CSPSolverType.DEF,
+                          callback=lambda c, p, v: v.value, help="Used linear programming solver")
 timeout = click.option('--timeout', 'timeout', type=HalfOpenRange, required=False,
                        show_default='ignore', help="ILP solver timeout in seconds")
 subchains = click.option('--subchains/--subtrees', 'subchains', metavar='BOOL', type=click.BOOL,
@@ -342,7 +369,7 @@ class ChainSerialILPType(enum.Enum):
 
 
 @chain__serial.command("ilp")
-@algorithm(ChainSerialILPType, M, L, start, end, delay)
+@algorithm(ChainSerialILPType, M, L, start, end, delay, pulp_solver, timeout)
 def chain__serial__ilp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """Chain partitioning based on ILP formalization.
 
@@ -371,7 +398,7 @@ class DagILPType(enum.Enum):
 
 
 @dag.command("ilp")
-@algorithm(DagILPType, root, M, L, N, cp_end, delay, subchains, timeout)
+@algorithm(DagILPType, root, M, L, N, cp_end, delay, subchains, pulp_solver, timeout)
 def dag__ilp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """DAG partitioning based on matrix ILP formalization.
 
@@ -415,7 +442,7 @@ class ExtCSPType(enum.Enum):
 
 
 @ext.command("csp")
-@algorithm(ExtCSPType, root, flavor, M, L, N, cp_end, delay, exhaustive, timeout)
+@algorithm(ExtCSPType, root, flavor, M, L, N, cp_end, delay, exhaustive, csp_solver, timeout)
 def ext__csp(filename: pathlib.Path, alg, **parameters: dict[str, ...]):
     """Cost-minimal tree partitioning heuristics based on CSP formalization.
 
@@ -512,7 +539,7 @@ class TreeLayoutILPType(enum.Enum):
 
 
 @tree__layout.command("ilp")
-@algorithm(TreeLayoutILPType, root, flavor, L, cp_end, subchains, delay, timeout)
+@algorithm(TreeLayoutILPType, root, flavor, L, cp_end, subchains, delay, pulp_solver, timeout)
 def tree__layout__ilp(filename: pathlib.Path, alg: TreeLayoutILPType, **parameters: dict[str, ...]):
     """Cost-optimal partitioning based on ILP formalization."""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
@@ -552,7 +579,7 @@ class TreeParallelILPType(enum.Enum):
 
 
 @tree__parallel.command("ilp")
-@algorithm(TreeParallelILPType, root, M, L, N, cp_end, delay, timeout, subchains)
+@algorithm(TreeParallelILPType, root, M, L, N, cp_end, delay, subchains, pulp_solver, timeout)
 def tree__parallel__ilp(filename: pathlib.Path, alg: TreeParallelILPType, **parameters: dict[str, ...]):
     """Cost-optimal partitioning based on ILP formalization."""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
@@ -780,23 +807,9 @@ class TreeSerialILPType(enum.Enum):
 
 
 @tree__serial.command("ilp")
-@algorithm(TreeSerialILPType, root, M, L, cp_end, delay, subchains, timeout)
+@algorithm(TreeSerialILPType, root, M, L, cp_end, delay, subchains, pulp_solver, timeout)
 def tree__serial__ilp(filename: pathlib.Path, alg: TreeSerialILPType, **parameters: dict[str, ...]):
     """Cost-optimal partitioning based on ILP formalization."""
-    invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
-
-
-class TreeSerialILPCplexType(enum.Enum):
-    """Partitioning algorithms in `slambuc.alg.tree.serial.ilp_cplex`."""
-    cpo = "tree_cpo_partitioning"
-    cplex = "tree_cplex_partitioning"
-    DEF = cplex
-
-
-@tree__serial.command("ilp_cplex")
-@algorithm(TreeSerialILPCplexType, root, M, L, cp_end, delay, timeout)
-def tree__serial__ilp_cplex(filename: pathlib.Path, alg: TreeSerialILPCplexType, **parameters: dict[str, ...]):
-    """Cost-optimal partitioning based on CPLEX's own ILP model."""
     invoke_algorithm(filename=filename, alg=alg.value, parameters=parameters)
 
 
@@ -848,10 +861,15 @@ def log_info(msg: str):
         click.secho(msg, err=True)
 
 
-def log_err(msg: str):
+def log_warn(msg: str):
     """Pretty print error message."""
     if not click.get_current_context().obj.get('OUTPUT_QUIET'):
-        click.secho(msg, err=True, fg='red')
+        click.secho(msg, err=True, fg='yellow')
+
+
+def log_err(msg: str):
+    """Pretty print error message."""
+    click.secho(msg, err=True, fg='red')
 
 
 def read_input_file(filename: pathlib.Path, data_type: str, arg_names: tuple[str] | list[str]):
@@ -890,6 +908,19 @@ def read_input_file(filename: pathlib.Path, data_type: str, arg_names: tuple[str
     return dict(zip(arg_names, data)) if isinstance(arg_names, (list, tuple)) else {arg_names: data}
 
 
+def validate_config(ctx: click.Context) -> bool:
+    params = ctx.params
+    if (lat := params.get("L", math.inf)) < math.inf and not (params.get("cp_end") or params.get('end')):
+        log_warn(f"WARNING: Latency limit (L={lat}) is set but the critical path tail node "
+                 f"[{'cp_end' if 'cp_end' in ctx.params else 'end'}] is missing!")
+    if (tail := (ctx.params.get("cp_end") or ctx.params.get('end'))) is not None and math.isinf(ctx.params.get("L")):
+        log_warn(f"WARNING: Critical path tail node ({'cp_end' if 'cp_end' in ctx.params else 'end'}={tail}) "
+                 f"is set but latency limit [L] is missing!")
+    return True
+
+
+########################################################################################################################
+
 def invoke_algorithm(filename: pathlib.Path, alg: str, parameters: dict[str, ...]):
     """Load input data and dynamically invoke partitioning algorithm."""
     ctx = click.get_current_context()
@@ -903,7 +934,7 @@ def invoke_algorithm(filename: pathlib.Path, alg: str, parameters: dict[str, ...
         log_err(f"Got unexpected error: {e}")
         raise click.ClickException from e
     ##################################
-    log_info(f"Loading input data from file: {filename}")
+    log_info(f"Loading input data from file: {click.format_filename(filename)}")
     data = read_input_file(filename=filename, data_type=ctx.obj['INPUT_DATA_TYPE'], arg_names=ctx.obj['INPUT_ARG_REF'])
     if not data:
         raise click.ClickException(f"Missing input data!")
@@ -917,8 +948,13 @@ def invoke_algorithm(filename: pathlib.Path, alg: str, parameters: dict[str, ...
               for arg in defaults for p in parameters if arg.casefold() == p.casefold()}
     log_info(f"Collected parameters:")
     for param, v in params.items():
-        log_info(f"  - {param}: {v}")
+        log_info(f"  - {param}: {v if isinstance(v, (str, int, float, type(None)))
+        else v.__name__ if isinstance(v, type) else type(v).__name__}")
     data.update(params)
+    ##################################
+    if not validate_config(ctx=ctx):
+        log_err("Failed to validate algorithm configuration! Exiting...")
+        sys.exit(os.EX_CONFIG)
     ##################################
     try:
         log_info(f"Executing partitioning algorithm...")
