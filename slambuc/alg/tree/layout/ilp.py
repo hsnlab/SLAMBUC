@@ -108,7 +108,9 @@ def tree_gen_hybrid_partitioning(tree: nx.DiGraph, root: int = 1, flavors: list[
     :return:            tuple of list of best partitions, sum cost of the partitioning, and resulted latency
     """
     model, X = build_gen_tree_cfg_model(tree, root, flavors, exec_calc, L, cp_end, delay)
-    status = model.solve(solver=solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False, timeLimit=timeout, **lpargs))
+    solver = solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False)
+    solver.timeLimit = timeout
+    status = model.solve(solver=solver, **lpargs)
     if status == lp.LpStatusOptimal:
         opt_cost, opt_lat = lp.value(model.objective), lp.value(model.constraints[LP_LAT])
         return recreate_st_from_gen_xdict(tree, X), opt_cost, L + opt_lat if L < math.inf else opt_lat
@@ -235,7 +237,9 @@ def tree_gen_mtx_partitioning(tree: nx.DiGraph, root: int = 1, flavors: list[Fla
     :return:            tuple of list of best partitions, sum cost of the partitioning, and resulted latency
     """
     model, X = build_gen_tree_mtx_model(tree, root, flavors, exec_calc, L, cp_end, subchains, delay)
-    status = model.solve(solver=solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False, timeLimit=timeout, **lpargs))
+    solver = solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False)
+    solver.timeLimit = timeout
+    status = model.solve(solver=solver, **lpargs)
     if status == lp.LpStatusOptimal:
         opt_cost, opt_lat = round(lp.value(model.objective), 0), round(lp.value(model.constraints[LP_LAT]), 0)
         return extract_st_from_gen_xmatrix(X), opt_cost, L + opt_lat if L < math.inf else opt_lat

@@ -105,7 +105,9 @@ def chain_cfg_partitioning(runtime: list[int], memory: list[int], rate: list[int
     """
     end = end if end is not None else len(runtime) - 1
     model, X = build_chain_cfg_model(runtime, memory, rate, data, M, L, start, end, delay)
-    status = model.solve(solver=solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False, timeLimit=timeout))
+    solver = solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False)
+    solver.timeLimit = timeout
+    status = model.solve(solver=solver)
     if status == lp.LpStatusOptimal:
         opt_cost, opt_lat = lp.value(model.objective), lp.value(model.constraints[LP_LAT])
         return extract_blocks_from_xvars(X), opt_cost, L + opt_lat if L < math.inf else opt_lat
@@ -268,7 +270,9 @@ def chain_mtx_partitioning(runtime: list[int], memory: list[int], rate: list[int
     :return:        tuple of partitioning blocks, optimal cost, and the calculated latency of the subchain
     """
     model, X = build_chain_mtx_model(runtime, memory, rate, data, M, L, delay)
-    status = model.solve(solver=solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False, timeLimit=timeout))
+    solver = solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False)
+    solver.timeLimit = timeout
+    status = model.solve(solver=solver)
     if status == lp.LpStatusOptimal:
         opt_cost, opt_lat = lp.value(model.objective), lp.value(model.constraints[LP_LAT])
         return recreate_blocks_from_xmatrix(X), opt_cost, L + opt_lat if L < math.inf else opt_lat

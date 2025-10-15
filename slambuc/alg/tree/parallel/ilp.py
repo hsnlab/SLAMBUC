@@ -134,7 +134,9 @@ def tree_par_cfg_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf
         # No feasible solution due to too strict limits
         return INFEASIBLE
     model, X = build_par_tree_cfg_model(tree, root, M, L, N, cpath, delay, isubtrees=ifeasible_par_greedy_subtrees)
-    status = model.solve(solver=solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False, timeLimit=timeout, **lpargs))
+    solver = solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False)
+    solver.timeLimit = timeout
+    status = model.solve(solver=solver, **lpargs)
     if status == lp.LpStatusOptimal:
         opt_cost, opt_lat = lp.value(model.objective), lp.value(model.constraints[LP_LAT])
         return recreate_subtrees_from_xdict(tree, X), opt_cost, L + opt_lat if L < math.inf else opt_lat
@@ -170,7 +172,9 @@ def tree_par_hybrid_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.
         # No feasible solution due to too strict limits
         return INFEASIBLE
     model, X = build_par_tree_cfg_model(tree, root, M, L, N, cpath, delay)
-    status = model.solve(solver=solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False, timeLimit=timeout, **lpargs))
+    solver = solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False)
+    solver.timeLimit = timeout
+    status = model.solve(solver=solver, **lpargs)
     if status == lp.LpStatusOptimal:
         opt_cost, opt_lat = lp.value(model.objective), lp.value(model.constraints[LP_LAT])
         return recreate_subtrees_from_xdict(tree, X), opt_cost, L + opt_lat if L < math.inf else opt_lat
@@ -359,7 +363,9 @@ def tree_par_mtx_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf
         # No feasible solution due to too strict limits
         return INFEASIBLE
     model, X = build_par_tree_mtx_model(tree, root, M, L, N, cpath, subchains, delay)
-    status = model.solve(solver=solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False, timeLimit=timeout, **lpargs))
+    solver = solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False)
+    solver.timeLimit = timeout
+    status = model.solve(solver=solver, **lpargs)
     if status == lp.LpStatusOptimal:
         opt_cost, opt_lat = round(lp.value(model.objective), 0), round(lp.value(model.constraints[LP_LAT]), 0)
         return extract_subtrees_from_xmatrix(X), opt_cost, L + opt_lat if L < math.inf else opt_lat

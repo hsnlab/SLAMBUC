@@ -123,7 +123,9 @@ def greedy_dag_partitioning(dag: nx.DiGraph, root: int = 1, M: int = math.inf, L
         # No feasible solution due to too strict limits
         return INFEASIBLE
     model, X = build_greedy_dag_mtx_model(dag, root, M, L, N, cpath, delay, subchains)
-    status = model.solve(solver=solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False, timeLimit=timeout, **lpargs))
+    solver = solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False)
+    solver.timeLimit = timeout
+    status = model.solve(solver=solver, **lpargs)
     if status == lp.LpStatusOptimal:
         opt_cost, opt_lat = round(lp.value(model.objective), 0), round(lp.value(model.constraints[LP_LAT]), 0)
         return extract_subtrees_from_xmatrix(X), opt_cost, L + opt_lat if L < math.inf else opt_lat
@@ -251,7 +253,9 @@ def dag_partitioning(dag: nx.DiGraph, root: int = 1, M: int = math.inf, L: int =
         # No feasible solution due to too strict limits
         return INFEASIBLE
     model, X = build_dag_mtx_model(dag, root, M, L, N, cpath, delay, subchains)
-    status = model.solve(solver=solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False, timeLimit=timeout, **lpargs))
+    solver = solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False)
+    solver.timeLimit = timeout
+    status = model.solve(solver=solver, **lpargs)
     if status == lp.LpStatusOptimal:
         opt_cost, opt_lat = round(lp.value(model.objective), 0), round(lp.value(model.constraints[LP_LAT]), 0)
         return extract_subtrees_from_xmatrix(X), opt_cost, L + opt_lat if L < math.inf else opt_lat
