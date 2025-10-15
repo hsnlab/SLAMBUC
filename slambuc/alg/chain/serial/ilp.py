@@ -84,7 +84,7 @@ def build_chain_cfg_model(runtime: list[int], memory: list[int], rate: list[int]
 
 def chain_cfg_partitioning(runtime: list[int], memory: list[int], rate: list[int], data: list[int],
                            M: int = math.inf, L: int = math.inf, start: int = 0, end: int = None,
-                           delay: int = 1, solver: lp.LpSolver = None) -> T_RESULTS:
+                           delay: int = 1, solver: lp.LpSolver = None, timeout: int = None) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning of a chain based on the configuration ILP formalization.
 
@@ -100,11 +100,12 @@ def chain_cfg_partitioning(runtime: list[int], memory: list[int], rate: list[int
     :param end:     tail node of the latency-limited subchain
     :param delay:   invocation delay between blocks
     :param solver:  specific solver class (default: COIN-OR CBC)
+    :param timeout: time limit in sec
     :return:        tuple of partitioning blocks, optimal cost, and the calculated latency of the subchain
     """
     end = end if end is not None else len(runtime) - 1
     model, X = build_chain_cfg_model(runtime, memory, rate, data, M, L, start, end, delay)
-    status = model.solve(solver=solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False))
+    status = model.solve(solver=solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False, timeLimit=timeout))
     if status == lp.LpStatusOptimal:
         opt_cost, opt_lat = lp.value(model.objective), lp.value(model.constraints[LP_LAT])
         return extract_blocks_from_xvars(X), opt_cost, L + opt_lat if L < math.inf else opt_lat
@@ -249,7 +250,7 @@ def build_chain_mtx_model(runtime: list[int], memory: list[int], rate: list[int]
 
 def chain_mtx_partitioning(runtime: list[int], memory: list[int], rate: list[int], data: list[int],
                            M: int = math.inf, L: int = math.inf, delay: int = 1, solver: lp.LpSolver = None,
-                           **kwargs) -> T_RESULTS:
+                           timeout: int = None, **kwargs) -> T_RESULTS:
     """
     Calculates minimal-cost partitioning of a chain based on the matrix ILP formalization.
 
@@ -263,10 +264,11 @@ def chain_mtx_partitioning(runtime: list[int], memory: list[int], rate: list[int
     :param L:       latency limit defined on the critical path in the form of subchain[start -> end] (in ms)
     :param delay:   invocation delay between blocks
     :param solver:  specific solver class (default: COIN-OR CBC)
+    :param timeout: time limit in sec
     :return:        tuple of partitioning blocks, optimal cost, and the calculated latency of the subchain
     """
     model, X = build_chain_mtx_model(runtime, memory, rate, data, M, L, delay)
-    status = model.solve(solver=solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False))
+    status = model.solve(solver=solver if solver else lp.PULP_CBC_CMD(mip=True, msg=False, timeLimit=timeout))
     if status == lp.LpStatusOptimal:
         opt_cost, opt_lat = lp.value(model.objective), lp.value(model.constraints[LP_LAT])
         return recreate_blocks_from_xmatrix(X), opt_cost, L + opt_lat if L < math.inf else opt_lat
