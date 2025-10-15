@@ -27,6 +27,7 @@ build: clean
 
 docker-image: clean
 	docker build -t czentye/slambuc:${VER} -t czentye/slambuc:latest .
+	docker image ls -f "reference=czentye/slambuc:*"
 
 check:
 	twine check dist/*
@@ -54,6 +55,9 @@ run:
 test:
 	python3.14 tests/validate_algs.py
 	python3.14 -m pytest -vv tests/
+	python3.14 tests/validate_cli.py
+	cd tests && ./validate_docker_cli.sh
+
 
 test12:
 	python3.12 -m pytest -vv tests/
