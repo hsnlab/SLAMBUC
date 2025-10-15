@@ -25,11 +25,11 @@ docker run --rm -ti czentye/slambuc:0.5.0 chain path sp tests/data/chain_test_se
 
 docker run --rm -ti czentye/slambuc:0.5.0 chain serial greedy tests/data/chain_test_sequence_serial.npy
 
-docker run --rm -ti czentye/slambuc:0.5.0 chain serial ilp tests/data/chain_test_sequence_serial.npy --alg cfg
-docker run --rm -ti czentye/slambuc:0.5.0 chain serial ilp tests/data/chain_test_sequence_serial.npy --alg mtx
+docker run --rm -ti czentye/slambuc:0.5.0 chain serial ilp tests/data/chain_test_sequence_serial.npy --alg cfg --solver glpk
+docker run --rm -ti czentye/slambuc:0.5.0 chain serial ilp tests/data/chain_test_sequence_serial.npy --alg mtx --solver glpk
 
-docker run --rm -ti czentye/slambuc:0.5.0 dag ilp tests/data/graph_test_dag.gml --alg greedy
-docker run --rm -ti czentye/slambuc:0.5.0 dag ilp tests/data/graph_test_dag.gml --alg dag
+docker run --rm -ti czentye/slambuc:0.5.0 dag ilp tests/data/graph_test_dag.gml --alg greedy --solver glpk
+docker run --rm -ti czentye/slambuc:0.5.0 dag ilp tests/data/graph_test_dag.gml --alg dag --solver glpk
 
 docker run --rm -ti czentye/slambuc:0.5.0 ext baseline tests/data/graph_test_tree.gml --alg singleton
 docker run --rm -ti czentye/slambuc:0.5.0 ext baseline tests/data/graph_test_tree.gml --alg no

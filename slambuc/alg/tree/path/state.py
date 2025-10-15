@@ -16,9 +16,9 @@ import math
 import networkx as nx
 
 from slambuc.alg import INFEASIBLE, T_RESULTS
+from slambuc.alg.app import RUNTIME, DATA
 from slambuc.alg.tree import seq_tree_partitioning
-from slambuc.alg.util import recalculate_partitioning
-from slambuc.generator.transform import transform_autonomous_caching
+from slambuc.alg.util import recalculate_partitioning, ipostorder_dfs
 
 
 def cacheless_path_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N: int = 1, L: int = math.inf,
@@ -41,6 +41,23 @@ def cacheless_path_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = m
         return INFEASIBLE
     sum_cost, sum_lat = recalculate_partitioning(tree, partition, root, N, cp_end, delay)
     return INFEASIBLE if validate and (cp_end is not None and L and sum_lat > L) else (partition, sum_cost, sum_lat)
+
+
+def transform_autonomous_caching(tree: dict[str | int, dict[str | int, dict[str, int]]] | nx.DiGraph,
+                                 root: int, copy: bool = False) -> nx.DiGraph:
+    """
+    Transform given *tree* by adding fetching and out-caching overheads to function execution times.
+
+    :param tree:    input tree
+    :param root:    root node
+    :param copy:    use a deep copy of the input instead of modifying the original
+    :return:        transformed tree
+    """
+    tf_tree = tree.copy() if copy else tree
+    for p, n in ipostorder_dfs(tree, root):
+        # Add data fetching and state caching overheads to the function execution time
+        tf_tree.nodes[n][RUNTIME] += tree[p][n][DATA] + sum(tree[n][s][DATA] for s in tree.successors(n))
+    return tf_tree
 
 
 def stateful_path_tree_partitioning(tree: nx.DiGraph, root: int = 1, M: int = math.inf, N: int = 1, L: int = math.inf,

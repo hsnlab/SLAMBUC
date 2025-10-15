@@ -15,8 +15,7 @@ import itertools
 
 import networkx as nx
 
-from slambuc.alg.app import PLATFORM, RUNTIME, DATA
-from slambuc.alg.util import ipostorder_dfs
+from slambuc.alg.app import PLATFORM
 
 
 def faasify_dag_by_duplication(dag: nx.DiGraph, root: int) -> nx.DiGraph | None:
@@ -59,20 +58,3 @@ def faasify_dag_by_duplication(dag: nx.DiGraph, root: int) -> nx.DiGraph | None:
 def faasify_dag_by_cutting(dag: nx.DiGraph, root: int) -> nx.DiGraph:
     ...
     # TODO
-
-
-def transform_autonomous_caching(tree: dict[str | int, dict[str | int, dict[str, int]]] | nx.DiGraph,
-                                 root: int, copy: bool = False) -> nx.DiGraph:
-    """
-    Transform given *tree* by adding fetching and out-caching overheads to function execution times.
-
-    :param tree:    input tree
-    :param root:    root node
-    :param copy:    use a deep copy of the input instead of modifying the original
-    :return:        transformed tree
-    """
-    tf_tree = tree.copy() if copy else tree
-    for p, n in ipostorder_dfs(tree, root):
-        # Add data fetching and state caching overheads to the function execution time
-        tf_tree.nodes[n][RUNTIME] += tree[p][n][DATA] + sum(tree[n][s][DATA] for s in tree.successors(n))
-    return tf_tree

@@ -21,7 +21,7 @@ import networkx as nx
 from slambuc.alg.app import PLATFORM, RUNTIME, DATA
 from slambuc.alg.util import recreate_subtree_blocks, split_chain, recreate_subchain_blocks, ihierarchical_nodes, \
     ihierarchical_edges, iclosed_subgraph, isubgraph_bfs
-from slambuc.generator.transform import transform_autonomous_caching
+from slambuc.alg.tree.path.state import transform_autonomous_caching
 from slambuc.misc.io import encode_service_tree, decode_service_tree, save_trees_to_file, iload_trees_from_file
 from slambuc.misc.plot import draw_tree, draw_dag
 from slambuc.misc.random import get_random_chain, get_random_tree

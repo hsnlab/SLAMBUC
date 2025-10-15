@@ -26,7 +26,7 @@ build: clean
 	python3.14 -m build --sdist --wheel --outdir dist/ .
 
 docker-image: clean
-	docker build -t czentye/slambuc:${VER} .
+	docker build -t czentye/slambuc:${VER} -t czentye/slambuc:latest .
 
 check:
 	twine check dist/*
@@ -40,6 +40,7 @@ release: build docker-image check
 	git push --tags origin
 	git push --tags github
 	docker push czentye/slambuc:${VER}
+	docker push czentye/slambuc:latest
 
 publish: build check
 	@#cat token.txt | xargs -I {} twine upload --repository pypi -u __token__ -p {} dist/*
