@@ -1,0 +1,15 @@
+.*
+**/__pycache__
+*.egg-info
+build
+dist
+tests
+!tests/data/chain_test_sequence_serial.npz
+!tests/data/chain_test_sequence_serial.npy
+!tests/data/graph_test_dag.gml
+!tests/data/graph_test_tree.gml
+!tests/data/graph_test_tree_par.gml
+!tests/data/graph_test_tree_ser.gml
+validation
+Dockerfile
+Makefile

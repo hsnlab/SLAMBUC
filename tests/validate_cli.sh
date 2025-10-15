@@ -83,9 +83,6 @@ slambuc tree serial ilp ./data/graph_test_tree_ser.gml --alg hybrid
 slambuc tree serial ilp ./data/graph_test_tree_ser.gml --alg mtx
 slambuc tree serial ilp ./data/graph_test_tree_ser.gml --alg all
 
-#slambuc tree serial ilp_cplex ./data/graph_test_tree_ser.gml --alg cplex
-#slambuc tree serial ilp_cplex ./data/graph_test_tree_ser.gml --alg cpo
-
 slambuc tree serial pseudo ./data/graph_test_tree_ser.gml --alg btree
 slambuc tree serial pseudo ./data/graph_test_tree_ser.gml --alg ltree
 

@@ -1,16 +1,37 @@
+# Copyright 2025 Janos Czentye
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at:
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+$(eval VER = `python3.14 -c "import slambuc;print(slambuc.__version__)"`)
+
 clean:
 	rm -rf *.egg-info
 	rm -rf ./build ./dist
 	rm -rf .pytest_cache
+	sudo py3clean -v .
+	docker rmi -f czentye/slambuc:${VER} || true
 
 build: clean
 	@#python3.14 setup.py sdist bdist_wheel
 	python3.14 -m build --sdist --wheel --outdir dist/ .
 
+docker-image: clean
+	docker build -t czentye/slambuc:${VER} .
+
 check:
 	twine check dist/*
 
-release: build check
+release: build docker-image check
 	git tag -a `python3.14 -c "import slambuc;print(slambuc.__version__)"` -m  "New version release"
 	git pull origin main
 	git pull github main
@@ -18,10 +39,14 @@ release: build check
 	git push github main
 	git push --tags origin
 	git push --tags github
+	docker push czentye/slambuc:${VER}
 
 publish: build check
 	@#cat token.txt | xargs -I {} twine upload --repository pypi -u __token__ -p {} dist/*
 	twine upload --verbose --repository SLAMBUC dist/*
+
+run:
+	docker run --rm -v.:/usr/src/slambuc --entrypoint sh -ti czentye/slambuc:${VER}
 
 ######## Testing
 
