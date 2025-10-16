@@ -15,7 +15,7 @@ import collections
 import itertools
 import math
 import time
-from typing import Generator, Callable
+from collections.abc import Generator, Callable
 
 import cspy
 import networkx as nx

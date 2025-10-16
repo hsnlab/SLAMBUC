@@ -15,7 +15,7 @@ import itertools
 import operator
 import pathlib
 import warnings
-from typing import Generator
+from collections.abc import Generator
 from functools import partial
 from importlib.resources.abc import Traversable
 

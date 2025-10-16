@@ -13,7 +13,7 @@
 # limitations under the License.
 import collections
 import itertools
-from typing import Generator
+from collections.abc import Generator
 
 import networkx as nx
 import pulp as lp

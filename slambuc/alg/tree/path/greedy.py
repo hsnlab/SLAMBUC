@@ -13,7 +13,7 @@
 # limitations under the License.
 import itertools
 import math
-from typing import Generator
+from collections.abc import Generator
 
 import networkx as nx
 
