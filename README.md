@@ -442,6 +442,26 @@ As an example, to unfold partitioning blocks, the following settings can be leve
 ([[0], [1, 2, 3, 4], [5], [6, 7, 8], [9]], 500, 404)
 ```
 
+#### Autocompletion
+
+Relying on the Click framework's built-in features, SLAMBUC also support autocompletion for its CLI.
+For further details and supported shells, see the related documentation
+[here](https://click.palletsprojects.com/en/stable/shell-completion/).
+
+To set up autocompletion for `bash`, use the following commands:
+
+```bash
+$ mkdir -p /etc/bash_completion.d/
+$ _SLAMBUC_COMPLETE=bash_source slambuc | sudo tee /etc/bash_completion.d/slambuc > /dev/null
+$ sudo chmod a+r /etc/bash_completion.d/slambuc 
+$ source ~/.bashrc
+# example
+$ slambuc tree serial <tab><tab>
+bicriteria  greedy      ilp         pseudo      pseudo_mp
+$ slambuc tree serial pseudo --<tab><tab>
+--alg       --root      --M         --L         --cp_end    --delay     --bidirect  --one-off   --help
+```
+
 ### Docker image
 
 From version `v0.6.0`, the core SLAMBUC package, including

@@ -51,6 +51,7 @@ extra = [
 tests = [
     'pytest',
     'tabulate',
+    'fitter',
     'twine>=6.1.0',
     'packaging>=24.2'
 ]

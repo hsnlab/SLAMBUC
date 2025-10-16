@@ -157,6 +157,14 @@ class PulpSolverType(enum.Enum):
     cplex = pulp.CPLEX_CMD
     DEF = cbc
 
+    @classmethod
+    def shell_complete(cls, *_) -> list[click.shell_completion.CompletionItem]:
+        return [click.shell_completion.CompletionItem(n.name) for n in cls]
+
+    @classmethod
+    def callback(cls, _, __, value) -> pulp.LpSolver:
+        return value.value(mip=True, msg=False)
+
 
 class CSPSolverType(enum.Enum):
     """Specific param type corresponding to CSP's solver classes supported by SLAMBUC."""
@@ -165,6 +173,14 @@ class CSPSolverType(enum.Enum):
     greedy = cspy.GreedyElim
     grasp = cspy.GRASP
     DEF = bidirect
+
+    @classmethod
+    def shell_complete(cls, *_) -> list[click.shell_completion.CompletionItem]:
+        return [click.shell_completion.CompletionItem(n.name) for n in cls]
+
+    @classmethod
+    def callback(cls, _, __, value) -> object:
+        return value.value
 
 
 def algorithm(enum_type: enum.EnumType, *options) -> typing.Callable:
@@ -177,7 +193,7 @@ def algorithm(enum_type: enum.EnumType, *options) -> typing.Callable:
             func = param(func)
         func = click.option('--alg', required=False, help="Specific algorithm to be run",
                             type=click.Choice(enum_type, case_sensitive=False),
-                            default=enum_type['DEF'])(func)
+                            default=enum_type['DEF'], shell_complete=lambda *_: enum_type._member_names_)(func)
         return func
 
     return wrapped
@@ -202,10 +218,12 @@ bidirect = click.option('--bidirect/--one-off', 'bidirectional', metavar='BOOL',
                         envvar='SLAMBUC_BIDIRECT', help="Use bidirectional/single subcase elimination")
 pulp_solver = click.option('--solver', 'solver', type=click.Choice(PulpSolverType, case_sensitive=False),
                            required=False, show_default=True, default=PulpSolverType.DEF, envvar='SLAMBUC_PULP_SOLVER',
-                           callback=lambda c, p, v: v.value(mip=True, msg=False), help="Used linear programming solver")
+                           callback=PulpSolverType.callback, shell_complete=PulpSolverType.shell_complete,
+                           help="Used linear programming solver")
 csp_solver = click.option('--solver', 'solver', type=click.Choice(CSPSolverType, case_sensitive=False),
                           required=False, show_default=True, default=CSPSolverType.DEF, envvar='SLAMBUC_CSP_SOLVER',
-                          callback=lambda c, p, v: v.value, help="Used linear programming solver")
+                          callback=CSPSolverType.callback, shell_complete=CSPSolverType.shell_complete,
+                          help="Used linear programming solver")
 timeout = click.option('--timeout', 'timeout', type=HalfOpenRange, required=False,
                        envvar='SLAMBUC_TIMEOUT', show_default='ignore', help="ILP solver timeout in seconds")
 subchains = click.option('--subchains/--subtrees', 'subchains', metavar='BOOL', type=click.BOOL,
@@ -946,11 +964,12 @@ def invoke_algorithm(filename: pathlib.Path, alg: str, parameters: dict[str, ...
     ##################################
     log_info(f"Loading input data from file: {click.format_filename(filename)}")
     data = read_input_file(filename=filename, data_type=ctx.obj['INPUT_DATA_TYPE'], arg_names=ctx.obj['INPUT_ARG_REF'])
-    if not data:
-        raise click.ClickException(f"Missing input data!")
     log_info(f"Parsed input:")
     for name, obj in data.items():
         log_info(f"  - {name}: {obj}")
+    if not all(map(bool, data.values())):
+        log_err(f"Error: missing input data!")
+        sys.exit(os.EX_DATAERR)
     ##################################
     spec = inspect.getfullargspec(alg_method)
     defaults = dict(reversed(list(kv for kv in zip(reversed(spec.args), reversed(spec.defaults)))))
