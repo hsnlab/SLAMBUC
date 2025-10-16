@@ -1,7 +1,7 @@
 # Serverless Layout Adaptation with Memory-Bounds and User Constraints (SLAMBUC)
 
 [![PyPI](https://img.shields.io/pypi/v/SLAMBUC)](https://pypi.org/project/SLAMBUC/)
-![DockerHub](https://img.shields.io/docker/v/czentye/slambuc?sort=semver&label=DockerHub&link=https%3A%2F%2Fhub.docker.com%2Fr%2Fczentye%2Fslambuc)
+[![DockerHub](https://img.shields.io/docker/v/czentye/slambuc?sort=semver&label=DockerHub)](https://hub.docker.com/r/czentye/slambuc)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/SLAMBUC)](https://pypi.org/project/SLAMBUC/#history)
 [![Downloads](https://static.pepy.tech/badge/slambuc)](https://pepy.tech/project/slambuc)
 [![GitHub License](https://img.shields.io/github/license/hsnlab/SLAMBUC)]((https://img.shields.io/github/license/hsnlab/SLAMBUC))
