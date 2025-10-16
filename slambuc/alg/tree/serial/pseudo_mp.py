@@ -18,7 +18,7 @@ import math
 import multiprocessing
 import operator
 import typing
-from collections.abc import Generator
+from typing import Generator
 
 import networkx as nx
 

@@ -15,7 +15,7 @@ import importlib.resources
 import itertools
 import pathlib
 import random
-from collections.abc import Generator
+from typing import Generator
 
 import networkx as nx
 import numpy as np

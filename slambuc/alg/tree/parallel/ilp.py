@@ -15,7 +15,7 @@ import collections
 import itertools
 import math
 import typing
-from collections.abc import Generator
+from typing import Generator
 
 import networkx as nx
 import pulp as lp
