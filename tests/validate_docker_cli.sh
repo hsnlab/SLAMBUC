@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 # Copyright 2025 Janos Czentye
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,79 +14,87 @@
 # limitations under the License.
 set -ex
 
-VER=$(python3.14 -c "import slambuc;print(slambuc.__version__)")
+export SCRIPT_DIR=$(readlink -f "$(dirname "$0")")
+export PROJECT_ROOT=$(readlink -f "${SCRIPT_DIR}/..")
 
-docker run --rm -ti czentye/slambuc:"${VER}" chain path dp tests/data/chain_test_sequence_serial.npz --alg chain
-docker run --rm -ti czentye/slambuc:"${VER}" chain path dp tests/data/chain_test_sequence_serial.npz --alg vector
+VER=$(python3 -c "import slambuc;print(slambuc.__version__)")
+IMG="czentye/slambuc:${VER}"
 
-docker run --rm -ti czentye/slambuc:"${VER}" chain path greedy tests/data/chain_test_sequence_serial.npz
+function run_slambuc() {
+    docker run --rm -v "${PROJECT_ROOT}":/usr/src/slambuc -e SLAMBUC_UNFOLD=yes -ti "${IMG}" "$@"
+}
 
-docker run --rm -ti czentye/slambuc:"${VER}" chain path min tests/data/chain_test_sequence_serial.npz
+run_slambuc chain path dp tests/data/chain_test_sequence_serial.npz --alg chain
+run_slambuc chain path dp tests/data/chain_test_sequence_serial.npz --alg vector
 
-docker run --rm -ti czentye/slambuc:"${VER}" chain path sp tests/data/chain_test_sequence_serial.npz
+run_slambuc chain path greedy tests/data/chain_test_sequence_serial.npz
 
-docker run --rm -ti czentye/slambuc:"${VER}" chain serial greedy tests/data/chain_test_sequence_serial.npy
+run_slambuc chain path min tests/data/chain_test_sequence_serial.npz
 
-docker run --rm -ti czentye/slambuc:"${VER}" chain serial ilp tests/data/chain_test_sequence_serial.npy --alg cfg #--solver glpk
-docker run --rm -ti czentye/slambuc:"${VER}" chain serial ilp tests/data/chain_test_sequence_serial.npy --alg mtx #--solver glpk
+run_slambuc chain path sp tests/data/chain_test_sequence_serial.npz
 
-docker run --rm -ti czentye/slambuc:"${VER}" dag ilp tests/data/graph_test_dag.gml --alg greedy #--solver glpk
-docker run --rm -ti czentye/slambuc:"${VER}" dag ilp tests/data/graph_test_dag.gml --alg dag #--solver glpk
+run_slambuc chain serial greedy tests/data/chain_test_sequence_serial.npy
 
-docker run --rm -ti czentye/slambuc:"${VER}" ext baseline tests/data/graph_test_tree.gml --alg singleton
-docker run --rm -ti czentye/slambuc:"${VER}" ext baseline tests/data/graph_test_tree.gml --alg no
+run_slambuc chain serial ilp tests/data/chain_test_sequence_serial.npy --alg cfg #--solver glpk
+run_slambuc chain serial ilp tests/data/chain_test_sequence_serial.npy --alg mtx #--solver glpk
 
-docker run --rm -ti czentye/slambuc:"${VER}" ext csp tests/data/graph_test_tree.gml --alg csp
-docker run --rm -ti czentye/slambuc:"${VER}" ext csp tests/data/graph_test_tree.gml --alg gen
+run_slambuc dag ilp tests/data/graph_test_dag.gml --alg greedy #--solver glpk
+run_slambuc dag ilp tests/data/graph_test_dag.gml --alg dag #--solver glpk
 
-docker run --rm -ti czentye/slambuc:"${VER}" ext greedy tests/data/graph_test_tree.gml --alg greedy
-docker run --rm -ti czentye/slambuc:"${VER}" ext greedy tests/data/graph_test_tree.gml --alg weight
-docker run --rm -ti czentye/slambuc:"${VER}" ext greedy tests/data/graph_test_tree.gml --alg lat
+run_slambuc ext baseline tests/data/graph_test_tree.gml --alg singleton
+run_slambuc ext baseline tests/data/graph_test_tree.gml --alg no
 
-docker run --rm -ti czentye/slambuc:"${VER}" ext mincut tests/data/graph_test_tree.gml --alg chain
-docker run --rm -ti czentye/slambuc:"${VER}" ext mincut tests/data/graph_test_tree.gml --alg ksplit
-docker run --rm -ti czentye/slambuc:"${VER}" ext mincut tests/data/graph_test_tree.gml --alg tree
+run_slambuc ext csp tests/data/graph_test_tree.gml --alg csp
+run_slambuc ext csp tests/data/graph_test_tree.gml --alg gen
 
-docker run --rm -ti czentye/slambuc:"${VER}" tree layout ilp tests/data/graph_test_tree.gml --alg hybrid #--solver glpk
-docker run --rm -ti czentye/slambuc:"${VER}" tree layout ilp tests/data/graph_test_tree.gml --alg mtx #--solver glpk
-docker run --rm -ti czentye/slambuc:"${VER}" tree layout ilp tests/data/graph_test_tree.gml --alg all #--solver glpk
+run_slambuc ext greedy tests/data/graph_test_tree.gml --alg greedy
+run_slambuc ext greedy tests/data/graph_test_tree.gml --alg weight
+run_slambuc ext greedy tests/data/graph_test_tree.gml --alg lat
 
-docker run --rm -ti czentye/slambuc:"${VER}" tree parallel greedy tests/data/graph_test_tree_par.gml --alg greedy
+run_slambuc ext mincut tests/data/graph_test_tree.gml --alg chain
+run_slambuc ext mincut tests/data/graph_test_tree.gml --alg ksplit
+run_slambuc ext mincut tests/data/graph_test_tree.gml --alg tree
 
-docker run --rm -ti czentye/slambuc:"${VER}" tree parallel ilp tests/data/graph_test_tree_par.gml --alg cfg #--solver glpk
-docker run --rm -ti czentye/slambuc:"${VER}" tree parallel ilp tests/data/graph_test_tree_par.gml --alg hybrid #--solver glpk
-docker run --rm -ti czentye/slambuc:"${VER}" tree parallel ilp tests/data/graph_test_tree_par.gml --alg mtx #--solver glpk
-docker run --rm -ti czentye/slambuc:"${VER}" tree parallel ilp tests/data/graph_test_tree_par.gml --alg all #--solver glpk
+run_slambuc tree layout ilp tests/data/graph_test_tree.gml --alg hybrid #--solver glpk
+run_slambuc tree layout ilp tests/data/graph_test_tree.gml --alg mtx #--solver glpk
+run_slambuc tree layout ilp tests/data/graph_test_tree.gml --alg all #--solver glpk
 
-docker run --rm -ti czentye/slambuc:"${VER}" tree parallel pseudo tests/data/graph_test_tree_par.gml --alg btree
-docker run --rm -ti czentye/slambuc:"${VER}" tree parallel pseudo tests/data/graph_test_tree_par.gml --alg ltree
+run_slambuc tree parallel greedy tests/data/graph_test_tree_par.gml --alg greedy
 
-docker run --rm -ti czentye/slambuc:"${VER}" tree parallel pseudo_mp tests/data/graph_test_tree_par.gml --alg ltree
+run_slambuc tree parallel ilp tests/data/graph_test_tree_par.gml --alg cfg #--solver glpk
+run_slambuc tree parallel ilp tests/data/graph_test_tree_par.gml --alg hybrid #--solver glpk
+run_slambuc tree parallel ilp tests/data/graph_test_tree_par.gml --alg mtx #--solver glpk
+run_slambuc tree parallel ilp tests/data/graph_test_tree_par.gml --alg all #--solver glpk
 
-docker run --rm -ti czentye/slambuc:"${VER}" tree path greedy tests/data/graph_test_tree_ser.gml --alg greedy
+run_slambuc tree parallel pseudo tests/data/graph_test_tree_par.gml --alg btree
+run_slambuc tree parallel pseudo tests/data/graph_test_tree_par.gml --alg ltree
 
-docker run --rm -ti czentye/slambuc:"${VER}" tree path meta tests/data/graph_test_tree_ser.gml --alg meta
+run_slambuc tree parallel pseudo_mp tests/data/graph_test_tree_par.gml --alg ltree
 
-docker run --rm -ti czentye/slambuc:"${VER}" tree path min tests/data/graph_test_tree_ser.gml --alg min
+run_slambuc tree path greedy tests/data/graph_test_tree_ser.gml --alg greedy
 
-docker run --rm -ti czentye/slambuc:"${VER}" tree path seq tests/data/graph_test_tree_ser.gml --alg seq
+run_slambuc tree path meta tests/data/graph_test_tree_ser.gml --alg meta
 
-docker run --rm -ti czentye/slambuc:"${VER}" tree path state tests/data/graph_test_tree_ser.gml --alg cacheless
-docker run --rm -ti czentye/slambuc:"${VER}" tree path state tests/data/graph_test_tree_ser.gml --alg stateful
+run_slambuc tree path min tests/data/graph_test_tree_ser.gml --alg min
 
-docker run --rm -ti czentye/slambuc:"${VER}" tree serial bicriteria tests/data/graph_test_tree_ser.gml --alg biheuristic
-docker run --rm -ti czentye/slambuc:"${VER}" tree serial bicriteria tests/data/graph_test_tree_ser.gml --alg bifptas
-docker run --rm -ti czentye/slambuc:"${VER}" tree serial bicriteria tests/data/graph_test_tree_ser.gml --alg dual
+run_slambuc tree path seq tests/data/graph_test_tree_ser.gml --alg seq
 
-docker run --rm -ti czentye/slambuc:"${VER}" tree serial greedy tests/data/graph_test_tree_ser.gml --alg greedy
+run_slambuc tree path state tests/data/graph_test_tree_ser.gml --alg cacheless
+run_slambuc tree path state tests/data/graph_test_tree_ser.gml --alg stateful
 
-docker run --rm -ti czentye/slambuc:"${VER}" tree serial ilp tests/data/graph_test_tree_ser.gml --alg cfg #--solver glpk
-docker run --rm -ti czentye/slambuc:"${VER}" tree serial ilp tests/data/graph_test_tree_ser.gml --alg hybrid #--solver glpk
-docker run --rm -ti czentye/slambuc:"${VER}" tree serial ilp tests/data/graph_test_tree_ser.gml --alg mtx #--solver glpk
-docker run --rm -ti czentye/slambuc:"${VER}" tree serial ilp tests/data/graph_test_tree_ser.gml --alg all #--solver glpk
+run_slambuc tree serial bicriteria tests/data/graph_test_tree_ser.gml --alg biheuristic
+run_slambuc tree serial bicriteria tests/data/graph_test_tree_ser.gml --alg bifptas
+run_slambuc tree serial bicriteria tests/data/graph_test_tree_ser.gml --alg dual
 
-docker run --rm -ti czentye/slambuc:"${VER}" tree serial pseudo tests/data/graph_test_tree_ser.gml --alg btree
-docker run --rm -ti czentye/slambuc:"${VER}" tree serial pseudo tests/data/graph_test_tree_ser.gml --alg ltree
+run_slambuc tree serial greedy tests/data/graph_test_tree_ser.gml --alg greedy
 
-docker run --rm -ti czentye/slambuc:"${VER}" tree serial pseudo_mp tests/data/graph_test_tree_ser.gml --alg btree
-docker run --rm -ti czentye/slambuc:"${VER}" tree serial pseudo_mp tests/data/graph_test_tree_ser.gml --alg ltree
+run_slambuc tree serial ilp tests/data/graph_test_tree_ser.gml --alg cfg #--solver glpk
+run_slambuc tree serial ilp tests/data/graph_test_tree_ser.gml --alg hybrid #--solver glpk
+run_slambuc tree serial ilp tests/data/graph_test_tree_ser.gml --alg mtx #--solver glpk
+run_slambuc tree serial ilp tests/data/graph_test_tree_ser.gml --alg all #--solver glpk
+
+run_slambuc tree serial pseudo tests/data/graph_test_tree_ser.gml --alg btree
+run_slambuc tree serial pseudo tests/data/graph_test_tree_ser.gml --alg ltree
+
+run_slambuc tree serial pseudo_mp tests/data/graph_test_tree_ser.gml --alg btree
+run_slambuc tree serial pseudo_mp tests/data/graph_test_tree_ser.gml --alg ltree

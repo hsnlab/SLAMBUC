@@ -64,7 +64,7 @@ def main(ctx: click.Context, format_json: bool, format_split: bool, output_quiet
 
 class HalfOpenIntRangeType(click.IntRange):
     """Custom Integer range type that supports positive half-open intervals to infinity."""
-    name = "INT"
+    name: str = "INT"
 
     def __init__(self):
         super().__init__(min=0, min_open=True, clamp=False)
@@ -85,12 +85,13 @@ HalfOpenRange = HalfOpenIntRangeType()
 
 class IndexRangeType(click.IntRange):
     """Custom Integer range type that supports custom/abstract array size depicted as 'n'."""
-    name = "IDX"
+    name: str = "IDX"
 
     class IndexMaxSize(float):
+        _abstract_size: str = 'n'
 
         def __str__(self):
-            return 'n'
+            return self._abstract_size
 
     def __init__(self, max_value: str | int = None):
         super().__init__(min=0, min_open=False, max_open=True, clamp=False)
@@ -121,7 +122,7 @@ CallGraphFile = CallGraphPathType()
 class SlambucFlavorType(click.ParamType):
     """Custom resource type matching SLAMBUC's own Flavor type."""
     name: str = 'Flavor'
-    _format = 'mem[int>0],ncore[int>0],cfactor[float>0.0]'
+    _format: str = 'mem[int>0],ncore[int>0],cfactor[float>0.0]'
 
     def convert(self, value: typing.Any, param: click.Parameter, ctx: click.Context) -> Flavor:
         """Parse and convert flavors from CLI inf format <mem[int]>,<ncore[int]>,<cfactor[float]>"""
