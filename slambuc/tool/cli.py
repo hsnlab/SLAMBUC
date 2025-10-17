@@ -52,7 +52,7 @@ GLOBAL_CTX_SETTINGS = dict(
 @click.version_option(slambuc.__version__, "-v", "--version", package_name="slambuc")
 @click.pass_context
 def main(ctx: click.Context, format_json: bool, format_split: bool, output_quiet: bool):
-    """Serverless Layout Adaptation with Memory-Bounds and User Constraints (SLAMBUC)."""
+    """Serverless Layout Adaptation with Memory-Bounds and User Constraints (SLAMBUC)"""
     ctx.ensure_object(dict)
     ctx.obj['FORMAT_JSON'] = format_json
     ctx.obj['FORMAT_SPLIT'] = format_split

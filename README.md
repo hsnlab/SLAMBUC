@@ -201,7 +201,7 @@ directly form the command line interface. E.g.:
 (.venv) $ slambuc -h
 Usage: slambuc [OPTIONS] COMMAND [ARGS]...
 
-  Serverless Layout Adaptation with Memory-Bounds and User Constraints (SLAMBUC).
+  Serverless Layout Adaptation with Memory-Bounds and User Constraints (SLAMBUC)
 
 Options:
   -j, --json     Output as valid JSON
@@ -252,7 +252,7 @@ that have default parameters can be defined via command line are exposed as opti
 ```bash
 (,venv) $ slambuc chain path dp ./tests/data/chain_test_sequence_serial.npz --M=6 --N=2 --L=500 --unit=100 --unfold
 Importing algorithm function: <vec_chain_partitioning> from SLAMBUC module: <slambuc.alg.chain.path.dp>
-Loading input data from file: /home/czentye/projects/SLAMBUC/tests/data/chain_test_sequence_serial.npz
+Loading input data from file: tests/data/chain_test_sequence_serial.npz
 Parsed input:
   - runtime: [20, 40, 50, 20, 70, 40, 50, 60, 40, 10]
   - memory: [3, 3, 2, 1, 2, 1, 2, 1, 2, 3]
@@ -277,7 +277,7 @@ Received FEASIBLE solution:
 ```bash
 (.venv) $ slambuc tree serial pseudo ./tests/data/graph_test_tree_random.gml  --root=1 --M=6 --L=450 --cp_end=10 --delay=10
 Importing algorithm function: <pseudo_ltree_partitioning> from SLAMBUC module: <slambuc.alg.tree.serial.pseudo>
-Loading input data from file: /home/czentye/projects/SLAMBUC/tests/data/graph_test_tree_random.gml
+Loading input data from file: tests/data/graph_test_tree_random.gml
 Parsed input:
   - tree: DiGraph named 'random_tree_1759849079.887418' with 11 nodes and 10 edges
 Collected parameters:
