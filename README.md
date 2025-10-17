@@ -315,6 +315,7 @@ Refer to the wiki for the related
 To serialize networkx-based graph objects, the following code snippet in Python brings an example:
 
 ```python
+#!/usr/bin/env python3.14
 from slambuc.misc.random import get_random_tree
 from slambuc.misc.io import save_tree
 import networkx as nx
@@ -350,6 +351,7 @@ store the metric arrays **strictly following the order** of:
 The following code snippet in Python brings an example for saving an application call chain:
 
 ```python
+#!/usr/bin/env python3.14
 import numpy as np
 
 # Define metrics
@@ -405,7 +407,7 @@ For example, to list the partitioning, cost, and latency results per line in JSO
 398.0
 ```
 
-or just print the optimal partitioning results, one per line, use
+print the optimal partitioning results of one application call tree, one per line, use
 
 ```bash
 (.venv) $ slambuc -s -j -q  tree path greedy ./tests/data/graph_test_tree_random.gml --cp_end=10 --L=500 --cuts --unit=10
@@ -415,6 +417,13 @@ or just print the optimal partitioning results, one per line, use
 [[[1, 2], [3], [4], [5], [6], [7], [8], [9], [10]], 890, 5]
 [[[1], [2], [3], [4], [5], [6], [7], [8], [9, 10]], 890, 4]
 [[[1], [2], [3], [4], [5], [6], [7], [8], [9], [10]], 890, 5]
+```
+
+or just print the blocks of an optimal partitioning (first element of results) by using the JSON parser tool `jq`, use
+
+```bash
+(.venv) $ slambuc -j -q chain serial ilp tests/data/chain_test_sequence_serial.npy --M=6 | jq --compact-output '.[0]'
+[[0],[1,2,3],[4,5],[6,7,8],[9]]
 ```
 
 It is worth noting that CLI parameters are automatically parsed from environment variables in case the following
