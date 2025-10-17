@@ -47,6 +47,11 @@ publish: build check
 	@#cat token.txt | xargs -I {} twine upload --repository pypi -u __token__ -p {} dist/*
 	twine upload --verbose --repository SLAMBUC dist/*
 
+
+docker-push: docker-image
+	docker login
+	docker push	czentye/slambuc:latest
+
 run:
 	docker run --rm -v.:/usr/src/slambuc --entrypoint sh -ti czentye/slambuc:${VER}
 

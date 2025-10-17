@@ -998,6 +998,10 @@ def invoke_algorithm(filename: pathlib.Path, alg: str, parameters: dict[str, ...
         dumper = functools.partial(json.dumps, indent=None, default=str) if ctx.obj.get('FORMAT_JSON') else repr
         for res in (results if ctx.obj.get('FORMAT_SPLIT') else (results,)):
             click.secho(dumper(res), fg='green' if feasible else 'yellow', bold=True)
+    except BrokenPipeError as e:
+        # https://docs.python.org/3/library/signal.html#note-on-sigpipe
+        os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+        sys.exit(128 + e.errno)
     except Exception:
         log_err(traceback.format_exc())
         log_err(f"Got unexpected error during algorithm execution!")
