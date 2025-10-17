@@ -69,6 +69,8 @@ However, for the latest changes, it can be installed directly from GitHub as fol
 python3.14 -m pip install --no-cache-dir git+https://github.com/hsnlab/SLAMBUC.git
 ```
 
+##### Tree visualization
+
 Tree plotting relies on networkx's internal plotting feature that generates a layout based on the
 [graphviz tool and its python frontend](https://pygraphviz.github.io/documentation/stable/install.html).
 Thus, in that case, the related dependencies must be installed first.
