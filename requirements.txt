@@ -1,8 +1,8 @@
 ### Core ###
 numpy~=2.3.4
 networkx~=3.6
-matplotlib~=3.10.6
-pandas~=2.3.2
+matplotlib~=3.10.7
+pandas~=2.3.3
 # sudo apt install glpk-utils
 pulp~=3.3.0
 scipy~=1.16.3
