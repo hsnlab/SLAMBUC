@@ -25,8 +25,8 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules"
 ]
 dependencies = [
-    'numpy~=2.2.6',
-    'networkx~=3.5',
+    'numpy~=2.3.4',
+    'networkx~=3.6',
     'pulp~=3.3.0',
     'cspy>=0.1.2',
     'click~=8.3.0'
