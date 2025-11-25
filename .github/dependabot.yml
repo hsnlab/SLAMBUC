@@ -8,4 +8,4 @@ updates:
       python-packages:
         patterns:
           - "*"
-    versioning-strategy: increase
+    versioning-strategy: increase-if-necessary
