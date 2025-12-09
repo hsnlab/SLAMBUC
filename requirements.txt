@@ -1,6 +1,6 @@
 ### Core ###
 numpy~=2.3.4
-networkx~=3.6
+networkx~=3.4
 matplotlib~=3.10.7
 pandas~=2.3.3
 # sudo apt install glpk-utils
