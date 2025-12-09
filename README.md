@@ -252,7 +252,7 @@ that have default parameters can be defined via command line are exposed as opti
 #### Example for chain partitioning from CLI
 
 ```bash
-(,venv) $ slambuc chain path dp ./tests/data/chain_test_sequence_serial.npz --M=6 --N=2 --L=500 --unit=100 --unfold
+(.venv) $ slambuc chain path dp ./tests/data/chain_test_sequence_serial.npz --M=6 --N=2 --L=500 --unit=100 --unfold
 Importing algorithm function: <vec_chain_partitioning> from SLAMBUC module: <slambuc.alg.chain.path.dp>
 Loading input data from file: tests/data/chain_test_sequence_serial.npz
 Parsed input:
