@@ -5,7 +5,7 @@ matplotlib~=3.10.7
 pandas~=2.3.3
 # sudo apt install glpk-utils
 pulp~=3.3.0
-scipy~=1.16.3
+scipy~=1.15.3
 cspy>=0.1.2
 ### Test ###
 pytest
