@@ -25,11 +25,11 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules"
 ]
 dependencies = [
-    'numpy~=2.4.0',
+    'numpy~=2.4.1',
     'networkx~=3.6.1',
     'pulp~=3.3.0',
     'cspy>=0.1.2',
-    'click~=8.3.0'
+    'click~=8.3.1'
 ]
 
 [project.urls]
@@ -42,22 +42,23 @@ slambuc = 'slambuc.tool.cli:main'
 
 [project.optional-dependencies]
 extra = [
-    'pygraphviz~=1.14.0',
-    'matplotlib~=3.10.6',
-    'pandas~=2.3.2',
-    'scipy~=1.16.3',
-    'docplex~=2.30.251'
+    'pygraphviz~=1.14',
+    'matplotlib~=3.10.8',
+    'pandas~=2.3.3',
+    'scipy~=1.17.0',
+    'docplex~=2.31.254'
 ]
 tests = [
     'pytest',
     'tabulate',
     'fitter',
+    'build',
     'twine>=6.1.0',
     'packaging>=24.2.0'
 ]
 validation = [
     'tabulate',
-    'psutil~=7.2.0'
+    'psutil~=7.2.1'
 ]
 doc = [
     'pydoc-markdown~=4.8.2'

@@ -8,7 +8,6 @@ updates:
       python-packages:
         patterns:
           - "*"
-    ignore:
-      - dependency-name: '*'
-        update-types: [ "version-update:semver-patch" ]
+    allow:
+      - dependency-type: all
     versioning-strategy: increase

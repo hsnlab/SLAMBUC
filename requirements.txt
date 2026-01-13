@@ -1,25 +1,25 @@
 ### Core ###
-numpy~=2.4.0
+numpy~=2.4.1
 networkx~=3.6.1
-matplotlib~=3.10.7
+matplotlib~=3.10.8
 pandas~=2.3.3
 # sudo apt install glpk-utils
 pulp~=3.3.0
-scipy~=1.16.3
+scipy~=1.17.0
 cspy>=0.1.2
 ### Test ###
 pytest
 # sudo apt install python3.14-dev graphviz libgraphviz-dev pkg-config
-pygraphviz~=1.14.0
-tabulate~=0.9.0
-click~=8.3.0
-psutil
+pygraphviz~=1.14
+tabulate
+click~=8.3.1
+psutil~=7.2.1
 ### Package ###
 twine>=6.1.0
 packaging>=24.2.0
 build
 ### Ext ###
 pydoc-markdown
-docplex~=2.30.251
+docplex~=2.31.254
 #fitter~=1.7.1
 #spar~=0.0.7
