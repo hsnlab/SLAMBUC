@@ -13,7 +13,7 @@ pytest
 pygraphviz~=1.14
 tabulate
 click~=8.3.1
-psutil~=7.2.1
+psutil~=7.2.2
 ### Package ###
 twine>=6.1.0
 packaging>=24.2.0
