@@ -2,10 +2,10 @@
 numpy~=2.4.1
 networkx~=3.6.1
 matplotlib~=3.10.8
-pandas~=3.0.0
+pandas~=2.3.3
 # sudo apt install glpk-utils
 pulp~=3.3.0
-scipy~=1.17.0
+scipy~=1.15.3
 cspy>=0.1.2
 ### Test ###
 pytest
@@ -20,6 +20,6 @@ packaging>=24.2.0
 build
 ### Ext ###
 pydoc-markdown
-docplex~=2.31.254
+docplex~=2.32.257
 #fitter~=1.7.1
 #spar~=0.0.7
