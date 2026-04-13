@@ -28,8 +28,8 @@ dependencies = [
     'numpy~=2.4.1',
     'networkx~=3.6.1',
     'pulp~=3.3.0',
-    'cspy>=0.1.2',
-    'click~=8.3.1'
+    'cspy>=1.0.3',
+    'click~=8.3.2'
 ]
 
 [project.urls]
@@ -45,16 +45,16 @@ extra = [
     'pygraphviz~=1.14',
     'matplotlib~=3.10.8',
     'pandas~=2.3.3',
-    'scipy~=1.17.0',
-    'docplex~=2.31.254'
+    'scipy~=1.15.3',
+    'docplex~=2.32.264'
 ]
 tests = [
     'pytest',
     'tabulate',
     'fitter',
     'build',
-    'twine>=6.1.0',
-    'packaging>=24.2.0'
+    'twine>=6.2.0',
+    'packaging>=26.0'
 ]
 validation = [
     'tabulate',
