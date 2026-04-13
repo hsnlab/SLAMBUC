@@ -27,7 +27,8 @@ jobs:
             ${{ runner.os }}-pip-
       - name: Install system dependencies
         run: |
-          sudo apt-get update && sudo apt-get install -y graphviz libgraphviz-dev pkg-config glpk-utils
+          sudo apt-get update && sudo apt-get install -y \
+                        graphviz libgraphviz-dev pkg-config glpk-utils gcc g++ gfortran libopenblas-dev liblapack-dev
       - name: Install Python dependencies
         run: |
           python3.14 -m pip install -v --upgrade pip
