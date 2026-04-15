@@ -54,7 +54,7 @@ tests = [
     'fitter',
     'build',
     'twine>=6.2.0',
-    'packaging>=26.0'
+    'packaging>=26.1'
 ]
 validation = [
     'tabulate',
