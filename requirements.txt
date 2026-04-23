@@ -12,7 +12,7 @@ pytest
 # sudo apt install python3.14-dev graphviz libgraphviz-dev pkg-config
 pygraphviz~=1.14
 tabulate
-click~=8.3.2
+click~=8.3.3
 psutil~=7.2.2
 ### Package ###
 twine>=6.1.0
