@@ -29,7 +29,7 @@ dependencies = [
     'networkx~=3.6.1',
     'pulp~=3.3.0',
     'cspy>=0.1.2',
-    'click~=8.3.2'
+    'click~=8.3.3'
 ]
 
 [project.urls]
