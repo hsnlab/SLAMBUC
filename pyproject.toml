@@ -43,7 +43,7 @@ slambuc = 'slambuc.tool.cli:main'
 [project.optional-dependencies]
 extra = [
     'pygraphviz~=1.14',
-    'matplotlib~=3.10.8',
+    'matplotlib~=3.10.9',
     'pandas~=3.0.2',
     'scipy~=1.17.0',
     'docplex~=2.32.264'
@@ -54,7 +54,7 @@ tests = [
     'fitter',
     'build',
     'twine>=6.2.0',
-    'packaging>=26.1'
+    'packaging>=26.2'
 ]
 validation = [
     'tabulate',

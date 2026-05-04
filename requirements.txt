@@ -1,7 +1,7 @@
 ### Core ###
 numpy~=2.4.1
 networkx~=3.6.1
-matplotlib~=3.10.8
+matplotlib~=3.10.9
 pandas~=3.0.2
 # sudo apt install glpk-utils
 pulp~=3.3.0
@@ -16,7 +16,7 @@ click~=8.3.3
 psutil~=7.2.2
 ### Package ###
 twine>=6.1.0
-packaging>=24.2.0
+packaging>=26.2
 build
 ### Ext ###
 pydoc-markdown
