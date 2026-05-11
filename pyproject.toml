@@ -27,7 +27,7 @@ classifiers = [
 dependencies = [
     'numpy~=2.4.1',
     'networkx~=3.6.1',
-    'pulp~=3.3.0',
+    'pulp~=3.3.1',
     'cspy>=0.1.2',
     'click~=8.3.3'
 ]
@@ -44,7 +44,7 @@ slambuc = 'slambuc.tool.cli:main'
 extra = [
     'pygraphviz~=1.14',
     'matplotlib~=3.10.9',
-    'pandas~=3.0.2',
+    'pandas~=2.3.3',
     'scipy~=1.17.0',
     'docplex~=2.32.264'
 ]
