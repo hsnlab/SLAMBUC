@@ -4,7 +4,7 @@ networkx~=3.6.1
 matplotlib~=3.10.9
 pandas~=2.3.3
 # sudo apt install glpk-utils
-pulp~=3.3.1
+pulp~=3.3.2
 scipy~=1.17.1
 cspy>=0.1.2
 ### Test ###
@@ -12,7 +12,7 @@ pytest
 # sudo apt install python3.14-dev graphviz libgraphviz-dev pkg-config
 pygraphviz~=1.14
 tabulate
-click~=8.4.0
+click~=8.4.1
 psutil~=7.2.2
 ### Package ###
 twine>=6.1.0
