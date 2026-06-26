@@ -10,7 +10,7 @@ cspy>=0.1.2
 ### Test ###
 pytest
 # sudo apt install python3.14-dev graphviz libgraphviz-dev pkg-config
-pygraphviz~=1.14
+pygraphviz~=2.0
 tabulate
 click~=8.4.2
 psutil~=7.2.2

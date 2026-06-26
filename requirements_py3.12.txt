@@ -1,7 +1,7 @@
 numpy~=2.4.0
 networkx~=3.6.1
 matplotlib~=3.10.9
-pygraphviz~=1.14.0
+pygraphviz~=2.0.0
 pandas~=2.3.3
 tabulate~=0.10.0
 pulp~=3.3.2
